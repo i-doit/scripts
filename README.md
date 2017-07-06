@@ -44,7 +44,7 @@ On a fresh installation download the script `idoit-install.sh` and execute it wi
 Download:
 
 ~~~ {.bash}
-curl -O https://raw.githubusercontent.com/bheisig/i-doit-scripts/master/idoit-install.sh
+wget https://raw.githubusercontent.com/bheisig/i-doit-scripts/master/idoit-install.sh
 chmod 755 idoit-install.sh
 ~~~
 
