@@ -20,6 +20,8 @@ on a fresh installation of a GNU/Linux operating system. Supported OSs are:
 *   Debian GNU/Linux 9 "Stretch"
 *   Debian GNU/Linux 8 "Jessie"
 *   Ubuntu Linux 16.04 LTS "Xenial"
+*   Ubuntu Linux 16.10 "Yakkety"
+*   Ubuntu Linux 17.04 "Zesty"
 
 Before you execute this script you should…
 

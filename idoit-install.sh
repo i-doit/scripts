@@ -118,15 +118,21 @@ function identifyOS {
         local os_description=`lsb_release --short --description`
 
         if [[ "$os_id" = "Debian" && "$os_codename" = "jessie" ]]; then
-            log "Identified operating system as ${os_description}"
+            log "Operating system identified as ${os_description}"
             log "Version 9 is recommended. Please consider to upgrade."
             OS="debian8"
         elif [[ "$os_id" = "Debian" && "$os_codename" = "stretch" ]]; then
-            log "Identified operating system as ${os_description}"
+            log "Operating system identified as ${os_description}"
             OS="debian9"
         elif [[ "$os_id" = "Ubuntu" && "$os_codename" = "xenial" ]]; then
-            log "Identified operating system as ${os_description}"
+            log "Operating system identified as ${os_description}"
             OS="ubuntu1604"
+        elif [[ "$os_id" = "Ubuntu" && "$os_codename" = "yakkety" ]]; then
+            log "Operating system identified as ${os_description}"
+            OS="ubuntu1610"
+        elif [[ "$os_id" = "Ubuntu" && "$os_codename" = "zesty" ]]; then
+            log "Operating system identified as ${os_description}"
+            OS="ubuntu1704"
         else
             abort "Operating system ${os_description} is not supported"
         fi
@@ -135,11 +141,11 @@ function identifyOS {
         local os_major_release=`cat /etc/debian_version | awk -F "." '{print $1}'`
 
         if [[ "$os_major_release" = "8" ]]; then
-            log "Identified operating system as Debian GNU/Linux ${os_release} (jessie)"
+            log "Operating system identified as Debian GNU/Linux ${os_release} (jessie)"
             log "Version 9 is recommended. Please consider to upgrade."
             OS="debian8"
         elif [[ "$os_major_release" = "9" ]]; then
-            log "Identified operating system as Debian GNU/Linux ${os_release} (stretch)"
+            log "Operating system identified as Debian GNU/Linux ${os_release} (stretch)"
             OS="debian9"
         else
             abort "Operating system Debian GNU/Linux ${os_release} is not supported"
@@ -165,7 +171,7 @@ function configureOS {
         "debian9")
             configureDebian9
             ;;
-        "ubuntu1604")
+        "ubuntu1604"|"ubuntu1610"|"ubuntu1704")
             configureUbuntu1604
             ;;
         *)
@@ -334,7 +340,7 @@ function configureMariaDB {
         "debian8")
             mariadb_config="/etc/mysql/conf.d/i-doit.cnf"
             ;;
-        "debian9"|"ubuntu1604")
+        "debian9"|"ubuntu1604"|"ubuntu1610"|"ubuntu1704")
             echo -n -e \
                 "Please enter a new password for MariaDB's super user 'root' [leave empty for '${MARIADB_SUPERUSER_PASSWORD}']: "
 
