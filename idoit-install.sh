@@ -42,7 +42,7 @@ UPDATE_FILE_PRO="https://i-doit.com/updates.xml"
 UPDATE_FILE_OPEN="https://i-doit.org/updates.xml"
 OS=""
 BASENAME=`basename $0`
-VERSION="0.1"
+VERSION="0.2"
 
 ##--------------------------------------------------------------------------------------------------
 
