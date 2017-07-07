@@ -82,7 +82,17 @@ You **should not** install i-doit with this script if you agree with one or more
 3) "I have special requirements to run i-doit."
 
 
-##  Contribute
+### What to do next?
+
+There are several steps you still need to do by yourself:
+
+1)  [Install your license (only pro version)](https://kb.i-doit.com/display/en/Install+License)
+2)  [Configure cron jobs](https://kb.i-doit.com/pages/viewpage.action?pageId=37355566)
+3)  [Configure backups (and test it!)](https://kb.i-doit.com/display/en/Backup+and+Recovery)
+4)  Document your IT (obviously ;-))
+
+
+##  Contribute & Support
 
 Please, report any issues to [our issue tracker](https://github.com/bheisig/i-doit-scripts/issues). Pull requests are very welcomed.
 
