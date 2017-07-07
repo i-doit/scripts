@@ -63,6 +63,20 @@ sudo ./idoit-install.sh
 
 The script will ask you several questions. All of them have default answers. This allows you to just hit `ENTER` whenever a user interaction is needed.
 
+Sometimes you need to restart your system so all changes take effect.
+
+As `root`:
+
+~~~ {.bash}
+systemctl reboot
+~~~
+
+As non-`root`:
+
+~~~ {.bash}
+sudo systemctl reboot
+~~~
+
 
 ### Who should use this script?
 
