@@ -17,8 +17,8 @@ The script `idoit-install.sh` allows you to easily install the latest version of
 
 on a fresh installation of a GNU/Linux operating system. Supported OSs are:
 
-*   Debian GNU/Linux 9 "Stretch"
 *   Debian GNU/Linux 8 "Jessie"
+*   Debian GNU/Linux 9 "Stretch" (**recommended**)
 *   Ubuntu Linux 16.04 LTS "Xenial"
 *   Ubuntu Linux 16.10 "Yakkety"
 *   Ubuntu Linux 17.04 "Zesty"
@@ -84,18 +84,18 @@ sudo systemctl reboot
 
 You should install i-doit with this script if you agree with one or more of the following statements:
 
-1)  "I need a stable instance of i-doit with a good performance installed on a recommended operating system."
-2)  "I am unsure how to maintain a GNU/Linux operating system."
-3)  "I do not have the time to setup i-doit."
+1)  _"I need a stable instance of i-doit with a good performance installed on a recommended operating system."_
+2)  _"I am unsure how to maintain a GNU/Linux operating system."_
+3)  _"I do not have the time to setup i-doit."_
 
 
 ### Who should not use this script?
 
 You **should not** install i-doit with this script if you agree with one or more of the following statements:
 
-1) "I am an experienced GNU/Linux system administrator."
-2) "i-doit will not be the only application on this system."
-3) "I have special requirements to run i-doit."
+1) _"I am an experienced GNU/Linux system administrator."_
+2) _"i-doit will not be the only application on this system."_
+3) _"I have special requirements to run i-doit."_
 
 
 ### What to do next?
