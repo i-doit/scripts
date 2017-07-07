@@ -537,7 +537,7 @@ function tearDown {
 }
 
 function showUsage {
-    log "Usage: $BASENAME"
+    log "Usage: $BASENAME [OPTIONS]"
     log ""
     log "Options:"
     log "    -h, --help      Print usage"
@@ -585,15 +585,30 @@ function abort {
 
 ##--------------------------------------------------------------------------------------------------
 
-case "$1" in
-    "-h"|"--help")
-        showUsage
-        exit 0
-        ;;
-    "-v"|"--version")
-        showVersion
-        exit 0
-        ;;
-esac
+ARGS=`getopt \
+    -o vh \
+    --long help,version -- "$@" 2> /dev/null`
+
+eval set -- "$ARGS"
+
+while true ; do
+    case "$1" in
+        -h|--help)
+            showUsage
+            exit 0
+            ;;
+        -v|--version)
+            showVersion
+            exit 0
+            ;;
+        --)
+            shift;
+            break;;
+        *)
+            log "Unkown option '${1}'."
+            printUsage
+            exit 1;;
+    esac
+done
 
 setup && execute && finish
