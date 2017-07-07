@@ -41,6 +41,10 @@ TMP_DIR="/tmp/i-doit_${DATE}"
 UPDATE_FILE_PRO="https://i-doit.com/updates.xml"
 UPDATE_FILE_OPEN="https://i-doit.org/updates.xml"
 OS=""
+BASENAME=`basename $0`
+VERSION="0.1"
+
+##--------------------------------------------------------------------------------------------------
 
 function execute {
     log "Install i-doit on a GNU/Linux operating system"
@@ -529,7 +533,19 @@ function setup {
 }
 
 function tearDown {
-    rm -rf "$TMP_DIR"
+    test -d "$TMP_DIR" && log "Cleanup" && ( rm -rf "$TMP_DIR" || echo "Failed" 1>&2 )
+}
+
+function showUsage {
+    log "Usage: $BASENAME"
+    log ""
+    log "Options:"
+    log "    -h, --help      Print usage"
+    log "    -v, --version   Print version"
+}
+
+function showVersion {
+    log "$BASENAME $VERSION"
 }
 
 function log {
@@ -556,16 +572,28 @@ function askYesNo {
 
 function finish {
     tearDown
-    log "Done"
+    log "Done. Have fun :-)"
     exit 0
 }
 
 function abort {
+    echo -e "$1"  1>&2
     tearDown
-    >&2 echo -e "$1"
-    >&2 echo "Operation failed"
+    echo "Operation failed. Please check what is wrong and try again." 1>&2
     exit 1
 }
 
-setup && execute && finish
+##--------------------------------------------------------------------------------------------------
 
+case "$1" in
+    "-h"|"--help")
+        showUsage
+        exit 0
+        ;;
+    "-v"|"--version")
+        showVersion
+        exit 0
+        ;;
+esac
+
+setup && execute && finish
