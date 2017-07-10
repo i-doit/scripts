@@ -10,12 +10,12 @@ Useful scripts to maintain i-doit
 
 ##  Install i-doit on a GNU/Linux operating system
 
-The script `idoit-install.sh` allows you to easily install the latest version of
+The script `idoit-install.sh` allows you to easily install the **latest version** of
 
 *   i-doit pro or
 *   i-doit open
 
-on a fresh installation of a GNU/Linux operating system. Supported OSs are:
+on a **fresh installation of a GNU/Linux operating system**. Supported OSs are:
 
 *   Debian GNU/Linux 8 "Jessie"
 *   Debian GNU/Linux 9 "Stretch" (**recommended**)
@@ -23,17 +23,15 @@ on a fresh installation of a GNU/Linux operating system. Supported OSs are:
 *   Ubuntu Linux 16.10 "Yakkety"
 *   Ubuntu Linux 17.04 "Zesty"
 
-Before you execute this script you should…
+Before you execute this script you …
 
-*   Install one of the supported operating systems based on the [requirements mentioned in the i-doit knowledge base](https://kb.i-doit.com/display/en/System+Requirements)
-*   Create a backup/snapshot of your system
-*   Make sure that the system is allowed to access external Web services, for example package repositories and the i-doit website.
+*   Must install one of the supported operating systems in x86 64 bit based on the [requirements mentioned in the i-doit knowledge base](https://kb.i-doit.com/display/en/System+Requirements) (excluding the LAMP stack)
+*   Should create a backup/snapshot of your system
+*   Must make sure that the system is allowed to access external Web services, for example package repositories and the i-doit website.
 
-The "rest" can done by the script.
+The script includes several steps which are essential for i-doit:
 
-The script includes several steps which are all optional, but essential for running i-doit:
-
-*   Install needed distribution packages
+*   Install needed distribution packages (LAMP stack)
 *   Configure PHP
 *   Configure Apache Web server
 *   Configure MariaDB DBMS
@@ -41,7 +39,10 @@ The script includes several steps which are all optional, but essential for runn
 
 All steps are based on information provided by the [i-doit knowledge base](https://kb.i-doit.com/display/en/).
 
-On a fresh installation download the script `idoit-install.sh` and execute it with super-user rights (`root`).
+
+### Usage
+
+Connect to your freshly installed OS, for example via **SSH**. Download the script `idoit-install.sh` and execute it with super-user rights (`root`).
 
 Download:
 
@@ -65,24 +66,10 @@ sudo ./idoit-install.sh
 
 The script will ask you several questions. All of them have default answers. This allows you to just hit `ENTER` whenever a user interaction is needed.
 
-Sometimes you need to restart your system so all changes take effect.
-
-As `root`:
-
-~~~ {.bash}
-systemctl reboot
-~~~
-
-As non-`root`:
-
-~~~ {.bash}
-sudo systemctl reboot
-~~~
-
 
 ### Who should use this script?
 
-You should install i-doit with this script if you agree with one or more of the following statements:
+You **should** install i-doit with this script if you agree with one or more of the following statements:
 
 1)  _"I need a stable instance of i-doit with a good performance installed on a recommended operating system."_
 2)  _"I am unsure how to maintain a GNU/Linux operating system."_
