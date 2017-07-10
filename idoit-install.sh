@@ -173,7 +173,7 @@ function identifyOS {
         fi
     elif [[ -f "/etc/centos-release" ]]; then
         local os_description=`cat /etc/centos-release`
-        local os_release=`cat /etc/redhat-release | grep -o '[0-9]\.[0-9]'`
+        local os_release=`cat /etc/centos-release | grep -o '[0-9]\.[0-9]'`
 
         if [[ "$os_release" = "7.3" ]]; then
             log "Operating system identified as CentOS ${os_release}"
@@ -186,8 +186,17 @@ function identifyOS {
         APACHE_GROUP="apache"
     elif [[ -f "/etc/redhat-release" ]]; then
         local os_description=`cat /etc/redhat-release`
+        local os_release=`cat /etc/redhat-release | grep -o '[0-9]\.[0-9]'`
 
-        abort "Operating system ${os_description} is not supported"
+        if [[ "$os_release" = "7.3" ]]; then
+            log "Operating system identified as Red Hat Enterprise Linux (RHEL) ${os_release}"
+            OS="redhat73"
+        else
+            abort "Operating system Red Hat Enterprise Linux (RHEL) $os_release is not supported"
+        fi
+
+        APACHE_USER="apache"
+        APACHE_GROUP="apache"
     elif [[ -f "/etc/SuSE-release" ]]; then
         local os_description=`cat /etc/SuSE-release | head -n1`
 
@@ -214,8 +223,8 @@ function configureOS {
         "ubuntu1604"|"ubuntu1610"|"ubuntu1704")
             configureUbuntu1604
             ;;
-        "centos73")
-            configureCentOS73
+        "redhat73"|"centos73")
+            configureRedHat73
             ;;
         *)
             abort "Unkown operating system '${OS}'!?!"
@@ -284,7 +293,21 @@ function configureUbuntu1604 {
         memcached unzip || abort "Unable to install required Ubuntu packages"
 }
 
-function configureCentOS73 {
+function configureRedHat73 {
+    local os_description=""
+    local mariadb_url=""
+
+    case "$OS" in
+        "redhat73")
+            os_description="Red Hat Enterprise Linux (RHEL)"
+            mariadb_url="http://yum.mariadb.org/10.1/rhel7-amd64"
+            ;;
+        "centos73")
+            os_description="CentOS"
+            mariadb_url="http://yum.mariadb.org/10.1/centos7-amd64"
+            ;;
+    esac
+
     log "Keep you yum packages up-to-date"
     yum --assumeyes --quiet update
     yum --assumeyes --quiet autoremove
@@ -293,7 +316,7 @@ function configureCentOS73 {
     log "Install some important packages, for example Apache Web server"
     yum --assumeyes --quiet install httpd unzip zip wget
 
-    log "CentOS 7.3 has out-dated packages for PHP and MariaDB. This script will fix this issue by enabling these 3rd party repositories:"
+    log "$os_description 7.3 has out-dated packages for PHP and MariaDB. This script will fix this issue by enabling these 3rd party repositories:"
     log ""
     log "    Webtatic.com for PHP 7.0"
     log "    Official MariaDB repository for MariaDB 10.1"
@@ -319,11 +342,11 @@ function configureCentOS73 {
 
     log "Enable MariaDB repository"
     cat > /etc/yum.repos.d/MariaDB.repo << EOF
-# MariaDB 10.1 CentOS repository list
+# MariaDB 10.1 repository list
 # http://downloads.mariadb.org/mariadb/repositories/
 [mariadb]
 name = MariaDB
-baseurl = http://yum.mariadb.org/10.1/centos7-amd64
+baseurl = $mariadb_url
 gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
 gpgcheck=1
 EOF
@@ -356,7 +379,7 @@ function configurePHP {
     local php_en_mod=""
     local php_version=`php --version | head -n1 -c7 | tail -c3`
 
-    if [[ "$OS" = "centos73" ]]; then
+    if [[ "$OS" = "redhat73" || "$OS" = "centos73" ]]; then
         ini_file="/etc/php.d/i-doit.ini"
     elif [[ "$php_version" = "7.0" ]]; then
         ini_file="/etc/php/7.0/mods-available/i-doit.ini"
@@ -405,7 +428,7 @@ EOF
 
     log "Append path to MariaDB UNIX socket to PHP settings"
     case "$OS" in
-        "centos73")
+        "redhat73"|"centos73")
             echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" >> "$ini_file" || \
                 abort "Unable to alter PHP settings"
             ;;
@@ -427,7 +450,7 @@ function configureApache {
     log "Configure Apache Web server"
 
     case "$OS" in
-        "centos73")
+        "redhat73"|"centos73")
             # TODO FIXME
             cat > /etc/httpd/conf.d/i-doit.conf << EOF
 <Directory /var/www/html/>
@@ -518,7 +541,7 @@ function configureMariaDB {
 
             mariadb_config="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
             ;;
-        "centos73")
+        "redhat73"|"centos73")
             secureMariaDB
 
             mariadb_config="/etc/my.cnf.d/99-i-doit.cnf"

@@ -22,6 +22,7 @@ on a **fresh installation of a GNU/Linux operating system**. Supported OSs are:
 *   Ubuntu Linux 16.04 LTS "Xenial"
 *   Ubuntu Linux 16.10 "Yakkety"
 *   Ubuntu Linux 17.04 "Zesty"
+*   Red Hat Enterprise Linux (RHEL) 7.3
 *   CentOS 7.3
 
 Before you execute this script you …
