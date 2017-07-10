@@ -26,6 +26,8 @@ set -u
 ##
 ## Configuration
 ##
+## You **should not** edit this config. You will be asked for your preferred settings.
+##
 
 MARIADB_HOSTNAME="localhost"
 MARIADB_SUPERUSER_PASSWORD="idoit"
@@ -50,18 +52,26 @@ function execute {
     log "Install i-doit on a GNU/Linux operating system"
     log ""
     log "Attention:"
-    log "This script may cause serious damage to your operating system and all its data. It comes with absolutely no warrenty."
+    log "This script alters your OS. It will install new packages and will change configuration settings."
+    log "Only use it on a fresh installation of a GNU/Linux OS."
+    log "It comes with absolutely no warrenty."
+    log "Read the documentation carefully before you continue:"
     log ""
-    log "You may choose to automatically…"
+    log "    https://github.com/bheisig/i-doit-scripts"
+    log ""
+    log "This script will automatically…"
+    log ""
     log "    1) install additional distribution packages,"
     log "    2) alter configuration of your PHP environment,"
     log "    3) alter configuration of your Apache Web server,"
     log "    4) alter configuration of your MariaDB DBMS, and"
     log "    5) download and install the latest version of i-doit pro or open"
     log ""
+    log "You may skip any step if you like."
+    log ""
 
-    askYesNo "Do you really want to use this script?"
-    if [[ $? -gt 0 ]]; then
+    askYesNo "Do you really want to continue?"
+    if [[ "$?" -gt 0 ]]; then
         log "Bye"
         exit 0
     fi
@@ -73,35 +83,35 @@ function execute {
     log "\n--------------------------------------------------------------------------------\n"
 
     askYesNo "Do you want to configure the operating system?"
-    if [[ $? -eq 0 ]]; then
+    if [[ "$?" -eq 0 ]]; then
         configureOS
     fi
 
     log "\n--------------------------------------------------------------------------------\n"
 
     askYesNo "Do you want to configure the PHP environment?"
-    if [[ $? -eq 0 ]]; then
+    if [[ "$?" -eq 0 ]]; then
         configurePHP
     fi
 
     log "\n--------------------------------------------------------------------------------\n"
 
     askYesNo "Do you want to configure the Apache Web server?"
-    if [[ $? -eq 0 ]]; then
+    if [[ "$?" -eq 0 ]]; then
         configureApache
     fi
 
     log "\n--------------------------------------------------------------------------------\n"
 
     askYesNo "Do you want to configure MariaDB?"
-    if [[ $? -eq 0 ]]; then
+    if [[ "$?" -eq 0 ]]; then
         configureMariaDB
     fi
 
     log "\n--------------------------------------------------------------------------------\n"
 
     askYesNo "Do you want to prepare and install i-doit automatically?"
-    if [[ $? -eq 0 ]]; then
+    if [[ "$?" -eq 0 ]]; then
         prepareIDoit
         installIDoit
     else
@@ -109,6 +119,17 @@ function execute {
         log "To complete the setup please follow the instructions as described in the i-doit Knowledge Base:"
         log "    https://kb.i-doit.com/display/en/Setup"
     fi
+
+    case "$OS" in
+        "ubuntu1604"|"ubuntu1610"|"ubuntu1704")
+            log "To garantee that all your changes take effect you should restart your system."
+
+            askYesNo "Do you want to restart your system NOW?"
+            if [[ "$?" -eq 0 ]]; then
+                systemctl reboot
+            fi
+            ;;
+    esac
 }
 
 function identifyOS {
@@ -150,6 +171,19 @@ function identifyOS {
         else
             abort "Operating system Debian GNU/Linux ${os_release} is not supported"
         fi
+    elif [[ -f "/etc/centos-release" ]]; then
+        local os_description=`cat /etc/centos-release`
+        local os_release=`cat /etc/redhat-release | grep -o '[0-9]\.[0-9]'`
+
+        if [[ "$os_release" = "7.3" ]]; then
+            log "Operating system identified as CentOS ${os_release}"
+            OS="centos73"
+        else
+            abort "Operating system CentOS $os_release is not supported"
+        fi
+
+        APACHE_USER="apache"
+        APACHE_GROUP="apache"
     elif [[ -f "/etc/redhat-release" ]]; then
         local os_description=`cat /etc/redhat-release`
 
@@ -160,6 +194,12 @@ function identifyOS {
         abort "Operating system ${os_description} is not supported"
     else
         abort "Unable to identify operating system"
+    fi
+
+    local arch=`uname -m`
+
+    if [[ "$arch" != "x86_64" ]]; then
+        log "Attention! The system architecture is not x86 64 bit, but ${arch}. This could cause unwanted behaviour."
     fi
 }
 
@@ -173,6 +213,9 @@ function configureOS {
             ;;
         "ubuntu1604"|"ubuntu1610"|"ubuntu1704")
             configureUbuntu1604
+            ;;
+        "centos73")
+            configureCentOS73
             ;;
         *)
             abort "Unkown operating system '${OS}'!?!"
@@ -195,8 +238,12 @@ function configureDebian8 {
     apt-get --quiet --yes autoremove || abort "Unable to remove unnecessary Debian packages"
 
     log "Install required Debian packages"
-    debconf-set-selections <<< "mariadb-server-10.0 mysql-server/root_password password ${MARIADB_SUPERUSER_PASSWORD}" || abort "Unable to set MariaDB super user password"
-    debconf-set-selections <<< "mariadb-server-10.0 mysql-server/root_password_again password ${MARIADB_SUPERUSER_PASSWORD}" || abort "Unable to set MariaDB super user password"
+    debconf-set-selections <<< \
+        "mariadb-server-10.0 mysql-server/root_password password ${MARIADB_SUPERUSER_PASSWORD}" || \
+        abort "Unable to set MariaDB super user password"
+    debconf-set-selections <<< \
+        "mariadb-server-10.0 mysql-server/root_password_again password ${MARIADB_SUPERUSER_PASSWORD}" || \
+        abort "Unable to set MariaDB super user password"
     apt-get --quiet --yes install \
         apache2 libapache2-mod-php5 \
         php5 php5-cli php5-common php5-curl php5-gd php5-json php5-ldap php5-mcrypt php5-mysqlnd \
@@ -237,6 +284,71 @@ function configureUbuntu1604 {
         memcached unzip || abort "Unable to install required Ubuntu packages"
 }
 
+function configureCentOS73 {
+    log "Keep you yum packages up-to-date"
+    yum --assumeyes --quiet update
+    yum --assumeyes --quiet autoremove
+    yum --assumeyes --quiet clean all
+
+    log "Install some important packages, for example Apache Web server"
+    yum --assumeyes --quiet install httpd unzip zip wget
+
+    log "CentOS 7.3 has out-dated packages for PHP and MariaDB. This script will fix this issue by enabling these 3rd party repositories:"
+    log ""
+    log "    Webtatic.com for PHP 7.0"
+    log "    Official MariaDB repository for MariaDB 10.1"
+    log ""
+
+    askYesNo "Do you agree with it?"
+    if [[ "$?" -eq 1 ]]; then
+        abort "Requirements for i-doit not met"
+    fi
+
+    log "Enable Webtatic repository"
+    rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm || \
+        abort "Unable to install EPEL"
+    rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm || \
+        abort "Unable to enable Webtatic"
+
+    log "Install PHP packages"
+    yum --assumeyes --quiet install \
+        php70w php70w-bcmath php70w-cli php70w-common php70w-gd php70w-ldap php70w-mbstring \
+        php70w-mcrypt php70w-mysqlnd php70w-opcache php70w-pdo php70w-pecl-imagick \
+        php70w-pecl-memcached php70w-pgsql php70w-soap php70w-xml || \
+        abort "Unable to install PHP packages"
+
+    log "Enable MariaDB repository"
+    cat > /etc/yum.repos.d/MariaDB.repo << EOF
+# MariaDB 10.1 CentOS repository list
+# http://downloads.mariadb.org/mariadb/repositories/
+[mariadb]
+name = MariaDB
+baseurl = http://yum.mariadb.org/10.1/centos7-amd64
+gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
+gpgcheck=1
+EOF
+
+    if [[ "$?" -gt 0 ]]; then
+        abort "Unable to create and edit file '/etc/yum.repos.d/MariaDB.repo'"
+    fi
+
+    log "Install MariaDB packages"
+    yum --assumeyes --quiet install MariaDB-server MariaDB-client || \
+        abort "Unable to install MariaDB"
+
+    log "Enable services"
+    systemctl enable httpd.service || abort "Cannot enable Apache Web server"
+    systemctl enable mariadb.service || abort "Cannot enable MariaDB server"
+
+    log "Start services"
+    systemctl start httpd.service || abort "Unable to start Apache Web server"
+    systemctl start mariadb.service || abort "Unable to start MariaDB server"
+
+    log "Allow incoming HTTP traffic"
+    firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
+    systemctl restart firewalld.service || abort "Unable to restart firewall"
+}
+
 function configurePHP {
     log "Configure PHP"
 
@@ -244,7 +356,9 @@ function configurePHP {
     local php_en_mod=""
     local php_version=`php --version | head -n1 -c7 | tail -c3`
 
-    if [[ "$php_version" = "7.0" ]]; then
+    if [[ "$OS" = "centos73" ]]; then
+        ini_file="/etc/php.d/i-doit.ini"
+    elif [[ "$php_version" = "7.0" ]]; then
         ini_file="/etc/php/7.0/mods-available/i-doit.ini"
         php_en_mod=`which phpenmod`
     elif [[ "$php_version" = "5.6" ]]; then
@@ -259,6 +373,7 @@ function configurePHP {
         abort "PHP ${php_version} is not supported. Please upgrade/downgrade."
     fi
 
+    log "Write PHP settings to '${ini_file}'"
     cat > "$ini_file" << EOF
 allow_url_fopen = Yes
 file_uploads = On
@@ -282,23 +397,72 @@ default_socket_timeout = 60
 date.timezone = Europe/Berlin
 session.gc_maxlifetime = 604800
 session.cookie_lifetime = 0
-mysqli.default_socket = /var/run/mysqld/mysqld.sock
 EOF
 
-   log "Enable PHP settings"
-   "$php_en_mod" i-doit
-   log "Enable PHP module for memcached"
-   "$php_en_mod" memcached
+    if [[ "$?" -gt 0 ]]; then
+        abort "Unable to create and edit file '${ini_file}'"
+    fi
+
+    log "Append path to MariaDB UNIX socket to PHP settings"
+    case "$OS" in
+        "centos73")
+            echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" >> "$ini_file" || \
+                abort "Unable to alter PHP settings"
+            ;;
+        *)
+            echo "mysqli.default_socket = /var/run/mysqld/mysqld.sock" >> "$ini_file" || \
+                abort "Unable to alter PHP settings"
+            ;;
+    esac
+
+    if [[ -n "$php_en_mod" ]]; then
+        log "Enable PHP settings"
+        "$php_en_mod" i-doit
+        log "Enable PHP module for memcached"
+        "$php_en_mod" memcached
+    fi
 }
 
 function configureApache {
     log "Configure Apache Web server"
 
-    local a2_en_site=`which a2ensite`
-    local a2_dis_site=`which a2dissite`
-    local a2_en_mod=`which a2enmod`
+    case "$OS" in
+        "centos73")
+            # TODO FIXME
+            cat > /etc/httpd/conf.d/i-doit.conf << EOF
+<Directory /var/www/html/>
+        AllowOverride All
+</Directory>
+EOF
 
-   cat > /etc/apache2/sites-available/i-doit.conf << EOF
+            if [[ "$?" -gt 0 ]]; then
+                abort "Unable to create and edit file '/etc/httpd/conf.d/i-doit.conf'"
+            fi
+
+            test ! -d "$INSTALL_DIR" && (
+                    mkdir -p "$INSTALL_DIR" || \
+                        abort "Unable to create directory '${INSTALL_DIR}'"
+            )
+
+            log "Cleanup VHost directory"
+            rm -rf "${INSTALL_DIR}"/* || abort "Unable to remove files"
+            log "Change directory ownership"
+            chown "$APACHE_USER":"$APACHE_GROUP" -R "${INSTALL_DIR}/" || \
+                abort "Unable to change ownership"
+            log "SELinux: Allow Apache Web server to read/write files under ${INSTALL_DIR}/"
+            chcon -t httpd_sys_content_t "${INSTALL_DIR}/" -R || \
+                abort "Unable to give read permissions recursively"
+            chcon -t httpd_sys_rw_content_t "${INSTALL_DIR}/" -R || \
+                abort "Unable to give write permissions recursively"
+            log "Restart Apache Web server"
+            systemctl restart httpd.service || abort "Unable to restart Apache Web server"
+            ;;
+        *)
+            local a2_en_site=`which a2ensite`
+            local a2_dis_site=`which a2dissite`
+            local a2_en_mod=`which a2enmod`
+
+            cat > /etc/apache2/sites-available/i-doit.conf << EOF
 <VirtualHost *:80>
         ServerAdmin i-doit@example.net
 
@@ -315,66 +479,50 @@ function configureApache {
 </VirtualHost>
 EOF
 
-   log "Disable default VHost"
-   "$a2_dis_site" 000-default || abort "Unable to disable default VHost"
-   log "Cleanup VHost directory"
-   rm -rf "${INSTALL_DIR}"/* || abort "Unable to remove files"
-   log "Change directory ownership"
-   chown "$APACHE_USER":"$APACHE_GROUP" -R "${INSTALL_DIR}/" || abort "Unable to change ownership"
-   log "Enable new VHost settings"
-   "$a2_en_site" i-doit || abort "Unable to enable VHost settings"
-   log "Enable Apache module rewrite"
-   "$a2_en_mod" rewrite || abort "Unable to enable Apache module rewrite"
-   log "Restart Apache Web server"
-   systemctl restart apache2.service || abort "Unable to restart Apache Web server"
+            if [[ "$?" -gt 0 ]]; then
+                abort "Unable to create and edit file '/etc/apache2/sites-available/i-doit.conf'"
+            fi
+
+            log "Disable default VHost"
+            "$a2_dis_site" 000-default || abort "Unable to disable default VHost"
+            log "Cleanup VHost directory"
+            rm -rf "${INSTALL_DIR}"/* || abort "Unable to remove files"
+            log "Change directory ownership"
+            chown "$APACHE_USER":"$APACHE_GROUP" -R "${INSTALL_DIR}/" || \
+                abort "Unable to change ownership"
+            log "Enable new VHost settings"
+            "$a2_en_site" i-doit || abort "Unable to enable VHost settings"
+            log "Enable Apache module rewrite"
+            "$a2_en_mod" rewrite || abort "Unable to enable Apache module rewrite"
+            log "Restart Apache Web server"
+            systemctl restart apache2.service || abort "Unable to restart Apache Web server"
+            ;;
+    esac
+
+
 }
 
 function configureMariaDB {
     log "Configure MariaDB DBMS"
 
     local mysql_bin=`which mysql`
-
     local mariadb_config=""
+    local mariadb_service="mysql.service"
 
     case "$OS" in
         "debian8")
-            mariadb_config="/etc/mysql/conf.d/i-doit.cnf"
+            mariadb_config="/etc/mysql/conf.d/99-i-doit.cnf"
             ;;
         "debian9"|"ubuntu1604"|"ubuntu1610"|"ubuntu1704")
-            echo -n -e \
-                "Please enter a new password for MariaDB's super user 'root' [leave empty for '${MARIADB_SUPERUSER_PASSWORD}']: "
-
-            read answer
-
-            if [[ -n "$answer" ]]; then
-                MARIADB_SUPERUSER_PASSWORD="$answer"
-            fi
-
-            log "Set root password"
-            "$mysql_bin" -uroot \
-                -e"UPDATE mysql.user SET Password=PASSWORD('${MARIADB_SUPERUSER_PASSWORD}') WHERE User='root';" || \
-                abort "Unable to set root password"
-            log "Allow root login only from localhost"
-            "$mysql_bin" -uroot \
-                -e"DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" || \
-                abort "Unable to disallow remote login for root"
-            log "Remove anonymous user"
-            "$mysql_bin" -uroot \
-                -e"DELETE FROM mysql.user WHERE User='';" || \
-                abort "Unable to remove anonymous user"
-            log "Remove test database"
-            "$mysql_bin" -uroot \
-                -e"DELETE FROM mysql.db WHERE Db='test' OR Db='test_%';" || \
-                abort "Unable to remove test database"
-            log "Allow to login user 'root' with password for MariaDB"
-            "$mysql_bin" -uroot \
-                -e"UPDATE mysql.user SET plugin = 'mysql_native_password' WHERE User = 'root';" || \
-                abort "Unable to update user table"
-            "$mysql_bin" -uroot \
-                -e"FLUSH PRIVILEGES;" || \
-                abort "Unable to flush privileges"
+            secureMariaDB
 
             mariadb_config="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
+            ;;
+        "centos73")
+            secureMariaDB
+
+            mariadb_config="/etc/my.cnf.d/99-i-doit.cnf"
+            mariadb_service="mariadb.service"
             ;;
         *)
             abort "Unkown operating system '${OS}'!?!"
@@ -384,9 +532,9 @@ function configureMariaDB {
     "$mysql_bin" -uroot -p"$MARIADB_SUPERUSER_PASSWORD" -e"SET GLOBAL innodb_fast_shutdown = 0" || \
       abort "Unable to prepare shutdown"
     log "Stop MariaDB"
-    systemctl stop mysql.service || abort "Unable to stop MariaDB"
+    systemctl stop "$mariadb_service" || abort "Unable to stop MariaDB"
     log "Move old MariaDB log files"
-    mv /var/lib/mysql/ib_logfile[01] /tmp || abort "Unable to move old log files"
+    mv /var/lib/mysql/ib_logfile[01] "$TMP_DIR" || abort "Unable to remove old log files"
 
     log "How many bytes of your RAM do you like to spend to MariaDB?"
     echo -n -e "You SHOULD give MariaDB ~ 50 per cent of your RAM [leave empty for '${MARIADB_INNODB_BUFFER_POOL_SIZE}']: "
@@ -446,11 +594,54 @@ table_open_cache = 2048
 sql-mode = ""
 EOF
 
+    if [[ "$?" -gt 0 ]]; then
+        abort "Unable to create and edit file '${mariadb_config}'"
+    fi
+
     log "Start MariaDB"
-    systemctl start mysql.service || abort "Unable to start MariaDB"
+    systemctl start "$mariadb_service" || abort "Unable to start MariaDB"
+}
+
+function secureMariaDB {
+    local mysql_bin=`which mysql`
+
+    echo -n -e \
+        "Please enter a new password for MariaDB's super user 'root' [leave empty for '${MARIADB_SUPERUSER_PASSWORD}']: "
+
+    read answer
+
+    if [[ -n "$answer" ]]; then
+        MARIADB_SUPERUSER_PASSWORD="$answer"
+    fi
+
+    log "Set root password"
+    "$mysql_bin" -uroot \
+        -e"UPDATE mysql.user SET Password=PASSWORD('${MARIADB_SUPERUSER_PASSWORD}') WHERE User='root';" || \
+        abort "Unable to set root password"
+    log "Allow root login only from localhost"
+    "$mysql_bin" -uroot \
+        -e"DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" || \
+        abort "Unable to disallow remote login for root"
+    log "Remove anonymous user"
+    "$mysql_bin" -uroot \
+        -e"DELETE FROM mysql.user WHERE User='';" || \
+        abort "Unable to remove anonymous user"
+    log "Remove test database"
+    "$mysql_bin" -uroot \
+        -e"DELETE FROM mysql.db WHERE Db='test' OR Db='test_%';" || \
+        abort "Unable to remove test database"
+    log "Allow to login user 'root' with password for MariaDB"
+    "$mysql_bin" -uroot \
+        -e"UPDATE mysql.user SET plugin = 'mysql_native_password' WHERE User = 'root';" || \
+        abort "Unable to update user table"
+    "$mysql_bin" -uroot \
+        -e"FLUSH PRIVILEGES;" || \
+        abort "Unable to flush privileges"
 }
 
 function prepareIDoit {
+    local wget_bin=`which wget`
+
     log "Prepare i-doit"
 
     if [[ ! -f "${INSTALL_DIR}/i-doit.zip" ]]; then
@@ -463,23 +654,32 @@ function prepareIDoit {
         case "$variant" in
             ""|"PRO"|"Pro"|"pro")
                 update_file_url="$UPDATE_FILE_PRO"
+                log "Install i-doit pro"
                 ;;
             "OPEN"|"Open"|"open")
                 update_file_url="$UPDATE_FILE_OPEN"
+                log "Install i-doit open"
                 ;;
             *)
                 abort "Unknown variant"
         esac
 
         log "Identify latest version of i-doit"
-        wget --quiet -O "$TMP_DIR/updates.xml" "$update_file_url" || \
+        "$wget_bin" --quiet -O "$TMP_DIR/updates.xml" "$update_file_url" || \
             abort "Unable to fetch file from '${update_file_url}'"
 
-        local url=`cat "${TMP_DIR}/updates.xml" | tail -n5 | head -n1 | sed "s/<filename>//" | sed "s/<\/filename>//" | sed "s/-update.zip/.zip/" | awk '{print $1}'`
+        local url=`cat "${TMP_DIR}/updates.xml" | \
+            tail -n5 | \
+            head -n1 | \
+            sed "s/<filename>//" | \
+            sed "s/<\/filename>//" | \
+            sed "s/-update.zip/.zip/" | \
+            awk '{print $1}'`
 
         test -n "$url" || abort "Missing URL"
 
-        wget  --quiet -O "${INSTALL_DIR}/i-doit.zip" "$url" || abort "Unable to download file"
+        "$wget_bin"  --quiet -O "${INSTALL_DIR}/i-doit.zip" "$url" || \
+            abort "Unable to download file"
     fi
 
     log "Unzip package"
@@ -489,9 +689,10 @@ function prepareIDoit {
     log "Prepare files and directories"
     mv i-doit.zip "$TMP_DIR" || abort "Unable to remove downloaded file"
     chown "$APACHE_USER":"$APACHE_GROUP" -R . || abort "Unable to change ownership"
-    find . -type d -name \* -exec chmod 775 {} \; || "Unable to change directory permissions"
-    find . -type f -exec chmod 664 {} \; || "Unable to change file permissions"
-    chmod 774 controller tenants import updatecheck *.sh setup/*.sh || "Unable to change executable permissions"
+    find . -type d -name \* -exec chmod 775 {} \; || abort "Unable to change directory permissions"
+    find . -type f -exec chmod 664 {} \; || abort "Unable to change file permissions"
+    chmod 774 controller tenants import updatecheck *.sh setup/*.sh || \
+        abort "Unable to change executable permissions"
 }
 
 function installIDoit {
@@ -528,8 +729,11 @@ function installIDoit {
        -a "$IDOIT_ADMIN_CENTER_PASSWORD" -q || abort "i-doit setup script returned an error"
 
     local ipaddress=$(hostname -I |tr -d '[:space:]')
-    log "Your setup is ready. Navigate to http://${ipaddress}/ with your Web browser"
-    log "and login with username/password 'admin'"
+    log "Your setup is ready. Navigate to"
+    log ""
+    log "    http://${ipaddress}/"
+    log ""
+    log "with your Web browser and login with username/password 'admin'"
 }
 
 function setup {
@@ -546,6 +750,7 @@ function showUsage {
     log "Usage: $BASENAME [OPTIONS]"
     log ""
     log "Options:"
+    log ""
     log "    -h, --help      Print usage"
     log "    -v, --version   Print version"
 }
