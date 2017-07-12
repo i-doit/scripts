@@ -35,7 +35,8 @@ MARIADB_INNODB_BUFFER_POOL_SIZE="1G"
 APACHE_USER="www-data"
 APACHE_GROUP="www-data"
 IDOIT_ADMIN_CENTER_PASSWORD="admin"
-#MARIADB_USER_PASSWORD="idoit"
+MARIADB_IDOIT_USERNAME="idoit"
+MARIADB_IDOIT_PASSWORD="idoit"
 IDOIT_DEFAULT_TENANT="CMDB"
 INSTALL_DIR="/var/www/html"
 DATE=`date +%Y-m-d`
@@ -50,7 +51,10 @@ CRON_FILE="/etc/cron.d/i-doit"
 BASENAME=`basename $0`
 VERSION="0.4"
 
-WGET_BIN=`which wget`
+MARIADB_BIN=""
+SUDO_BIN=""
+UNZIP_BIN=""
+WGET_BIN=""
 
 ##--------------------------------------------------------------------------------------------------
 
@@ -93,6 +97,8 @@ function execute {
     if [[ "$?" -eq 0 ]]; then
         configureOS
     fi
+
+    checkRequirements
 
     log "\n--------------------------------------------------------------------------------\n"
 
@@ -250,6 +256,29 @@ function identifyOS {
 
     if [[ "$arch" != "x86_64" ]]; then
         log "Attention! The system architecture is not x86 64 bit, but ${arch}. This could cause unwanted behaviour."
+    fi
+}
+
+function checkRequirements {
+    MARIADB_BIN=`which mysql`
+    SUDO_BIN=`which sudo`
+    UNZIP_BIN=`which unzip`
+    WGET_BIN=`which wget`
+
+    if [[ ! -x "$MARIADB_BIN" ]]; then
+        abort "MariaDB client is missing"
+    fi
+
+    if [[ ! -x "$SUDO_BIN" ]]; then
+        abort "sudo is missing"
+    fi
+
+    if [[ ! -x "$UNZIP_BIN" ]]; then
+        abort "unzip is missing"
+    fi
+
+    if [[ ! -x "$WGET_BIN" ]]; then
+        abort "wget is missing"
     fi
 }
 
@@ -574,7 +603,6 @@ EOF
 function configureMariaDB {
     log "Configure MariaDB DBMS"
 
-    local mysql_bin=`which mysql`
     local mariadb_config=""
     local mariadb_service="mysql.service"
 
@@ -598,7 +626,7 @@ function configureMariaDB {
     esac
 
     log "Prepare shutdown of MariaDB"
-    "$mysql_bin" -uroot -p"$MARIADB_SUPERUSER_PASSWORD" -e"SET GLOBAL innodb_fast_shutdown = 0" || \
+    "$MARIADB_BIN" -uroot -p"$MARIADB_SUPERUSER_PASSWORD" -e"SET GLOBAL innodb_fast_shutdown = 0" || \
       abort "Unable to prepare shutdown"
     log "Stop MariaDB"
     systemctl stop "$mariadb_service" || abort "Unable to stop MariaDB"
@@ -672,8 +700,6 @@ EOF
 }
 
 function secureMariaDB {
-    local mysql_bin=`which mysql`
-
     echo -n -e \
         "Please enter a new password for MariaDB's super user 'root' [leave empty for '${MARIADB_SUPERUSER_PASSWORD}']: "
 
@@ -684,26 +710,26 @@ function secureMariaDB {
     fi
 
     log "Set root password"
-    "$mysql_bin" -uroot \
+    "$MARIADB_BIN" -uroot \
         -e"UPDATE mysql.user SET Password=PASSWORD('${MARIADB_SUPERUSER_PASSWORD}') WHERE User='root';" || \
         abort "Unable to set root password"
     log "Allow root login only from localhost"
-    "$mysql_bin" -uroot \
+    "$MARIADB_BIN" -uroot \
         -e"DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" || \
         abort "Unable to disallow remote login for root"
     log "Remove anonymous user"
-    "$mysql_bin" -uroot \
+    "$MARIADB_BIN" -uroot \
         -e"DELETE FROM mysql.user WHERE User='';" || \
         abort "Unable to remove anonymous user"
     log "Remove test database"
-    "$mysql_bin" -uroot \
+    "$MARIADB_BIN" -uroot \
         -e"DELETE FROM mysql.db WHERE Db='test' OR Db='test_%';" || \
         abort "Unable to remove test database"
     log "Allow to login user 'root' with password for MariaDB"
-    "$mysql_bin" -uroot \
+    "$MARIADB_BIN" -uroot \
         -e"UPDATE mysql.user SET plugin = 'mysql_native_password' WHERE User = 'root';" || \
         abort "Unable to update user table"
-    "$mysql_bin" -uroot \
+    "$MARIADB_BIN" -uroot \
         -e"FLUSH PRIVILEGES;" || \
         abort "Unable to flush privileges"
 }
@@ -778,12 +804,11 @@ function installIDoit {
         MARIADB_HOSTNAME="$answer"
     fi
 
-    ## install.sh only supports 'root' user and won't setup a dedicated 'idoit':
-    #echo -e -n "Please enter the password for the new MariaDB user [leave empty for '${MARIADB_USER_PASSWORD}']: "
-    #read answer
-    #if [[ -n "$answer" ]]; then
-    #    MARIADB_USER_PASSWORD="$answer"
-    #fi
+    echo -e -n "Please enter the password for the new MariaDB user '${MARIADB_IDOIT_USERNAME}' [leave empty for '${MARIADB_IDOIT_PASSWORD}']: "
+    read answer
+    if [[ -n "$answer" ]]; then
+        MARIADB_IDOIT_PASSWORD="$answer"
+    fi
 
     echo -e -n "Please enter the password for the i-doit Admin Center [leave empty for '${IDOIT_ADMIN_CENTER_PASSWORD}']: "
     read answer
@@ -797,11 +822,43 @@ function installIDoit {
         IDOIT_DEFAULT_TENANT="$answer"
     fi
 
-    cd "${INSTALL_DIR}/setup"
+    cd "${INSTALL_DIR}/setup" || abort "Directory '${INSTALL_DIR}/setup' not accessible"
 
+    log "Run i-doit's setup script"
     ./install.sh -n "$IDOIT_DEFAULT_TENANT" \
-       -s "idoit_system" -m "idoit_data" -h "$MARIADB_HOSTNAME" -p "$MARIADB_SUPERUSER_PASSWORD" \
-       -a "$IDOIT_ADMIN_CENTER_PASSWORD" -q || abort "i-doit setup script returned an error"
+        -s "idoit_system" -m "idoit_data" -h "$MARIADB_HOSTNAME" -p "$MARIADB_SUPERUSER_PASSWORD" \
+        -a "$IDOIT_ADMIN_CENTER_PASSWORD" -q || abort "i-doit setup script returned an error"
+
+    log "Grant MariaDB user '${MARIADB_IDOIT_USERNAME}' access to system database"
+    "$MARIADB_BIN" -uroot -p"$MARIADB_SUPERUSER_PASSWORD" \
+        -e"GRANT ALL PRIVILEGES ON idoit_system.* TO '${MARIADB_IDOIT_USERNAME}'@'localhost' IDENTIFIED BY '${MARIADB_IDOIT_PASSWORD}';" || \
+        abort "Unable to grant access"
+
+    log "Grant MariaDB user '${MARIADB_IDOIT_USERNAME}' access to tenant database"
+    "$MARIADB_BIN" -uroot -p"$MARIADB_SUPERUSER_PASSWORD" \
+        -e"GRANT ALL PRIVILEGES ON idoit_data.* TO '${MARIADB_IDOIT_USERNAME}'@'localhost' IDENTIFIED BY '${MARIADB_IDOIT_PASSWORD}';" || \
+        abort "Unable to grant access"
+
+    log "Fix tenant table"
+    "$MARIADB_BIN" -uroot -p"$MARIADB_SUPERUSER_PASSWORD" \
+        -e"UPDATE idoit_system.isys_mandator SET isys_mandator__db_user = '${MARIADB_IDOIT_USERNAME}', isys_mandator__db_pass = '${MARIADB_IDOIT_PASSWORD}';" || \
+        abort "Unable to fix tenant table"
+
+    local config_file="${INSTALL_DIR}/src/config.inc.php"
+
+    log "Fix configuration file '${config_file}'"
+
+    sed -i -- \
+        "s/\"user\" => \"root\"/\"user\" => \"${MARIADB_IDOIT_USERNAME}\"/g" \
+        "$config_file" || \
+        abort "Unable to replace MariaDB username"
+
+    sed -i -- \
+        "s/\"pass\" => \"${MARIADB_SUPERUSER_PASSWORD}\"/\"pass\" => \"${MARIADB_IDOIT_PASSWORD}\"/g" \
+        "$config_file" || \
+        abort "Unable to replace MariaDB password"
+
+    chown "$APACHE_USER":"$APACHE_GROUP" "$config_file" || abort "Unable to change ownership"
 }
 
 function deployScriptSettings {
@@ -818,8 +875,8 @@ CONTROLLER_BIN="/usr/local/bin/idoit"
 APACHE_USER="$APACHE_USER"
 TENANT_DATABASE="idoit_data"
 TENANT_ID="1"
-MARIADB_USERNAME="root"
-MARIADB_PASSWORD="$MARIADB_SUPERUSER_PASSWORD"
+MARIADB_USERNAME="$MARIADB_IDOIT_USERNAME"
+MARIADB_PASSWORD="$MARIADB_IDOIT_PASSWORD"
 INSTANCE_PATH="$INSTALL_DIR"
 IDOIT_USERNAME="admin"
 IDOIT_PASSWORD="admin"
