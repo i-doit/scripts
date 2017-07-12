@@ -48,7 +48,7 @@ CONTROLLER_BIN="/usr/local/bin/idoit"
 JOBS_BIN="/usr/local/bin/idoit-jobs"
 CRON_FILE="/etc/cron.d/i-doit"
 BASENAME=`basename $0`
-VERSION="0.3"
+VERSION="0.4"
 
 WGET_BIN=`which wget`
 
