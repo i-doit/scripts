@@ -35,7 +35,7 @@ MARIADB_INNODB_BUFFER_POOL_SIZE="1G"
 APACHE_USER="www-data"
 APACHE_GROUP="www-data"
 IDOIT_ADMIN_CENTER_PASSWORD="admin"
-MARIADB_USER_PASSWORD="idoit"
+#MARIADB_USER_PASSWORD="idoit"
 IDOIT_DEFAULT_TENANT="CMDB"
 INSTALL_DIR="/var/www/html"
 DATE=`date +%Y-m-d`
@@ -43,8 +43,14 @@ TMP_DIR="/tmp/i-doit_${DATE}"
 UPDATE_FILE_PRO="https://i-doit.com/updates.xml"
 UPDATE_FILE_OPEN="https://i-doit.org/updates.xml"
 OS=""
+SCRIPT_SETTINGS="/etc/i-doit/i-doit.sh"
+CONTROLLER_BIN="/usr/local/bin/idoit"
+JOBS_BIN="/usr/local/bin/idoit-jobs"
+CRON_FILE="/etc/cron.d/i-doit"
 BASENAME=`basename $0`
 VERSION="0.3"
+
+WGET_BIN=`which wget`
 
 ##--------------------------------------------------------------------------------------------------
 
@@ -66,6 +72,7 @@ function execute {
     log "    3) alter configuration of your Apache Web server,"
     log "    4) alter configuration of your MariaDB DBMS, and"
     log "    5) download and install the latest version of i-doit pro or open"
+    log "    6) deploy cron jobs and an easy-to-use CLI tool for your i-doit instance"
     log ""
     log "You may skip any step if you like."
     log ""
@@ -114,10 +121,44 @@ function execute {
     if [[ "$?" -eq 0 ]]; then
         prepareIDoit
         installIDoit
+
+        local ipaddress=$(hostname -I |tr -d '[:space:]')
+        log "Your setup is ready. Navigate to"
+        log ""
+        log "    http://${ipaddress}/"
+        log ""
+        log "with your Web browser and login with username/password 'admin'"
     else
         log "Your operating system is prepared for the installation of i-doit."
         log "To complete the setup please follow the instructions as described in the i-doit Knowledge Base:"
+        log ""
         log "    https://kb.i-doit.com/display/en/Setup"
+    fi
+
+    log "\n--------------------------------------------------------------------------------\n"
+
+    askYesNo "Do you want to configure i-doit cron jobs?"
+    if [[ "$?" -eq 0 ]]; then
+        deployScriptSettings
+        deployController
+        deployJobScript
+        deployCronJobs
+
+        log "Cron jobs are successfully activated. To change the execution date and time please edit this file:"
+        log ""
+        log "    $CRON_FILE"
+        log ""
+        log "There is also a script available for all system users to execute the i-doit controller command line tool:"
+        log ""
+        log "    idoit"
+        log ""
+        log "The needed cron jobs are defined here:"
+        log ""
+        log "    $JOBS_BIN"
+        log ""
+        log "If needed you can change the settings of both the i-doit controller and the cron jobs:"
+        log ""
+        log "    $SCRIPT_SETTINGS"
     fi
 
     case "$OS" in
@@ -258,7 +299,7 @@ function configureDebian8 {
         php5 php5-cli php5-common php5-curl php5-gd php5-json php5-ldap php5-mcrypt php5-mysqlnd \
         php5-pgsql php5-memcached \
         mariadb-server mariadb-client \
-        memcached unzip sudo || abort "Unable to install required Debian packages"
+        memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
 }
 
 function configureDebian9 {
@@ -274,7 +315,7 @@ function configureDebian9 {
         mariadb-client mariadb-server \
         php php-bcmath php-cli php-common php-curl php-gd php-imagick php-json php-ldap php-mcrypt \
         php-memcached php-mysql php-pgsql php-xml php-zip \
-        memcached unzip sudo || abort "Unable to install required Debian packages"
+        memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
 }
 
 function configureUbuntu1604 {
@@ -290,7 +331,7 @@ function configureUbuntu1604 {
         mariadb-client mariadb-server \
         php php-bcmath php-cli php-common php-curl php-gd php-imagick php-json php-ldap php-mcrypt \
         php-memcached php-mysql php-pgsql php-xml php-zip \
-        memcached unzip || abort "Unable to install required Ubuntu packages"
+        memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
 }
 
 function configureRedHat73 {
@@ -314,7 +355,7 @@ function configureRedHat73 {
     yum --assumeyes --quiet clean all
 
     log "Install some important packages, for example Apache Web server"
-    yum --assumeyes --quiet install httpd unzip zip wget
+    yum --assumeyes --quiet install httpd unzip zip wget moreutils
 
     log "$os_description 7.3 has out-dated packages for PHP and MariaDB. This script will fix this issue by enabling these 3rd party repositories:"
     log ""
@@ -370,6 +411,13 @@ EOF
     log "Allow incoming HTTP traffic"
     firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
     systemctl restart firewalld.service || abort "Unable to restart firewall"
+}
+
+function configureSUSE12SP2 {
+    zypper refresh
+    zypper update
+    zypper install apache2 mariadb mariadb-client moreutils
+    zypper clean
 }
 
 function configurePHP {
@@ -521,8 +569,6 @@ EOF
             systemctl restart apache2.service || abort "Unable to restart Apache Web server"
             ;;
     esac
-
-
 }
 
 function configureMariaDB {
@@ -663,11 +709,11 @@ function secureMariaDB {
 }
 
 function prepareIDoit {
-    local wget_bin=`which wget`
-
     log "Prepare i-doit"
 
-    if [[ ! -f "${INSTALL_DIR}/i-doit.zip" ]]; then
+    local file="${TMP_DIR}/i-doit.zip"
+
+    if [[ ! -f "$file" ]]; then
         echo -n -e "Which variant of i-doit do you like to install? [PRO|open]: "
 
         local update_file_url=""
@@ -688,8 +734,10 @@ function prepareIDoit {
         esac
 
         log "Identify latest version of i-doit"
-        "$wget_bin" --quiet -O "$TMP_DIR/updates.xml" "$update_file_url" || \
+        test ! -f "$TMP_DIR/updates.xml" && (
+            "$WGET_BIN" --quiet -O "$TMP_DIR/updates.xml" "$update_file_url" || \
             abort "Unable to fetch file from '${update_file_url}'"
+        )
 
         local url=`cat "${TMP_DIR}/updates.xml" | \
             tail -n5 | \
@@ -701,8 +749,11 @@ function prepareIDoit {
 
         test -n "$url" || abort "Missing URL"
 
-        "$wget_bin"  --quiet -O "${INSTALL_DIR}/i-doit.zip" "$url" || \
+        "$WGET_BIN" --quiet -O "$file" "$url" || \
             abort "Unable to download file"
+
+        cp "$file" "${INSTALL_DIR}/i-doit.zip" || \
+            abort "Unable to copy file"
     fi
 
     log "Unzip package"
@@ -710,7 +761,7 @@ function prepareIDoit {
     unzip -q i-doit.zip || abort "Unable to unzip file"
 
     log "Prepare files and directories"
-    mv i-doit.zip "$TMP_DIR" || abort "Unable to remove downloaded file"
+    rm i-doit.zip || abort "Unable to remove downloaded file"
     chown "$APACHE_USER":"$APACHE_GROUP" -R . || abort "Unable to change ownership"
     find . -type d -name \* -exec chmod 775 {} \; || abort "Unable to change directory permissions"
     find . -type f -exec chmod 664 {} \; || abort "Unable to change file permissions"
@@ -727,11 +778,12 @@ function installIDoit {
         MARIADB_HOSTNAME="$answer"
     fi
 
-    echo -e -n "Please enter the password for the new MariaDB user [leave empty for '${MARIADB_USER_PASSWORD}']: "
-    read answer
-    if [[ -n "$answer" ]]; then
-        MARIADB_USER_PASSWORD="$answer"
-    fi
+    ## install.sh only supports 'root' user and won't setup a dedicated 'idoit':
+    #echo -e -n "Please enter the password for the new MariaDB user [leave empty for '${MARIADB_USER_PASSWORD}']: "
+    #read answer
+    #if [[ -n "$answer" ]]; then
+    #    MARIADB_USER_PASSWORD="$answer"
+    #fi
 
     echo -e -n "Please enter the password for the i-doit Admin Center [leave empty for '${IDOIT_ADMIN_CENTER_PASSWORD}']: "
     read answer
@@ -748,15 +800,80 @@ function installIDoit {
     cd "${INSTALL_DIR}/setup"
 
     ./install.sh -n "$IDOIT_DEFAULT_TENANT" \
-       -s "idoit_system" -m "idoit_data" -h "$MARIADB_HOSTNAME" -p "$MARIADB_USER_PASSWORD" \
+       -s "idoit_system" -m "idoit_data" -h "$MARIADB_HOSTNAME" -p "$MARIADB_SUPERUSER_PASSWORD" \
        -a "$IDOIT_ADMIN_CENTER_PASSWORD" -q || abort "i-doit setup script returned an error"
+}
 
-    local ipaddress=$(hostname -I |tr -d '[:space:]')
-    log "Your setup is ready. Navigate to"
-    log ""
-    log "    http://${ipaddress}/"
-    log ""
-    log "with your Web browser and login with username/password 'admin'"
+function deployScriptSettings {
+    log "Deploy script settings"
+
+    local settings_dir=`dirname "$SCRIPT_SETTINGS"`
+
+    test -d "$settings_dir" || (
+        mkdir -p "$settings_dir" || abort "Unable to create directory '$settings_dir'"
+    )
+
+    cat > "$SCRIPT_SETTINGS" << EOF
+CONTROLLER_BIN="/usr/local/bin/idoit"
+APACHE_USER="$APACHE_USER"
+TENANT_DATABASE="idoit_data"
+TENANT_ID="1"
+MARIADB_USERNAME="root"
+MARIADB_PASSWORD="$MARIADB_SUPERUSER_PASSWORD"
+INSTANCE_PATH="$INSTALL_DIR"
+IDOIT_USERNAME="admin"
+IDOIT_PASSWORD="admin"
+EOF
+
+    if [[ "$?" -gt 0 ]]; then
+        abort "Unable to create and edit file '/etc/apache2/sites-available/i-doit.conf'"
+    fi
+}
+
+function deployController {
+    log "Deploy controller script"
+
+    local download_url="https://raw.githubusercontent.com/bheisig/i-doit-scripts/${VERSION}/idoit"
+    local file="${TMP_DIR}/idoit"
+
+    test ! -f "$file" && (
+        "$WGET_BIN" --quiet -O "$file" "$download_url" || \
+            abort "Unable to fetch file from '${download_url}'"
+    )
+
+    chmod 777 "$file" || abort "Unable to set executable bit"
+
+    mv "$file" "$CONTROLLER_BIN" || abort "Unable to move script to '/usr/local/bin'"
+}
+
+function deployJobScript {
+    local download_url="https://raw.githubusercontent.com/bheisig/i-doit-scripts/${VERSION}/idoit-jobs"
+    local file="${TMP_DIR}/idoit-jobs"
+
+    test ! -f "$file" && (
+        "$WGET_BIN" --quiet -O "$file" "$download_url" || \
+            abort "Unable to fetch file from '${download_url}'"
+    )
+
+    chmod 777 "$file" || abort "Unable to set executable bit"
+
+    mv "$file" "$JOBS_BIN" || abort "Unable to move script to '/usr/local/bin'"
+}
+
+function deployCronJobs {
+    local download_url="https://raw.githubusercontent.com/bheisig/i-doit-scripts/${VERSION}/cron"
+    local file="$TMP_DIR/cron"
+
+    test ! -f "$file" && (
+        "$WGET_BIN" --quiet -O "$file" "$download_url" || \
+            abort "Unable to fetch file from '${download_url}'"
+    )
+
+    sed -i -- "s/www-data/${APACHE_USER}/g" "$file" || abort "Unable to set Apache user"
+
+    chmod 644 "$file" || abort "Unable to set read/write bits"
+
+    mv "$file" "$CRON_FILE" || abort "Unable to move file to '/etc/cron.d/i-doit'"
 }
 
 function setup {

@@ -1,0 +1,51 @@
+#!/bin/bash
+
+##
+## i-doit controller
+##
+
+set -u
+
+##
+## Configuration
+##
+
+CONFIGURATION_FILE="/etc/i-doit/i-doit.sh"
+ARGS="$@"
+
+##--------------------------------------------------------------------------------------------------
+
+function execute {
+    local prefix=""
+
+    test `whoami` != "$APACHE_USER" && prefix="sudo -u $APACHE_USER "
+
+    ${prefix}./controller -v -u "$IDOIT_USERNAME" -p "$IDOIT_PASSWORD" -i "$TENANT_ID" -m "$ARGS" || \
+        abort "i-doit controller exited with non-zero status"
+}
+
+function setup {
+    test -f "$CONFIGURATION_FILE" || abort "Missing configuration file '${CONFIGURATION_FILE}'"
+
+    source "$CONFIGURATION_FILE" || abort "Unable to include configuration file"
+
+    cd "$INSTANCE_PATH" || abort "No i-doit instance found under '${INSTANCE_PATH}'"
+}
+
+function finish {
+    exit 0
+}
+
+function abort {
+    echo -e "$1"  1>&2
+    echo "Operation failed. Please check what is wrong and try again." 1>&2
+    exit 1
+}
+
+function log {
+    echo -e "$1"
+}
+
+##--------------------------------------------------------------------------------------------------
+
+setup && execute && finish

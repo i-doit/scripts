@@ -38,6 +38,7 @@ The script includes several steps which are essential for i-doit:
 *   Configure Apache Web server
 *   Configure MariaDB DBMS
 *   Download and install the latest version of i-doit pro or open
+*   Deploy cron jobs and an easy-to-use CLI tool for your i-doit instance
 
 All steps are based on information provided by the [i-doit knowledge base](https://kb.i-doit.com/display/en/).
 
@@ -92,7 +93,6 @@ You **should not** install i-doit with this script if you agree with one or more
 There are several steps you still need to do by yourself:
 
 1)  [Install your license (only pro version)](https://kb.i-doit.com/display/en/Install+License)
-2)  [Configure cron jobs](https://kb.i-doit.com/pages/viewpage.action?pageId=37355566)
 3)  [Configure backups (and test it!)](https://kb.i-doit.com/display/en/Backup+and+Recovery)
 4)  Document your IT (obviously ;-))
 
