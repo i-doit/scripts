@@ -246,8 +246,19 @@ function identifyOS {
         APACHE_GROUP="apache"
     elif [[ -f "/etc/SuSE-release" ]]; then
         local os_description=`cat /etc/SuSE-release | head -n1`
+        local os_release=`cat /etc/SuSE-release | grep "VERSION" | grep -o '[0-9]*'`
+        local os_patchlevel=`cat /etc/SuSE-release | grep "PATCHLEVEL" | grep -o '[0-9]'`
 
-        abort "Operating system ${os_description} is not supported"
+        if [[ "$os_release" = "12" && "$os_patchlevel" = "2" ]]; then
+            log "Operating system identified as SUSE Linux Enterprise Server ${os_release} SP${os_patchlevel}"
+            OS="sles12sp2"
+        else
+            abort "Operating system ${os_description} is not supported"
+        fi
+
+        INSTALL_DIR="/srv/www/htdocs"
+        APACHE_USER="wwwrun"
+        APACHE_GROUP="www"
     else
         abort "Unable to identify operating system"
     fi
@@ -295,6 +306,9 @@ function configureOS {
             ;;
         "redhat73"|"centos73")
             configureRedHat73
+            ;;
+        "sles12sp2")
+            configureSLES12SP2
             ;;
         *)
             abort "Unkown operating system '${OS}'!?!"
@@ -442,11 +456,46 @@ EOF
     systemctl restart firewalld.service || abort "Unable to restart firewall"
 }
 
-function configureSUSE12SP2 {
-    zypper refresh
-    zypper update
-    zypper install apache2 mariadb mariadb-client moreutils
-    zypper clean
+function configureSLES12SP2 {
+    zypper --quiet --non-interactive refresh || abort "Unable to refresh software repositories"
+    zypper --quiet --non-interactive update || abort "Unable to update software packages"
+
+    local dev_repos=`zypper repos -E | grep "SLE-SDK12-SP2" | wc -l`
+    local web_repos=`zypper repos -E | grep "SLE-Module-Web-Scripting12" | wc -l`
+
+    if [[ "$dev_repos" -lt 2 || "$web_repos" -lt 2 ]]; then
+        log "Please make sure that the following add-ons are activated in Yast:"
+        log ""
+        log "    SUSE Linux Enterprise Software Development Kit 12 SP2"
+        log "    Web and Scripting Module 12"
+        log ""
+        log "After activating these repositories run this script again."
+
+        abort "Essential software repositories are missing"
+    fi
+
+    zypper --quiet --non-interactive install \
+        apache2 apache2-mod_php7 \
+        mariadb mariadb-client \
+        memcached \
+        php7 php7-bcmath php7-ctype php7-curl php7-gd php7-gettext php7-json php7-ldap \
+        php7-mbstring php7-mcrypt php7-mysql php7-opcache php7-openssl php7-pdo php7-pgsql \
+        php7-phar php7-soap php7-sockets php7-sqlite php7-xsl php7-zip php7-zlib || \
+        abort "Unable to install required software packages"
+
+    zypper --quiet --non-interactive clean || abort "Unable to clean up cached software packages"
+
+    log "Enable services"
+    systemctl enable apache2.service || abort "Cannot enable Apache Web server"
+    systemctl enable mysql.service || abort "Cannot enable MariaDB server"
+
+    log "Start services"
+    systemctl start apache2.service || abort "Unable to start Apache Web server"
+    systemctl start mysql.service || abort "Unable to start MariaDB server"
+
+    log "Allow incoming HTTP traffic"
+    SuSEfirewall2 open EXT TCP http || "Unable to open port 80"
+    SuSEfirewall2 start || abort "Unable to restart firewall"
 }
 
 function configurePHP {
@@ -458,6 +507,8 @@ function configurePHP {
 
     if [[ "$OS" = "redhat73" || "$OS" = "centos73" ]]; then
         ini_file="/etc/php.d/i-doit.ini"
+    elif [[ "$OS" = "sles12sp2" ]]; then
+        ini_file="/etc/php7/conf.d/i-doit.ini"
     elif [[ "$php_version" = "7.0" ]]; then
         ini_file="/etc/php/7.0/mods-available/i-doit.ini"
         php_en_mod=`which phpenmod`
@@ -509,6 +560,10 @@ EOF
             echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" >> "$ini_file" || \
                 abort "Unable to alter PHP settings"
             ;;
+        "sles12sp2")
+            echo "mysqli.default_socket = /var/run/mysql/mysql.sock" >> "$ini_file" || \
+                abort "Unable to alter PHP settings"
+            ;;
         *)
             echo "mysqli.default_socket = /var/run/mysqld/mysqld.sock" >> "$ini_file" || \
                 abort "Unable to alter PHP settings"
@@ -528,7 +583,6 @@ function configureApache {
 
     case "$OS" in
         "redhat73"|"centos73")
-            # TODO FIXME
             cat > /etc/httpd/conf.d/i-doit.conf << EOF
 <Directory /var/www/html/>
         AllowOverride All
@@ -556,6 +610,44 @@ EOF
                 abort "Unable to give write permissions recursively"
             log "Restart Apache Web server"
             systemctl restart httpd.service || abort "Unable to restart Apache Web server"
+            ;;
+        "sles12sp2")
+            cat > /etc/apache2/vhosts.d/i-doit.conf << EOF
+<VirtualHost *:80>
+        ServerAdmin i-doit@example.net
+
+        DocumentRoot ${INSTALL_DIR}/
+        <Directory ${INSTALL_DIR}/>
+                # See ${INSTALL_DIR}/.htaccess for details
+                AllowOverride All
+                Require all granted
+        </Directory>
+
+        LogLevel warn
+        ErrorLog /var/log/apache2/error.log
+        CustomLog /var/log/apache2/access.log combined
+</VirtualHost>
+EOF
+
+            if [[ "$?" -gt 0 ]]; then
+                abort "Unable to create and edit file '/etc/apache2/vhosts.d/i-doit.conf'"
+            fi
+
+            log "Cleanup VHost directory"
+            rm -rf "${INSTALL_DIR}"/* || abort "Unable to remove files"
+
+            log "Change directory ownership"
+            chown "$APACHE_USER":"$APACHE_GROUP" -R "${INSTALL_DIR}/" || \
+                abort "Unable to change ownership"
+
+            log "Enable Apache module for PHP 7"
+            "$a2_en_mod" php7 || abort "Unable to enable Apache module php7"
+
+            log "Enable Apache module rewrite"
+            "$a2_en_mod" rewrite || abort "Unable to enable Apache module rewrite"
+
+            log "Restart Apache Web server"
+            systemctl restart apache2.service || abort "Unable to restart Apache Web server"
             ;;
         *)
             local a2_en_site=`which a2ensite`
@@ -620,6 +712,11 @@ function configureMariaDB {
 
             mariadb_config="/etc/my.cnf.d/99-i-doit.cnf"
             mariadb_service="mariadb.service"
+            ;;
+        "sles12sp2")
+            secureMariaDB
+
+            mariadb_config="/etc/my.cnf.d/99-i-doit.cnf"
             ;;
         *)
             abort "Unkown operating system '${OS}'!?!"
@@ -784,7 +881,7 @@ function prepareIDoit {
 
     log "Unzip package"
     cd "$INSTALL_DIR"
-    unzip -q i-doit.zip || abort "Unable to unzip file"
+    "$UNZIP_BIN" -q i-doit.zip || abort "Unable to unzip file"
 
     log "Prepare files and directories"
     rm i-doit.zip || abort "Unable to remove downloaded file"
