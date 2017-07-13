@@ -1,0 +1,109 @@
+#!/bin/bash
+
+##
+## i-doit backup
+##
+
+##
+## Copyright (C) 2017 synetics GmbH, <https://i-doit.com/>
+##
+## This program is free software: you can redistribute it and/or modify
+## it under the terms of the GNU Affero General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU Affero General Public License for more details.
+##
+## You should have received a copy of the GNU Affero General Public License
+## along with this program. If not, see <http://www.gnu.org/licenses/>.
+##
+
+set -u
+
+##
+## Configuration
+##
+
+USER="root"
+CONFIGURATION_FILE="/etc/i-doit/i-doit.sh"
+DATE=`date +%Y-%m-%d_%H-%M-%S`
+
+##--------------------------------------------------------------------------------------------------
+
+function execute {
+    dumpDatabase system "$SYSTEM_DATABASE"
+
+    dumpDatabase tenant "$TENANT_DATABASE"
+
+    log "Backup i-doit instance located at '${INSTANCE_PATH}'"
+
+    tar czf "${BACKUP_DIR}/i-doit_${DATE}.tar.gz" "$INSTANCE_PATH" || \
+        abort "Unable to dump directory"
+
+    rm -f "${BACKUP_DIR}/i-doit_latest.tar.gz" || \
+        abort "Unable to remove out-dated symlink to directory dump"
+
+    ln -s "${BACKUP_DIR}/i-doit_${DATE}.tar.gz" "${BACKUP_DIR}/i-doit_latest.tar.gz" || \
+        abort "Unable to create symlink to latest directory dump"
+
+    log "Remove backups that are older than $BACKUP_AGE days"
+
+    if [[ "$BACKUP_AGE" -ge 1 ]]; then
+        find "${BACKUP_DIR}"/* -mtime +${BACKUP_AGE} -exec rm {} \; || \
+            abort "Unable to remove out-dated backups"
+    fi
+}
+
+function dumpDatabase {
+    local db_description="$1"
+    local db_name="$2"
+
+    log "Dump $db_description database '${db_name}'"
+
+    /usr/bin/mysqldump \
+        -h"$MARIADB_HOSTNAME" -u"$MARIADB_USERNAME" -p"$MARIADB_PASSWORD" "$db_name" | \
+        gzip -9 > "${BACKUP_DIR}/${db_name}_${DATE}.sql.gz" || \
+        abort "Unable to dump database"
+
+    rm -f ${BACKUP_DIR}/${db_name}_latest.sql.gz || abort "Unable to remove out-dated symlink"
+
+    ln -s ${BACKUP_DIR}/${db_name}_${DATE}.sql.gz ${BACKUP_DIR}/${db_name}_latest.sql.gz || \
+        abort "Unable to create symlink to latest dump"
+}
+
+function setup {
+    test `whoami` = "$USER" || abort "Only user '${USER}' may execute this script"
+
+    test -f "$CONFIGURATION_FILE" || abort "Missing configuration file '${CONFIGURATION_FILE}'"
+
+    source "$CONFIGURATION_FILE" || abort "Unable to include configuration file"
+
+    test -d "$INSTANCE_PATH" || abort "No i-doit instance found under '${INSTANCE_PATH}'"
+
+    if [[ ! -d "$BACKUP_DIR" ]]; then
+        log "Create backup directory '${BACKUP_DIR}'"
+        mkdir -p -m 775 "$BACKUP_DIR" || abort "Unable to create backup directory"
+    fi
+}
+
+function log {
+    echo -e "$1"
+}
+
+function finish {
+    log "Done. Have fun :-)"
+    exit 0
+}
+
+function abort {
+    echo -e "$1"  1>&2
+    echo "Operation failed. Please check what is wrong and try again." 1>&2
+    exit 1
+}
+
+##--------------------------------------------------------------------------------------------------
+
+setup && execute && finish

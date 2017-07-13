@@ -1,0 +1,98 @@
+#!/bin/bash
+
+##
+## i-doit restore
+##
+
+##
+## Copyright (C) 2017 synetics GmbH, <https://i-doit.com/>
+##
+## This program is free software: you can redistribute it and/or modify
+## it under the terms of the GNU Affero General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU Affero General Public License for more details.
+##
+## You should have received a copy of the GNU Affero General Public License
+## along with this program. If not, see <http://www.gnu.org/licenses/>.
+##
+
+set -u
+
+##
+## Configuration
+##
+
+USER="root"
+CONFIGURATION_FILE="/etc/i-doit/i-doit.sh"
+DATE=`date +%Y-%m-%d_%H-%M-%S`
+
+##--------------------------------------------------------------------------------------------------
+
+function execute {
+    restoreDatabase system "$SYSTEM_DATABASE"
+    restoreDatabase tenant "$TENANT_DATABASE"
+
+    log "Restore i-doit instance located at '${INSTANCE_PATH}'"
+    rm -rf "$INSTANCE_PATH"/* || abort "Unable to clean up instance"
+    tar xzf "${BACKUP_DIR}/i-doit_latest.tar.gz" -C / || abort "Unable to exstract files"
+}
+
+function restoreDatabase {
+    local db_description="$1"
+    local db_name="$2"
+
+    log "Restore $db_description database"
+    /usr/bin/mysql -h"$MARIADB_HOSTNAME" -u"$MARIADB_USERNAME" -p"$MARIADB_PASSWORD" \
+        -e"DROP DATABASE IF EXISTS ${db_name};" || abort "Unable to drop database"
+    /usr/bin/mysql -h"$MARIADB_HOSTNAME" -u"$MARIADB_USERNAME" -p"$MARIADB_PASSWORD" \
+        -e"CREATE DATABASE IF NOT EXISTS ${db_name};" || abort "Unable to create database"
+    /bin/gunzip < "${BACKUP_DIR}/${db_name}_latest.sql.gz" | \
+        /usr/bin/mysql \
+        -h"$MARIADB_HOSTNAME" -u"$MARIADB_USERNAME" -p"$MARIADB_PASSWORD" "$db_name" || \
+        abort "Unable to import dump"
+}
+
+function setup {
+    test `whoami` = "$USER" || abort "Only user '${USER}' may execute this script"
+
+    test -f "$CONFIGURATION_FILE" || abort "Missing configuration file '${CONFIGURATION_FILE}'"
+
+    source "$CONFIGURATION_FILE" || abort "Unable to include configuration file"
+
+    test -d "$INSTANCE_PATH" || abort "No i-doit instance found under '${INSTANCE_PATH}'"
+
+    test -d "$BACKUP_DIR" || abort "No backups found under '${BACKUP_DIR}'"
+
+    test -f "${BACKUP_DIR}/${SYSTEM_DATABASE}_latest.sql.gz" || \
+        abort "No dump for system database found"
+
+    test -f "${BACKUP_DIR}/${TENANT_DATABASE}_latest.sql.gz" || \
+        abort "No dump for tenant database found"
+
+    test -f "${BACKUP_DIR}/i-doit_latest.tar.gz" || \
+        abort "No file dump found"
+}
+
+function log {
+    echo -e "$1"
+}
+
+function finish {
+    log "Done. Have fun :-)"
+    exit 0
+}
+
+function abort {
+    echo -e "$1"  1>&2
+    echo "Operation failed. Please check what is wrong and try again." 1>&2
+    exit 1
+}
+
+##--------------------------------------------------------------------------------------------------
+
+setup && execute && finish

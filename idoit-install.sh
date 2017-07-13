@@ -48,6 +48,7 @@ SCRIPT_SETTINGS="/etc/i-doit/i-doit.sh"
 CONTROLLER_BIN="/usr/local/bin/idoit"
 JOBS_BIN="/usr/local/bin/idoit-jobs"
 CRON_FILE="/etc/cron.d/i-doit"
+BACKUP_DIR="/var/backups/i-doit"
 BASENAME=`basename $0`
 VERSION="0.4"
 
@@ -77,6 +78,7 @@ function execute {
     log "    4) alter configuration of your MariaDB DBMS, and"
     log "    5) download and install the latest version of i-doit pro or open"
     log "    6) deploy cron jobs and an easy-to-use CLI tool for your i-doit instance"
+    log "    7) deploy scripts to backup and restore your i-doit instance"
     log ""
     log "You may skip any step if you like."
     log ""
@@ -166,6 +168,33 @@ function execute {
         log ""
         log "    $SCRIPT_SETTINGS"
     fi
+
+    log "\n--------------------------------------------------------------------------------\n"
+
+    askYesNo "Do you want to backup i-doit automatically?"
+    if [[ "$?" -eq 0 ]]; then
+        test ! -f "$SCRIPT_SETTINGS" && deployScriptSettings
+
+        deployBackupAndRestore
+
+        log "Backups are successfully activated. Each night a backup will be created. Backups will be kept for 30 days:"
+        log ""
+        log "    $BACKUP_DIR"
+        log ""
+        log "You may create a backup manually:"
+        log ""
+        log "    idoit-backup"
+        log ""
+        log "Of course, you are able to restore i-doit from the lastest backup:"
+        log ""
+        log "    idoit-restore"
+        log ""
+        log "Settings may be changed here:"
+        log ""
+        log "    $SCRIPT_SETTINGS"
+    fi
+
+    log "\n--------------------------------------------------------------------------------\n"
 
     case "$OS" in
         "ubuntu1604"|"ubuntu1610"|"ubuntu1704")
@@ -832,8 +861,6 @@ function secureMariaDB {
 }
 
 function prepareIDoit {
-    log "Prepare i-doit"
-
     local file="${TMP_DIR}/i-doit.zip"
 
     if [[ ! -f "$file" ]]; then
@@ -970,13 +997,18 @@ function deployScriptSettings {
     cat > "$SCRIPT_SETTINGS" << EOF
 CONTROLLER_BIN="/usr/local/bin/idoit"
 APACHE_USER="$APACHE_USER"
+SYSTEM_DATABASE="idoit_system"
 TENANT_DATABASE="idoit_data"
 TENANT_ID="1"
 MARIADB_USERNAME="$MARIADB_IDOIT_USERNAME"
 MARIADB_PASSWORD="$MARIADB_IDOIT_PASSWORD"
+MARIADB_HOSTNAME="$MARIADB_HOSTNAME"
 INSTANCE_PATH="$INSTALL_DIR"
 IDOIT_USERNAME="admin"
 IDOIT_PASSWORD="admin"
+BACKUP_DIR="$BACKUP_DIR"
+# Max. age of backup files (in days):
+BACKUP_AGE=30
 EOF
 
     if [[ "$?" -gt 0 ]]; then
@@ -985,33 +1017,13 @@ EOF
 }
 
 function deployController {
-    log "Deploy controller script"
-
-    local download_url="https://raw.githubusercontent.com/bheisig/i-doit-scripts/${VERSION}/idoit"
-    local file="${TMP_DIR}/idoit"
-
-    test ! -f "$file" && (
-        "$WGET_BIN" --quiet -O "$file" "$download_url" || \
-            abort "Unable to fetch file from '${download_url}'"
-    )
-
-    chmod 777 "$file" || abort "Unable to set executable bit"
-
-    mv "$file" "$CONTROLLER_BIN" || abort "Unable to move script to '/usr/local/bin'"
+    log "Deploy i-doit controller"
+    deployScript idoit
 }
 
 function deployJobScript {
-    local download_url="https://raw.githubusercontent.com/bheisig/i-doit-scripts/${VERSION}/idoit-jobs"
-    local file="${TMP_DIR}/idoit-jobs"
-
-    test ! -f "$file" && (
-        "$WGET_BIN" --quiet -O "$file" "$download_url" || \
-            abort "Unable to fetch file from '${download_url}'"
-    )
-
-    chmod 777 "$file" || abort "Unable to set executable bit"
-
-    mv "$file" "$JOBS_BIN" || abort "Unable to move script to '/usr/local/bin'"
+    log "Deploy i-doit jobs"
+    deployScript idoit-jobs
 }
 
 function deployCronJobs {
@@ -1028,6 +1040,30 @@ function deployCronJobs {
     chmod 644 "$file" || abort "Unable to set read/write bits"
 
     mv "$file" "$CRON_FILE" || abort "Unable to move file to '/etc/cron.d/i-doit'"
+}
+
+function deployBackupAndRestore {
+    log "Deploy backup and restore scripts"
+
+    deployScript idoit-backup
+    deployScript idoit-restore
+}
+
+function deployScript {
+    local file="$1"
+    local tmp_file="${TMP_DIR}/$file"
+    local url="https://raw.githubusercontent.com/bheisig/i-doit-scripts/${VERSION}/$file"
+
+    log "Deploy script '$file'"
+
+    test ! -f "$tmp_file" && (
+        "$WGET_BIN" --quiet -O "$tmp_file" "$url" || \
+            abort "Unable to fetch file from '${url}'"
+    )
+
+    chmod 777 "$tmp_file" || abort "Unable to set read/write/executable bits"
+
+    mv "$tmp_file" "/usr/local/bin/$file" || abort "Unable to move file to '/usr/local/bin/'"
 }
 
 function setup {

@@ -40,6 +40,7 @@ The script includes several steps which are essential for i-doit:
 *   Configure MariaDB DBMS
 *   Download and install the latest version of i-doit pro or open
 *   Deploy cron jobs and an easy-to-use CLI tool for your i-doit instance
+*   Deploy scripts to backup and restore your i-doit instance
 
 All steps are based on information provided by the [i-doit knowledge base](https://kb.i-doit.com/display/en/).
 
