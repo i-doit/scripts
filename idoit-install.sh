@@ -125,6 +125,8 @@ function execute {
 
     log "\n--------------------------------------------------------------------------------\n"
 
+    local status=0
+
     askYesNo "Do you want to prepare and install i-doit automatically?"
     if [[ "$?" -eq 0 ]]; then
         prepareIDoit
@@ -136,6 +138,8 @@ function execute {
         log "    http://${ipaddress}/"
         log ""
         log "with your Web browser and login with username/password 'admin'"
+
+        status=1
     else
         log "Your operating system is prepared for the installation of i-doit."
         log "To complete the setup please follow the instructions as described in the i-doit Knowledge Base:"
@@ -143,55 +147,59 @@ function execute {
         log "    https://kb.i-doit.com/display/en/Setup"
     fi
 
-    log "\n--------------------------------------------------------------------------------\n"
+    if [[ "$status" = 1 ]]; then
+        log "\n--------------------------------------------------------------------------------\n"
 
-    askYesNo "Do you want to configure i-doit cron jobs?"
-    if [[ "$?" -eq 0 ]]; then
-        deployScriptSettings
-        deployController
-        deployJobScript
-        deployCronJobs
+        askYesNo "Do you want to configure i-doit cron jobs?"
+        if [[ "$?" -eq 0 ]]; then
+            deployScriptSettings
+            deployController
+            deployJobScript
+            deployCronJobs
 
-        log "Cron jobs are successfully activated. To change the execution date and time please edit this file:"
-        log ""
-        log "    $CRON_FILE"
-        log ""
-        log "There is also a script available for all system users to execute the i-doit controller command line tool:"
-        log ""
-        log "    idoit"
-        log ""
-        log "The needed cron jobs are defined here:"
-        log ""
-        log "    $JOBS_BIN"
-        log ""
-        log "If needed you can change the settings of both the i-doit controller and the cron jobs:"
-        log ""
-        log "    $SCRIPT_SETTINGS"
+            log "Cron jobs are successfully activated. To change the execution date and time please edit this file:"
+            log ""
+            log "    $CRON_FILE"
+            log ""
+            log "There is also a script available for all system users to execute the i-doit controller command line tool:"
+            log ""
+            log "    idoit"
+            log ""
+            log "The needed cron jobs are defined here:"
+            log ""
+            log "    $JOBS_BIN"
+            log ""
+            log "If needed you can change the settings of both the i-doit controller and the cron jobs:"
+            log ""
+            log "    $SCRIPT_SETTINGS"
+
+            status=2
+        fi
     fi
 
-    log "\n--------------------------------------------------------------------------------\n"
+    if [[ "$status" = 2 ]]; then
+        log "\n--------------------------------------------------------------------------------\n"
 
-    askYesNo "Do you want to backup i-doit automatically?"
-    if [[ "$?" -eq 0 ]]; then
-        test ! -f "$SCRIPT_SETTINGS" && deployScriptSettings
+        askYesNo "Do you want to backup i-doit automatically?"
+        if [[ "$?" -eq 0 ]]; then
+            deployBackupAndRestore
 
-        deployBackupAndRestore
-
-        log "Backups are successfully activated. Each night a backup will be created. Backups will be kept for 30 days:"
-        log ""
-        log "    $BACKUP_DIR"
-        log ""
-        log "You may create a backup manually:"
-        log ""
-        log "    idoit-backup"
-        log ""
-        log "Of course, you are able to restore i-doit from the lastest backup:"
-        log ""
-        log "    idoit-restore"
-        log ""
-        log "Settings may be changed here:"
-        log ""
-        log "    $SCRIPT_SETTINGS"
+            log "Backups are successfully activated. Each night a backup will be created. Backups will be kept for 30 days:"
+            log ""
+            log "    $BACKUP_DIR"
+            log ""
+            log "You may create a backup manually:"
+            log ""
+            log "    idoit-backup"
+            log ""
+            log "Of course, you are able to restore i-doit from the lastest backup:"
+            log ""
+            log "    idoit-restore"
+            log ""
+            log "Settings may be changed here:"
+            log ""
+            log "    $SCRIPT_SETTINGS"
+        fi
     fi
 
     log "\n--------------------------------------------------------------------------------\n"
