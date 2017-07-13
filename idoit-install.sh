@@ -132,10 +132,11 @@ function execute {
         prepareIDoit
         installIDoit
 
-        local ipaddress=$(hostname -I |tr -d '[:space:]')
+        local ip_address=`ip route get 1 | awk '{print $NF;exit}'`
+
         log "Your setup is ready. Navigate to"
         log ""
-        log "    http://${ipaddress}/"
+        log "    http://${ip_address}/"
         log ""
         log "with your Web browser and login with username/password 'admin'"
 
