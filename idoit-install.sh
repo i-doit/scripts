@@ -395,7 +395,7 @@ function configureDebian9 {
         apache2 libapache2-mod-php \
         mariadb-client mariadb-server \
         php php-bcmath php-cli php-common php-curl php-gd php-imagick php-json php-ldap php-mcrypt \
-        php-memcached php-mysql php-pgsql php-xml php-zip \
+        php-memcached php-mysql php-pgsql php-soap php-xml php-zip \
         memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
 }
 
@@ -411,7 +411,7 @@ function configureUbuntu1604 {
         apache2 libapache2-mod-php \
         mariadb-client mariadb-server \
         php php-bcmath php-cli php-common php-curl php-gd php-imagick php-json php-ldap php-mcrypt \
-        php-memcached php-mysql php-pgsql php-xml php-zip \
+        php-memcached php-mysql php-pgsql php-soap php-xml php-zip \
         memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
 }
 
@@ -495,6 +495,13 @@ EOF
 }
 
 function configureSLES12SP2 {
+    ## Needed for chronic (included in moreutils):
+    #log "Add repository 'SLE 12 SP2 Backports'"
+    #zypper --quiet --non-interactive addrepo \
+    #    http://download.opensuse.org/repositories/utilities/SLE_12_SP2_Backports/utilities.repo || \
+    #    abort "Unable to add repository 'SLE 12 SP2 Backports'"
+
+    log "Keep your packages up-to-date"
     zypper --quiet --non-interactive refresh || abort "Unable to refresh software repositories"
     zypper --quiet --non-interactive update || abort "Unable to update software packages"
 
@@ -512,10 +519,23 @@ function configureSLES12SP2 {
         abort "Essential software repositories are missing"
     fi
 
+    ## Installation of moreutils failed because of missing Perl dependencies:
+    #log "Install Perl modules"
+    #(
+    #    echo y;
+    #    echo o conf prerequisites_policy follow;
+    #    echo o conf commit
+    #) | cpan || abort "Unable to configure CPAN"
+
+    #cpan install Time::Duration || abort "Unable to install Perl module"
+    #cpan install IPC::Run || abort "Unable to install Perl module"
+
+    log "Install software packages"
     zypper --quiet --non-interactive install \
         apache2 apache2-mod_php7 \
         mariadb mariadb-client \
         memcached \
+        #moreutils \
         php7 php7-bcmath php7-ctype php7-curl php7-gd php7-gettext php7-json php7-ldap \
         php7-mbstring php7-mcrypt php7-mysql php7-opcache php7-openssl php7-pdo php7-pgsql \
         php7-phar php7-soap php7-sockets php7-sqlite php7-xsl php7-zip php7-zlib || \
