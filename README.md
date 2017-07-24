@@ -95,8 +95,85 @@ You **should not** install i-doit with this script if you agree with one or more
 There are several steps you still need to do by yourself:
 
 1)  [Install your license (only pro version)](https://kb.i-doit.com/display/en/Install+License)
-3)  [Configure backups (and test it!)](https://kb.i-doit.com/display/en/Backup+and+Recovery)
-4)  Document your IT (obviously ;-))
+2)  Document your IT (obviously ;-))
+
+
+##  Easy-use of the i-doit Controller
+
+i-doit is shipped with a commandline tool called **Controller**. It is a little bit complicated to execute it because you have to change to i-doit's installation directory and you need the user rights of the Apache Web server. Additionally, you need to login before using one of the useful "handlers".
+
+To make sysadmin's life easier you may wrap the **Controller** in a separate script called `idoit`. It changes to the right directory, gains proper rights and stores your credentials.
+
+This script can be installed with `install.sh`. Its configuration settings may be altered in a file located under `/etc/i-doit/i-doit.sh`.
+
+To display the usage run:
+
+~~~ {.bash}
+idoit
+~~~
+
+Call a handler with optional arguments:
+
+~~~ {.bash}
+idoit HANDLER [OPTIONS]
+~~~
+
+For example, use the `notifications` handler to send emails:
+
+~~~ {.bash}
+idoit notifications
+~~~
+
+
+##  Run Important Jobs Automatically
+
+There are some jobs which are essential for keeping your CMDB in a good shape. There is a script called `idoit-jobs` to handle some important jobs properly:
+
+*   Clean up cache files
+*   Clean up update packages
+*   Archive older logbook entries
+*   Re-create cache for user rights
+*   Purge "unfinished" objects
+*   Re-create the search index
+*   Send notifications by email
+
+This script can be installed with `install.sh`. Its configuration settings may be altered in a file located under `/etc/i-doit/i-doit.sh`.
+
+Manually execute the jobs by running:
+
+~~~ {.bash}
+sudo idoit-jobs
+~~~
+
+You may want to execute this script automatically by creating a new cron job. There is already a file for that called `cron` which can be copied to `/etc/cron.d/i-doit`. It can be deployed with `install.sh` and run the jobs every night.
+
+
+##  Backup and Restore i-doit
+
+There are two useful scripts to backup and restore your i-doit instance. The backups contain the following data:
+
+*   i-doit installation files including uploaded files and installed add-ons
+*   Dumps of the system database and the first tenant's database
+
+Backups are compressed and stored under `/var/backup/i-doit/`. They will be kept for at least 30 days.
+
+Both scripts can easily be installed with `install.sh`. Their configuration settings may be altered in a file located under `/etc/i-doit/i-doit.sh`.
+
+Create a backup manually by running:
+
+~~~ {.bash}
+sudo idoit-backup
+~~~
+
+To restore the latest backup run:
+
+~~~ {.bash}
+sudo idoit-restore
+~~~
+
+You may automate your backups with a cron job. `install.sh` can handle it (see above).
+
+Keep in mind that these scripts are just a little step for a good backup strategy. Consider to copy those backup files to another location. Additionally, if you installed i-doit within a virtual machine you should create snapshots.
 
 
 ##  Contribute & Support
