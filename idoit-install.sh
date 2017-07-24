@@ -495,12 +495,6 @@ EOF
 }
 
 function configureSLES12SP2 {
-    ## Needed for chronic (included in moreutils):
-    #log "Add repository 'SLE 12 SP2 Backports'"
-    #zypper --quiet --non-interactive addrepo \
-    #    http://download.opensuse.org/repositories/utilities/SLE_12_SP2_Backports/utilities.repo || \
-    #    abort "Unable to add repository 'SLE 12 SP2 Backports'"
-
     log "Keep your packages up-to-date"
     zypper --quiet --non-interactive refresh || abort "Unable to refresh software repositories"
     zypper --quiet --non-interactive update || abort "Unable to update software packages"
@@ -518,17 +512,6 @@ function configureSLES12SP2 {
 
         abort "Essential software repositories are missing"
     fi
-
-    ## Installation of moreutils failed because of missing Perl dependencies:
-    #log "Install Perl modules"
-    #(
-    #    echo y;
-    #    echo o conf prerequisites_policy follow;
-    #    echo o conf commit
-    #) | cpan || abort "Unable to configure CPAN"
-
-    #cpan install Time::Duration || abort "Unable to install Perl module"
-    #cpan install IPC::Run || abort "Unable to install Perl module"
 
     log "Install software packages"
     zypper --quiet --non-interactive install \
@@ -553,6 +536,18 @@ function configureSLES12SP2 {
     log "Allow incoming HTTP traffic"
     SuSEfirewall2 open EXT TCP http || "Unable to open port 80"
     SuSEfirewall2 start || abort "Unable to restart firewall"
+
+    log "Install 'chronic'"
+    ## TODO: I know, this seems to be pretty ugly, but:
+    ## Why the hack is moreutils not included in the standard repositories?!?
+    wget --quiet -O "${TMP_DIR}/chronic" \
+        https://git.joeyh.name/index.cgi/moreutils.git/plain/chronic || \
+        abort "Unable to download 'chronic'"
+    chmod +x "${TMP_DIR}/chronic" || abort "Unable to set executable bit"
+    mv "${TMP_DIR}/chronic" /usr/bin || abort "Unable to move 'chronic' to '/usr/bin'"
+    wget --quiet -O - https://cpanmin.us | perl - App::cpanminus || \
+        abort "Unable to install cpanminus"
+    cpanm --quiet --notest --install IPC::Run || abort "Unable to install Perl module IPC::Run"
 }
 
 function configurePHP {
