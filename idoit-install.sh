@@ -1080,6 +1080,9 @@ function deployBackupAndRestore {
 
     deployScript idoit-backup
     deployScript idoit-restore
+
+    log "Create the first backup"
+    /usr/local/bin/idoit-backup || abort "Backup script returned with error"
 }
 
 function deployScript {
