@@ -535,7 +535,6 @@ function configureSLES12SP2 {
         apache2 apache2-mod_php7 \
         mariadb mariadb-client \
         memcached \
-        #moreutils \
         php7 php7-bcmath php7-ctype php7-curl php7-gd php7-gettext php7-json php7-ldap \
         php7-mbstring php7-mcrypt php7-mysql php7-opcache php7-openssl php7-pdo php7-pgsql \
         php7-phar php7-soap php7-sockets php7-sqlite php7-xsl php7-zip php7-zlib || \
@@ -670,6 +669,8 @@ EOF
             systemctl restart httpd.service || abort "Unable to restart Apache Web server"
             ;;
         "sles12sp2")
+            local a2_en_mod=`which a2enmod`
+
             cat > /etc/apache2/vhosts.d/i-doit.conf << EOF
 <VirtualHost *:80>
         ServerAdmin i-doit@example.net
@@ -703,6 +704,9 @@ EOF
 
             log "Enable Apache module rewrite"
             "$a2_en_mod" rewrite || abort "Unable to enable Apache module rewrite"
+
+            log "Enable Apache module mod_access_compat"
+            "$a2_en_mod" mod_access_compat || abort "Unable to enable Apache module mod_access_compat"
 
             log "Restart Apache Web server"
             systemctl restart apache2.service || abort "Unable to restart Apache Web server"
