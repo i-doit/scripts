@@ -17,11 +17,11 @@ The script `idoit-install.sh` allows you to easily install the **latest version*
 
 on a **fresh installation of a GNU/Linux operating system**. Supported OSs are:
 
-*   Debian GNU/Linux 8 "Jessie"
-*   Debian GNU/Linux 9 "Stretch" (**recommended**)
-*   Ubuntu Linux 16.04 LTS "Xenial"
-*   Ubuntu Linux 16.10 "Yakkety"
-*   Ubuntu Linux 17.04 "Zesty"
+*   Debian GNU/Linux 8 "jessie"
+*   Debian GNU/Linux 9 "stretch" (**recommended**)
+*   Ubuntu Linux 16.04 LTS "xenial"
+*   Ubuntu Linux 16.10 "yakkety"
+*   Ubuntu Linux 17.04 "zesty"
 *   Red Hat Enterprise Linux (RHEL) 7.3
 *   CentOS 7.3
 *   SUSE Linux Enterprise Server 12 SP2
@@ -70,6 +70,10 @@ sudo ./idoit-install.sh
 ~~~
 
 The script will ask you several questions. All of them have default answers. This allows you to just hit `ENTER` whenever a user interaction is needed.
+
+Here is an example recording how to install i-doit on a fresh + clean Debian GNU/Linux 9 "stretch" in under 2 minutes (click on the picture):
+
+[![asciicast](https://asciinema.org/a/130677.png)](https://asciinema.org/a/130677)
 
 
 ### Who should use this script?
