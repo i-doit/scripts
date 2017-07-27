@@ -314,21 +314,36 @@ function checkRequirements {
     UNZIP_BIN=`which unzip`
     WGET_BIN=`which wget`
 
-    if [[ ! -x "$MARIADB_BIN" ]]; then
-        abort "MariaDB client is missing"
-    fi
+    declare -A binaries
+    binaries["mariabdb"]="$MARIADB_BIN"
+    binaries["sudo"]="$SUDO_BIN"
+    binaries["unzip"]="$UNZIP_BIN"
+    binaries["wget"]="$WGET_BIN"
+    binaries["systemctl"]=`which systemctl`
+    binaries["apachectl"]=`which apachectl`
+    binaries["php"]=`which php`
+    binaries["chronic"]=`which chronic`
 
-    if [[ ! -x "$SUDO_BIN" ]]; then
-        abort "sudo is missing"
-    fi
+    local failed=0
 
-    if [[ ! -x "$UNZIP_BIN" ]]; then
-        abort "unzip is missing"
-    fi
+    for bin in "${!binaries[@]}"; do
+        if [[ ! -x "${binaries[$bin]}" ]]; then
+            log "$bin is missing"
+            ((failed++))
+        fi
+    done
 
-    if [[ ! -x "$WGET_BIN" ]]; then
-        abort "wget is missing"
-    fi
+    case "$failed" in
+        0)
+            log "All requirements met. Excellent."
+            ;;
+        1)
+            abort "Important requirement is missing. Please install and configure it."
+            ;;
+        *)
+            abort "Important requirements are missing. Please install and configure them."
+            ;;
+    esac
 }
 
 function configureOS {
@@ -650,8 +665,6 @@ EOF
                         abort "Unable to create directory '${INSTALL_DIR}'"
             )
 
-            log "Cleanup VHost directory"
-            rm -rf "${INSTALL_DIR}"/* || abort "Unable to remove files"
             log "Change directory ownership"
             chown "$APACHE_USER":"$APACHE_GROUP" -R "${INSTALL_DIR}/" || \
                 abort "Unable to change ownership"
@@ -686,9 +699,6 @@ EOF
             if [[ "$?" -gt 0 ]]; then
                 abort "Unable to create and edit file '/etc/apache2/vhosts.d/i-doit.conf'"
             fi
-
-            log "Cleanup VHost directory"
-            rm -rf "${INSTALL_DIR}"/* || abort "Unable to remove files"
 
             log "Change directory ownership"
             chown "$APACHE_USER":"$APACHE_GROUP" -R "${INSTALL_DIR}/" || \
@@ -734,8 +744,6 @@ EOF
 
             log "Disable default VHost"
             "$a2_dis_site" 000-default || abort "Unable to disable default VHost"
-            log "Cleanup VHost directory"
-            rm -rf "${INSTALL_DIR}"/* || abort "Unable to remove files"
             log "Change directory ownership"
             chown "$APACHE_USER":"$APACHE_GROUP" -R "${INSTALL_DIR}/" || \
                 abort "Unable to change ownership"
@@ -891,48 +899,73 @@ function secureMariaDB {
 function prepareIDoit {
     local file="${TMP_DIR}/i-doit.zip"
 
-    if [[ ! -f "$file" ]]; then
-        echo -n -e "Which variant of i-doit do you like to install? [PRO|open]: "
+    log "Cleanup VHost directory"
+    rm -rf "${INSTALL_DIR}"/* || abort "Unable to remove files"
+    rm -f "${INSTALL_DIR}"/.htaccess || abort "Unable to remove files"
 
-        local update_file_url=""
+    echo -n -e "Which variant of i-doit do you like to install? [PRO|open]: "
 
-        read variant
+    local update_file_url=""
+    local variant=""
 
-        case "$variant" in
-            ""|"PRO"|"Pro"|"pro")
-                update_file_url="$UPDATE_FILE_PRO"
-                log "Install i-doit pro"
-                ;;
-            "OPEN"|"Open"|"open")
-                update_file_url="$UPDATE_FILE_OPEN"
-                log "Install i-doit open"
-                ;;
-            *)
-                abort "Unknown variant"
-        esac
+    read wanted_variant
 
-        log "Identify latest version of i-doit"
-        test ! -f "$TMP_DIR/updates.xml" && (
-            "$WGET_BIN" --quiet -O "$TMP_DIR/updates.xml" "$update_file_url" || \
-            abort "Unable to fetch file from '${update_file_url}'"
-        )
+    case "$wanted_variant" in
+        ""|"PRO"|"Pro"|"pro")
+            update_file_url="$UPDATE_FILE_PRO"
+            variant="pro"
+            ;;
+        "OPEN"|"Open"|"open")
+            update_file_url="$UPDATE_FILE_OPEN"
+            variant="open"
+            ;;
+        *)
+            abort "Unknown variant"
+    esac
 
-        local url=`cat "${TMP_DIR}/updates.xml" | \
-            tail -n5 | \
-            head -n1 | \
-            sed "s/<filename>//" | \
-            sed "s/<\/filename>//" | \
-            sed "s/-update.zip/.zip/" | \
-            awk '{print $1}'`
+    log "Install i-doit $variant"
 
-        test -n "$url" || abort "Missing URL"
+    log "Identify latest version of i-doit $variant"
+    test ! -f "$TMP_DIR/updates.xml" && (
+        "$WGET_BIN" --quiet -O "$TMP_DIR/updates.xml" "$update_file_url" || \
+        abort "Unable to fetch file from '${update_file_url}'"
+    )
 
-        "$WGET_BIN" --quiet -O "$file" "$url" || \
-            abort "Unable to download file"
+    local url=`cat "${TMP_DIR}/updates.xml" | \
+        tail -n5 | \
+        head -n1 | \
+        sed "s/<filename>//" | \
+        sed "s/<\/filename>//" | \
+        sed "s/-update.zip/.zip/" | \
+        awk '{print $1}'`
 
-        cp "$file" "${INSTALL_DIR}/i-doit.zip" || \
-            abort "Unable to copy file"
-    fi
+    test -n "$url" || abort "Missing URL"
+
+    local version=`cat "${TMP_DIR}/updates.xml" | \
+        tail -n13 | \
+        head -n1 | \
+        sed "s/<version>//" | \
+        sed "s/<\/version>//" | \
+        awk '{print $1}'`
+
+    test -n "$version" || abort "Missing version"
+
+    local release_date=`cat "${TMP_DIR}/updates.xml" | \
+        tail -n6 | \
+        head -n1 | \
+        sed "s/<release>//" | \
+        sed "s/<\/release>//" | \
+        awk '{print $1}'`
+
+    test -n "$release_date" || abort "Missing release date"
+
+    log "Found i-doit $variant $version (released on ${release_date})"
+
+    "$WGET_BIN" --quiet -O "$file" "$url" || \
+        abort "Unable to download installation file"
+
+    cp "$file" "${INSTALL_DIR}/i-doit.zip" || \
+        abort "Unable to copy installation file"
 
     log "Unzip package"
     cd "$INSTALL_DIR"
