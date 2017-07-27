@@ -108,7 +108,7 @@ i-doit is shipped with a commandline tool called **Controller**. It is a little 
 
 To make sysadmin's life easier you may wrap the **Controller** in a separate script called `idoit`. It changes to the right directory, gains proper rights and stores your credentials.
 
-This script can be installed with `install.sh`. Its configuration settings may be altered in a file located under `/etc/i-doit/i-doit.sh`.
+This script can be installed with `idoit-install.sh` and will be copied to `/usr/local/bin/`. Its configuration settings may be altered in a file located under `/etc/i-doit/i-doit.sh`.
 
 To display the usage run:
 
@@ -141,7 +141,7 @@ There are some jobs which are essential for keeping your CMDB in a good shape. T
 *   Re-create the search index
 *   Send notifications by email
 
-This script can be installed with `install.sh`. Its configuration settings may be altered in a file located under `/etc/i-doit/i-doit.sh`.
+This script can be installed with `idoit-install.sh` and will be copied to `/usr/local/bin/`. Its configuration settings may be altered in a file located under `/etc/i-doit/i-doit.sh`.
 
 Manually execute the jobs by running:
 
@@ -161,7 +161,7 @@ There are two useful scripts to backup and restore your i-doit instance. The bac
 
 Backups are compressed and stored under `/var/backup/i-doit/`. They will be kept for at least 30 days.
 
-Both scripts can easily be installed with `install.sh`. Their configuration settings may be altered in a file located under `/etc/i-doit/i-doit.sh`.
+Both scripts can easily be installed with `idoit-install.sh` and will be copied to `/usr/local/bin/`. Their configuration settings may be altered in a file located under `/etc/i-doit/i-doit.sh`.
 
 Create a backup manually by running:
 
@@ -175,9 +175,35 @@ To restore the latest backup run:
 sudo idoit-restore
 ~~~
 
-You may automate your backups with a cron job. `install.sh` can handle it (see above).
+You may automate your backups with a cron job. `idoit-install.sh` can handle it (see above).
 
 Keep in mind that these scripts are just a little step for a good backup strategy. Consider to copy those backup files to another location. Additionally, if you installed i-doit within a virtual machine you should create snapshots.
+
+
+##  Configuration Settings
+
+As already mentioned before some scripts provide configuration settings. These settings may be altered in a file located under `/etc/i-doit/i-doit.sh`:
+
+Setting             Default Value                                   Description
+---------           ---------------                                 -------------
+`CONTROLLER_BIN`    `/usr/local/bin/idoit`                          See "Easy-use of the i-doit Controller"
+`APACHE_USER`       `www-data` (Debian/Ubuntu),                     User who runs Apache Web server
+                    `apache` (RHEL/CentOS),
+                    `wwwrun` (SLES)
+`SYSTEM_DATABASE`   `idoit_system`                                  i-doit's system database
+`TENANT_DATABASE`   `idoit_data`                                    i-doit's tenant database
+`TENANT_ID`         `1`                                             Tenant ID
+`MARIADB_USERNAME`  `idoit`                                         MariaDB user for i-doit
+`MARIADB_PASSWORD`  `idoit`                                         Password for this user
+`MARIADB_HOSTNAME`  `localhost`                                     `localhost` uses a local UNIX socket for a better performance
+`INSTANCE_PATH`     `/var/www/html` (Debian/Ubuntu/RHEL/CentOS),    In which directory is i-doit located?
+                    `/srv/www/htdocs` (SLES)
+`IDOIT_USERNAME`    `admin`                                         i-doit user who executes controller handlers
+`IDOIT_PASSWORD`    `admin`                                         User's password
+`BACKUP_DIR`        `/var/backups/i-doit`                           Directory for local backups
+`BACKUP_AGE`        `30`                                            Max. age of backup files (in days)
+
+The installation script `idoit-install.sh` will ask the user to change most of the default values. **Pro tip:** You should set your own passwords. ;-)
 
 
 ##  Contribute & Support
