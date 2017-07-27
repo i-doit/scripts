@@ -182,26 +182,23 @@ Keep in mind that these scripts are just a little step for a good backup strateg
 
 ##  Configuration Settings
 
-As already mentioned before some scripts provide configuration settings. These settings may be altered in a file located under `/etc/i-doit/i-doit.sh`:
+As already mentioned before some scripts provide configuration settings. These settings may be altered in a file located under `/etc/i-doit/i-doit.sh`.
 
-Setting             Default Value                                   Description
----------           ---------------                                 -------------
-`CONTROLLER_BIN`    `/usr/local/bin/idoit`                          See "Easy-use of the i-doit Controller"
-`APACHE_USER`       `www-data` (Debian/Ubuntu),                     User who runs Apache Web server
-                    `apache` (RHEL/CentOS),
-                    `wwwrun` (SLES)
-`SYSTEM_DATABASE`   `idoit_system`                                  i-doit's system database
-`TENANT_DATABASE`   `idoit_data`                                    i-doit's tenant database
-`TENANT_ID`         `1`                                             Tenant ID
-`MARIADB_USERNAME`  `idoit`                                         MariaDB user for i-doit
-`MARIADB_PASSWORD`  `idoit`                                         Password for this user
-`MARIADB_HOSTNAME`  `localhost`                                     `localhost` uses a local UNIX socket for a better performance
-`INSTANCE_PATH`     `/var/www/html` (Debian/Ubuntu/RHEL/CentOS),    In which directory is i-doit located?
-                    `/srv/www/htdocs` (SLES)
-`IDOIT_USERNAME`    `admin`                                         i-doit user who executes controller handlers
-`IDOIT_PASSWORD`    `admin`                                         User's password
-`BACKUP_DIR`        `/var/backups/i-doit`                           Directory for local backups
-`BACKUP_AGE`        `30`                                            Max. age of backup files (in days)
+| Setting               | Default Value                                                         | Description
+| --------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------
+| `CONTROLLER_BIN`      | `/usr/local/bin/idoit`                                                | See "Easy-use of the i-doit Controller"                       |
+| `APACHE_USER`         | `www-data` (Debian/Ubuntu), `apache` (RHEL/CentOS), `wwwrun` (SLES)   | User who runs Apache Web server                               |
+| `SYSTEM_DATABASE`     | `idoit_system`                                                        | i-doit's system database                                      |
+| `TENANT_DATABASE`     | `idoit_data`                                                          | i-doit's tenant database                                      |
+| `TENANT_ID`           | `1`                                                                   | Tenant ID                                                     |
+| `MARIADB_USERNAME`    | `idoit`                                                               | MariaDB user for i-doit                                       |
+| `MARIADB_PASSWORD`    | `idoit`                                                               | Password for this user                                        |
+| `MARIADB_HOSTNAME`    | `localhost`                                                           | `localhost` uses a local UNIX socket for a better performance |
+| `INSTANCE_PATH`       | `/var/www/html` (Debian/Ubuntu/RHEL/CentOS), `/srv/www/htdocs` (SLES) | In which directory is i-doit located?                         |
+| `IDOIT_USERNAME`      | `admin`                                                               | i-doit user who executes controller handlers                  |
+| `IDOIT_PASSWORD`      | `admin`                                                               | User's password                                               |
+| `BACKUP_DIR`          | `/var/backups/i-doit`                                                 | Directory for local backups                                   |
+| `BACKUP_AGE`          | `30`                                                                  | Max. age of backup files (in days); `0` disables it           |
 
 The installation script `idoit-install.sh` will ask the user to change most of the default values. **Pro tip:** You should set your own passwords. ;-)
 
