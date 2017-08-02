@@ -83,11 +83,7 @@ function execute {
     log "You may skip any step if you like."
     log ""
 
-    askYesNo "Do you really want to continue?"
-    if [[ "$?" -gt 0 ]]; then
-        log "Bye"
-        exit 0
-    fi
+    askYesNo "Do you really want to continue?" || ( log "Bye" && exit 0 )
 
     log "\n--------------------------------------------------------------------------------\n"
 
@@ -95,33 +91,21 @@ function execute {
 
     log "\n--------------------------------------------------------------------------------\n"
 
-    askYesNo "Do you want to configure the operating system?"
-    if [[ "$?" -eq 0 ]]; then
-        configureOS
-    fi
+    askYesNo "Do you want to configure the operating system?" && configureOS
 
     checkRequirements
 
     log "\n--------------------------------------------------------------------------------\n"
 
-    askYesNo "Do you want to configure the PHP environment?"
-    if [[ "$?" -eq 0 ]]; then
-        configurePHP
-    fi
+    askYesNo "Do you want to configure the PHP environment?" && configurePHP
 
     log "\n--------------------------------------------------------------------------------\n"
 
-    askYesNo "Do you want to configure the Apache Web server?"
-    if [[ "$?" -eq 0 ]]; then
-        configureApache
-    fi
+    askYesNo "Do you want to configure the Apache Web server?" && configureApache
 
     log "\n--------------------------------------------------------------------------------\n"
 
-    askYesNo "Do you want to configure MariaDB?"
-    if [[ "$?" -eq 0 ]]; then
-        configureMariaDB
-    fi
+    askYesNo "Do you want to configure MariaDB?" && configureMariaDB
 
     log "\n--------------------------------------------------------------------------------\n"
 
@@ -209,10 +193,7 @@ function execute {
         "ubuntu1604"|"ubuntu1610"|"ubuntu1704")
             log "To garantee that all your changes take effect you should restart your system."
 
-            askYesNo "Do you want to restart your system NOW?"
-            if [[ "$?" -eq 0 ]]; then
-                systemctl reboot
-            fi
+            askYesNo "Do you want to restart your system NOW?" && systemctl reboot
             ;;
     esac
 }
@@ -275,7 +256,10 @@ function identifyOS {
 
         if [[ "$os_release" = "7.3" ]]; then
             log "Operating system identified as Red Hat Enterprise Linux (RHEL) ${os_release}"
-            OS="redhat73"
+            OS="rhel73"
+        elif [[ "$os_release" = "7.4" ]]; then
+            log "Operating system identified as Red Hat Enterprise Linux (RHEL) ${os_release}"
+            OS="rhel74"
         else
             abort "Operating system Red Hat Enterprise Linux (RHEL) $os_release is not supported"
         fi
@@ -357,8 +341,8 @@ function configureOS {
         "ubuntu1604"|"ubuntu1610"|"ubuntu1704")
             configureUbuntu1604
             ;;
-        "redhat73"|"centos73")
-            configureRedHat73
+        "rhel73"|"rhel74"|"centos73")
+            configureRHEL
             ;;
         "sles12sp2")
             configureSLES12SP2
@@ -430,39 +414,46 @@ function configureUbuntu1604 {
         memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
 }
 
-function configureRedHat73 {
+function configureRHEL {
     local os_description=""
+    local os_release=""
     local mariadb_url=""
 
     case "$OS" in
-        "redhat73")
+        "rhel73")
             os_description="Red Hat Enterprise Linux (RHEL)"
+            os_release="7.3"
+            mariadb_url="http://yum.mariadb.org/10.1/rhel7-amd64"
+            ;;
+        "rhel74")
+            os_description="Red Hat Enterprise Linux (RHEL)"
+            os_release="7.4"
             mariadb_url="http://yum.mariadb.org/10.1/rhel7-amd64"
             ;;
         "centos73")
             os_description="CentOS"
+            os_release="7.3"
             mariadb_url="http://yum.mariadb.org/10.1/centos7-amd64"
             ;;
     esac
 
-    log "Keep you yum packages up-to-date"
-    yum --assumeyes --quiet update
-    yum --assumeyes --quiet autoremove
-    yum --assumeyes --quiet clean all
+    log "Keep your yum packages up-to-date"
+    yum --assumeyes --quiet update || abort "Unable to update yum packages"
+    yum --assumeyes --quiet autoremove || abort "Unable to remove out-dated yum packages"
+    yum --assumeyes --quiet clean all || abort "Unable to clean yum caches"
+    rm -rf /var/cache/yum || abort "Unable to remove orphaned yum caches"
 
     log "Install some important packages, for example Apache Web server"
-    yum --assumeyes --quiet install httpd unzip zip wget moreutils
+    yum --assumeyes --quiet install httpd unzip zip wget || \
+        abort "Unable to install packages"
 
-    log "$os_description 7.3 has out-dated packages for PHP and MariaDB. This script will fix this issue by enabling these 3rd party repositories:"
+    log "$os_description $os_release has out-dated packages for PHP and MariaDB. This script will fix this issue by enabling these 3rd party repositories:"
     log ""
     log "    Webtatic.com for PHP 7.0"
     log "    Official MariaDB repository for MariaDB 10.1"
     log ""
 
-    askYesNo "Do you agree with it?"
-    if [[ "$?" -eq 1 ]]; then
-        abort "Requirements for i-doit not met"
-    fi
+    askYesNo "Do you agree with it?" || abort "Requirements for i-doit not met"
 
     log "Enable Webtatic repository"
     rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm || \
@@ -495,6 +486,19 @@ EOF
     log "Install MariaDB packages"
     yum --assumeyes --quiet install MariaDB-server MariaDB-client || \
         abort "Unable to install MariaDB"
+
+    case "$OS" in
+        "rhel73"|"rhel74")
+            log "Enable required repository 'rhel-7-server-eus-optional-rpms'"
+            subscription-manager repos --enable=rhel-7-server-eus-optional-rpms || \
+                abort "Repository cannot be enabled"
+            ## Install moreutils *after* EPEL *and* rhel-7-server-eus-optional-rpms have been
+            ## enabled!
+    esac
+
+    log "Install 'moreutils'"
+    yum --assumeyes --quiet install moreutils || \
+        abort "Unable to install packages"
 
     log "Enable services"
     systemctl enable httpd.service || abort "Cannot enable Apache Web server"
@@ -572,7 +576,7 @@ function configurePHP {
     local php_en_mod=""
     local php_version=`php --version | head -n1 -c7 | tail -c3`
 
-    if [[ "$OS" = "redhat73" || "$OS" = "centos73" ]]; then
+    if [[ "$OS" = "rhel73" || "$OS" = "rhel74" || "$OS" = "centos73" ]]; then
         ini_file="/etc/php.d/i-doit.ini"
     elif [[ "$OS" = "sles12sp2" ]]; then
         ini_file="/etc/php7/conf.d/i-doit.ini"
@@ -623,7 +627,7 @@ EOF
 
     log "Append path to MariaDB UNIX socket to PHP settings"
     case "$OS" in
-        "redhat73"|"centos73")
+        "rhel73"|"rhel74"|"centos73")
             echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" >> "$ini_file" || \
                 abort "Unable to alter PHP settings"
             ;;
@@ -649,7 +653,7 @@ function configureApache {
     log "Configure Apache Web server"
 
     case "$OS" in
-        "redhat73"|"centos73")
+        "rhel73"|"rhel74"|"centos73")
             cat > /etc/httpd/conf.d/i-doit.conf << EOF
 <Directory /var/www/html/>
         AllowOverride All
@@ -772,7 +776,7 @@ function configureMariaDB {
 
             mariadb_config="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
             ;;
-        "redhat73"|"centos73")
+        "rhel73"|"rhel74"|"centos73")
             secureMariaDB
 
             mariadb_config="/etc/my.cnf.d/99-i-doit.cnf"
