@@ -56,6 +56,7 @@ MARIADB_BIN=""
 SUDO_BIN=""
 UNZIP_BIN=""
 WGET_BIN=""
+PHP_BIN=""
 
 ##--------------------------------------------------------------------------------------------------
 
@@ -297,15 +298,16 @@ function checkRequirements {
     SUDO_BIN=`which sudo`
     UNZIP_BIN=`which unzip`
     WGET_BIN=`which wget`
+    PHP_BIN=`which php`
 
     declare -A binaries
     binaries["mariabdb"]="$MARIADB_BIN"
     binaries["sudo"]="$SUDO_BIN"
     binaries["unzip"]="$UNZIP_BIN"
     binaries["wget"]="$WGET_BIN"
+    binaries["php"]="$PHP_BIN"
     binaries["systemctl"]=`which systemctl`
     binaries["apachectl"]=`which apachectl`
-    binaries["php"]=`which php`
     binaries["chronic"]=`which chronic`
 
     local failed=0
@@ -935,31 +937,28 @@ function prepareIDoit {
         abort "Unable to fetch file from '${update_file_url}'"
     )
 
-    local url=`cat "${TMP_DIR}/updates.xml" | \
-        tail -n5 | \
-        head -n1 | \
-        sed "s/<filename>//" | \
-        sed "s/<\/filename>//" | \
-        sed "s/-update.zip/.zip/" | \
-        awk '{print $1}'`
+    local parse_updates_script="${TMP_DIR}/parseupdates.php"
+
+    cat > "$parse_updates_script" << EOF
+<?php
+\$attribute = \$argv[1];
+\$xml = new SimpleXMLElement(trim(file_get_contents('${update_file_url}')));
+echo \$xml->updates->update[count(\$xml->updates->update) - 1]->\$attribute;
+EOF
+
+    if [[ "$?" -gt 0 ]]; then
+        abort "Unable to create and edit file '${parse_updates_script}'"
+    fi
+
+    local url=`$PHP_BIN "$parse_updates_script" "filename" | sed "s/-update.zip/.zip/"`
 
     test -n "$url" || abort "Missing URL"
 
-    local version=`cat "${TMP_DIR}/updates.xml" | \
-        tail -n13 | \
-        head -n1 | \
-        sed "s/<version>//" | \
-        sed "s/<\/version>//" | \
-        awk '{print $1}'`
+    local version=`$PHP_BIN "$parse_updates_script" "version"`
 
     test -n "$version" || abort "Missing version"
 
-    local release_date=`cat "${TMP_DIR}/updates.xml" | \
-        tail -n6 | \
-        head -n1 | \
-        sed "s/<release>//" | \
-        sed "s/<\/release>//" | \
-        awk '{print $1}'`
+    local release_date=`$PHP_BIN "$parse_updates_script" "release"`
 
     test -n "$release_date" || abort "Missing release date"
 
