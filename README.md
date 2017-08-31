@@ -53,6 +53,17 @@ Download:
 
 ~~~ {.bash}
 wget https://raw.githubusercontent.com/bheisig/i-doit-scripts/master/idoit-install.sh
+~~~
+
+Alternatively, use cURL for the download:
+
+~~~ {.bash}
+curl -O https://raw.githubusercontent.com/bheisig/i-doit-scripts/master/idoit-install.sh
+~~~
+
+Make the script executable:
+
+~~~ {.bash}
 chmod 755 idoit-install.sh
 ~~~
 
