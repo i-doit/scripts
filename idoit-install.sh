@@ -194,7 +194,7 @@ function execute {
         "ubuntu1604"|"ubuntu1610"|"ubuntu1704")
             log "To garantee that all your changes take effect you should restart your system."
 
-            askYesNo "Do you want to restart your system NOW?" && systemctl reboot
+            askYesNo "Do you want to restart your system NOW?" && systemctl -q reboot
             ;;
     esac
 }
@@ -458,9 +458,13 @@ function configureRHEL {
     askYesNo "Do you agree with it?" || abort "Requirements for i-doit not met"
 
     log "Enable Webtatic repository"
-    rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm || \
+    rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7 || \
+        abort "Unable to import GPG key from EPEL"
+    rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm || \
         abort "Unable to install EPEL"
-    rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm || \
+    rpm --import --quiet https://mirror.webtatic.com/yum/RPM-GPG-KEY-webtatic-el7 || \
+        abort "Unable to import GPG key from Webtatic"
+    rpm -Uvh --quiet https://mirror.webtatic.com/yum/el7/webtatic-release.rpm || \
         abort "Unable to enable Webtatic"
 
     log "Install PHP packages"
@@ -486,7 +490,10 @@ EOF
     fi
 
     log "Install MariaDB packages"
-    yum --assumeyes --quiet install MariaDB-server MariaDB-client || \
+    rpm --import --quiet https://yum.mariadb.org/RPM-GPG-KEY-MariaDB || \
+        abort "Unable to import GPG key from MariaDB"
+    ## Suppress unnecessary notices which could confuse the user:
+    yum --assumeyes --quiet install MariaDB-server MariaDB-client &> /dev/null || \
         abort "Unable to install MariaDB"
 
     case "$OS" in
@@ -503,16 +510,20 @@ EOF
         abort "Unable to install packages"
 
     log "Enable services"
-    systemctl enable httpd.service || abort "Cannot enable Apache Web server"
-    systemctl enable mariadb.service || abort "Cannot enable MariaDB server"
+    systemctl -q enable httpd.service || abort "Cannot enable Apache Web server"
+    systemctl -q enable mariadb.service || abort "Cannot enable MariaDB server"
 
     log "Start services"
-    systemctl start httpd.service || abort "Unable to start Apache Web server"
-    systemctl start mariadb.service || abort "Unable to start MariaDB server"
+    systemctl -q start httpd.service || abort "Unable to start Apache Web server"
+    systemctl -q start mariadb.service || abort "Unable to start MariaDB server"
 
     log "Allow incoming HTTP traffic"
+    systemctl -q is-active firewalld.service || (
+        log "Firewall is inactive. Start unit"
+        systemctl -q start firewalld.service || abort "Unable to activate firewall"
+    )
     firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
-    systemctl restart firewalld.service || abort "Unable to restart firewall"
+    systemctl -q restart firewalld.service || abort "Unable to restart firewall"
 }
 
 function configureSLES12SP2 {
@@ -547,12 +558,12 @@ function configureSLES12SP2 {
     zypper --quiet --non-interactive clean || abort "Unable to clean up cached software packages"
 
     log "Enable services"
-    systemctl enable apache2.service || abort "Cannot enable Apache Web server"
-    systemctl enable mysql.service || abort "Cannot enable MariaDB server"
+    systemctl -q enable apache2.service || abort "Cannot enable Apache Web server"
+    systemctl -q enable mysql.service || abort "Cannot enable MariaDB server"
 
     log "Start services"
-    systemctl start apache2.service || abort "Unable to start Apache Web server"
-    systemctl start mysql.service || abort "Unable to start MariaDB server"
+    systemctl -q start apache2.service || abort "Unable to start Apache Web server"
+    systemctl -q start mysql.service || abort "Unable to start MariaDB server"
 
     log "Allow incoming HTTP traffic"
     SuSEfirewall2 open EXT TCP http || "Unable to open port 80"
@@ -680,7 +691,7 @@ EOF
             chcon -t httpd_sys_rw_content_t "${INSTALL_DIR}/" -R || \
                 abort "Unable to give write permissions recursively"
             log "Restart Apache Web server"
-            systemctl restart httpd.service || abort "Unable to restart Apache Web server"
+            systemctl -q restart httpd.service || abort "Unable to restart Apache Web server"
             ;;
         "sles12sp2")
             local a2_en_mod=`which a2enmod`
@@ -720,7 +731,7 @@ EOF
             "$a2_en_mod" mod_access_compat || abort "Unable to enable Apache module mod_access_compat"
 
             log "Restart Apache Web server"
-            systemctl restart apache2.service || abort "Unable to restart Apache Web server"
+            systemctl -q restart apache2.service || abort "Unable to restart Apache Web server"
             ;;
         *)
             local a2_en_site=`which a2ensite`
@@ -758,7 +769,7 @@ EOF
             log "Enable Apache module rewrite"
             "$a2_en_mod" rewrite || abort "Unable to enable Apache module rewrite"
             log "Restart Apache Web server"
-            systemctl restart apache2.service || abort "Unable to restart Apache Web server"
+            systemctl -q restart apache2.service || abort "Unable to restart Apache Web server"
             ;;
     esac
 }
@@ -797,7 +808,7 @@ function configureMariaDB {
     "$MARIADB_BIN" -uroot -p"$MARIADB_SUPERUSER_PASSWORD" -e"SET GLOBAL innodb_fast_shutdown = 0" || \
       abort "Unable to prepare shutdown"
     log "Stop MariaDB"
-    systemctl stop "$mariadb_service" || abort "Unable to stop MariaDB"
+    systemctl -q stop "$mariadb_service" || abort "Unable to stop MariaDB"
     log "Move old MariaDB log files"
     mv /var/lib/mysql/ib_logfile[01] "$TMP_DIR" || abort "Unable to remove old log files"
 
@@ -864,7 +875,7 @@ EOF
     fi
 
     log "Start MariaDB"
-    systemctl start "$mariadb_service" || abort "Unable to start MariaDB"
+    systemctl -q start "$mariadb_service" || abort "Unable to start MariaDB"
 }
 
 function secureMariaDB {
@@ -1192,6 +1203,8 @@ function abort {
 }
 
 ##--------------------------------------------------------------------------------------------------
+
+trap tearDown EXIT
 
 ARGS=`getopt \
     -o vh \
