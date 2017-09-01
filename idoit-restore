@@ -21,7 +21,8 @@
 ## along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##
 
-set -u
+set -euo pipefail
+IFS=$'\n\t'
 
 ##
 ## Configuration
@@ -29,7 +30,6 @@ set -u
 
 USER="root"
 CONFIGURATION_FILE="/etc/i-doit/i-doit.sh"
-DATE=`date +%Y-%m-%d_%H-%M-%S`
 
 ##--------------------------------------------------------------------------------------------------
 
@@ -38,7 +38,7 @@ function execute {
     restoreDatabase tenant "$TENANT_DATABASE"
 
     log "Restore i-doit instance located at '${INSTANCE_PATH}'"
-    rm -rf "$INSTANCE_PATH"/* || abort "Unable to clean up instance"
+    rm -rf "${INSTANCE_PATH:?}"/* || abort "Unable to clean up instance"
     tar xzf "${BACKUP_DIR}/i-doit_latest.tar.gz" -C / || abort "Unable to exstract files"
 }
 
@@ -58,10 +58,11 @@ function restoreDatabase {
 }
 
 function setup {
-    test `whoami` = "$USER" || abort "Only user '${USER}' may execute this script"
+    test "$(whoami)" = "$USER" || abort "Only user '${USER}' may execute this script"
 
     test -f "$CONFIGURATION_FILE" || abort "Missing configuration file '${CONFIGURATION_FILE}'"
 
+    # shellcheck source=/dev/null
     source "$CONFIGURATION_FILE" || abort "Unable to include configuration file"
 
     test -d "$INSTANCE_PATH" || abort "No i-doit instance found under '${INSTANCE_PATH}'"
@@ -88,11 +89,13 @@ function finish {
 }
 
 function abort {
-    echo -e "$1"  1>&2
+    echo -e "$1" 1>&2
     echo "Operation failed. Please check what is wrong and try again." 1>&2
     exit 1
 }
 
 ##--------------------------------------------------------------------------------------------------
 
-setup && execute && finish
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+    setup && execute && finish
+fi

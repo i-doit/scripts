@@ -21,29 +21,30 @@
 ## along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##
 
-set -u
+set -euo pipefail
 
 ##
 ## Configuration
 ##
 
 CONFIGURATION_FILE="/etc/i-doit/i-doit.sh"
-ARGS="$@"
+ARGS="$*"
 
 ##--------------------------------------------------------------------------------------------------
 
 function execute {
     local prefix=""
+    local controller="./controller -v -u $IDOIT_USERNAME -p $IDOIT_PASSWORD -i $TENANT_ID -m $ARGS"
 
-    test `whoami` != "$APACHE_USER" && prefix="sudo -u $APACHE_USER "
+    test "$(whoami)" != "$APACHE_USER" && prefix="sudo -u $APACHE_USER "
 
-    ${prefix}./controller -v -u "$IDOIT_USERNAME" -p "$IDOIT_PASSWORD" -i "$TENANT_ID" -m "$ARGS" || \
-        abort "i-doit controller exited with non-zero status"
+    eval "${prefix}${controller}" || abort "i-doit controller exited with non-zero status"
 }
 
 function setup {
     test -f "$CONFIGURATION_FILE" || abort "Missing configuration file '${CONFIGURATION_FILE}'"
 
+    # shellcheck source=/dev/null
     source "$CONFIGURATION_FILE" || abort "Unable to include configuration file"
 
     cd "$INSTANCE_PATH" || abort "No i-doit instance found under '${INSTANCE_PATH}'"
@@ -65,4 +66,6 @@ function log {
 
 ##--------------------------------------------------------------------------------------------------
 
-setup && execute && finish
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+    setup && execute && finish
+fi

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ##
-## i-doit cron jobs
+## i-doit jobs
 ##
 
 ##
@@ -21,7 +21,8 @@
 ## along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##
 
-set -u
+set -euo pipefail
+IFS=$'\n\t'
 
 ##
 ## Configuration
@@ -34,41 +35,44 @@ CONFIGURATION_FILE="/etc/i-doit/i-doit.sh"
 function execute {
     local prefix=""
 
-    test `whoami` != "$APACHE_USER" && prefix="sudo -u $APACHE_USER "
+    test "$(whoami)" != "$APACHE_USER" && prefix="sudo -u $APACHE_USER "
 
     log "Clear caches"
-    ${prefix}rm -rf "$INSTANCE_PATH"/temp/* || abort "Unable to clear caches"
+    eval "${prefix}rm -rf ${INSTANCE_PATH}/temp/*" || abort "Unable to clear caches"
 
     log "Clear updates"
-    ${prefix}rm -rf "$INSTANCE_PATH"/updates/versions/* || abort "Unable to clear updates"
+    eval "${prefix}rm -rf ${INSTANCE_PATH}/updates/versions/*" || abort "Unable to clear updates"
 
     log "Archive i-doit logbook"
-    ${prefix}${CONTROLLER_BIN} archivelog || abort "Handler 'archivelog' failed"
+    eval "${prefix}${CONTROLLER_BIN} archivelog" || abort "Handler 'archivelog' failed"
     log ""
 
     log "Cleanup i-doit rights"
-    ${prefix}${CONTROLLER_BIN} cleanup_auth || abort "Handler 'cleanup_auth' failed"
+    eval "${prefix}${CONTROLLER_BIN} cleanup_auth" || abort "Handler 'cleanup_auth' failed"
     log ""
 
     log "Purge unfinished objects"
-    ${prefix}${CONTROLLER_BIN} cleanup_objects -t 1 || abort "Handler 'cleanup_objects' failed"
+    eval "${prefix}${CONTROLLER_BIN} cleanup_objects -t 1" || \
+        abort "Handler 'cleanup_objects' failed"
     log ""
 
     log "Truncate search index"
-    ${prefix}/usr/bin/mysql -u"$MARIADB_USERNAME" -p"$MARIADB_PASSWORD" \
-        -e"TRUNCATE TABLE ${TENANT_DATABASE}.isys_search_idx" || \
+    eval "${prefix}/usr/bin/mysql -u$MARIADB_USERNAME -p$MARIADB_PASSWORD \
+        -eTRUNCATE TABLE ${TENANT_DATABASE}.isys_search_idx" || \
         abort "Unable truncate search index"
 
     log "Re-create search index"
-    ${prefix}${CONTROLLER_BIN} search_index fullindex || abort "Handler 'search_index' failed"
+    eval "${prefix}${CONTROLLER_BIN} search_index fullindex" || \
+        abort "Handler 'search_index' failed"
 
     log "Send notifications"
-    ${prefix}${CONTROLLER_BIN} notifications || abort "Handler 'notifications' failed"
+    eval "${prefix}${CONTROLLER_BIN} notifications" || abort "Handler 'notifications' failed"
 }
 
 function setup {
     test -f "$CONFIGURATION_FILE" || abort "Missing configuration file '${CONFIGURATION_FILE}'"
 
+    # shellcheck source=/dev/null
     source "$CONFIGURATION_FILE" || abort "Unable to include configuration file"
 
     test -x "$CONTROLLER_BIN" || abort "Script '${CONTROLLER_BIN}' not found"
@@ -93,4 +97,6 @@ function abort {
 
 ##--------------------------------------------------------------------------------------------------
 
-setup && execute && finish
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+    setup && execute && finish
+fi

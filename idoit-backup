@@ -21,7 +21,8 @@
 ## along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##
 
-set -u
+set -euo pipefail
+IFS=$'\n\t'
 
 ##
 ## Configuration
@@ -29,7 +30,7 @@ set -u
 
 USER="root"
 CONFIGURATION_FILE="/etc/i-doit/i-doit.sh"
-DATE=`date +%Y-%m-%d_%H-%M-%S`
+DATE=$(date +%Y-%m-%d_%H-%M-%S)
 
 ##--------------------------------------------------------------------------------------------------
 
@@ -52,7 +53,7 @@ function execute {
     log "Remove backups that are older than $BACKUP_AGE days"
 
     if [[ "$BACKUP_AGE" -ge 1 ]]; then
-        find "${BACKUP_DIR}"/* -mtime +${BACKUP_AGE} -exec rm {} \; || \
+        find "${BACKUP_DIR}"/* -mtime +"$BACKUP_AGE" -exec rm {} \; || \
             abort "Unable to remove out-dated backups"
     fi
 }
@@ -68,24 +69,25 @@ function dumpDatabase {
         gzip -9 > "${BACKUP_DIR}/${db_name}_${DATE}.sql.gz" || \
         abort "Unable to dump database"
 
-    rm -f ${BACKUP_DIR}/${db_name}_latest.sql.gz || abort "Unable to remove out-dated symlink"
+    rm -f "${BACKUP_DIR}/${db_name}_latest.sql.gz" || abort "Unable to remove out-dated symlink"
 
-    ln -s ${BACKUP_DIR}/${db_name}_${DATE}.sql.gz ${BACKUP_DIR}/${db_name}_latest.sql.gz || \
+    ln -s "${BACKUP_DIR}/${db_name}_${DATE}.sql.gz" "${BACKUP_DIR}/${db_name}_latest.sql.gz" || \
         abort "Unable to create symlink to latest dump"
 }
 
 function setup {
-    test `whoami` = "$USER" || abort "Only user '${USER}' may execute this script"
+    test "$(whoami)" = "$USER" || abort "Only user '${USER}' may execute this script"
 
     test -f "$CONFIGURATION_FILE" || abort "Missing configuration file '${CONFIGURATION_FILE}'"
 
+    # shellcheck source=/dev/null
     source "$CONFIGURATION_FILE" || abort "Unable to include configuration file"
 
     test -d "$INSTANCE_PATH" || abort "No i-doit instance found under '${INSTANCE_PATH}'"
 
     if [[ ! -d "$BACKUP_DIR" ]]; then
         log "Create backup directory '${BACKUP_DIR}'"
-        mkdir -p -m 775 "$BACKUP_DIR" || abort "Unable to create backup directory"
+        mkdir -p "$BACKUP_DIR" || abort "Unable to create backup directory"
     fi
 }
 
@@ -106,4 +108,6 @@ function abort {
 
 ##--------------------------------------------------------------------------------------------------
 
-setup && execute && finish
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+    setup && execute && finish
+fi
