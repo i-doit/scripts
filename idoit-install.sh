@@ -21,7 +21,8 @@
 ## along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##
 
-set -u
+set -euo pipefail
+IFS=$'\n\t'
 
 ##
 ## Configuration
@@ -39,7 +40,7 @@ MARIADB_IDOIT_USERNAME="idoit"
 MARIADB_IDOIT_PASSWORD="idoit"
 IDOIT_DEFAULT_TENANT="CMDB"
 INSTALL_DIR="/var/www/html"
-DATE=`date +%Y-%m-%d`
+DATE=$(date +%Y-%m-%d)
 TMP_DIR="/tmp/i-doit_${DATE}"
 UPDATE_FILE_PRO="https://i-doit.com/updates.xml"
 UPDATE_FILE_OPEN="https://i-doit.org/updates.xml"
@@ -49,7 +50,7 @@ CONTROLLER_BIN="/usr/local/bin/idoit"
 JOBS_BIN="/usr/local/bin/idoit-jobs"
 CRON_FILE="/etc/cron.d/i-doit"
 BACKUP_DIR="/var/backups/i-doit"
-BASENAME=`basename $0`
+BASENAME=$(basename "$0")
 VERSION="0.6"
 
 MARIADB_BIN=""
@@ -61,6 +62,9 @@ PHP_BIN=""
 ##--------------------------------------------------------------------------------------------------
 
 function execute {
+    local status=0
+    local ip_address=""
+
     log "Install i-doit on a GNU/Linux operating system"
     log ""
     log "Attention:"
@@ -110,14 +114,11 @@ function execute {
 
     log "\n--------------------------------------------------------------------------------\n"
 
-    local status=0
-
-    askYesNo "Do you want to prepare and install i-doit automatically?"
-    if [[ "$?" -eq 0 ]]; then
+    if askYesNo "Do you want to download and install i-doit automatically?"; then
         prepareIDoit
         installIDoit
 
-        local ip_address=`ip route get 1 | awk '{print $NF;exit}'`
+        ip_address=$(ip route get 1 | awk '{print $NF;exit}')
 
         log "Your setup is ready. Navigate to"
         log ""
@@ -136,8 +137,8 @@ function execute {
     if [[ "$status" = 1 ]]; then
         log "\n--------------------------------------------------------------------------------\n"
 
-        askYesNo "Do you want to configure i-doit cron jobs?"
-        if [[ "$?" -eq 0 ]]; then
+
+        if askYesNo "Do you want to configure i-doit cron jobs?"; then
             deployScriptSettings
             deployController
             deployJobScript
@@ -166,8 +167,7 @@ function execute {
     if [[ "$status" = 2 ]]; then
         log "\n--------------------------------------------------------------------------------\n"
 
-        askYesNo "Do you want to backup i-doit automatically?"
-        if [[ "$?" -eq 0 ]]; then
+        if askYesNo "Do you want to backup i-doit automatically?"; then
             deployBackupAndRestore
 
             log "Backups are successfully activated. Each night a backup will be created. Backups will be kept for 30 days:"
@@ -200,10 +200,18 @@ function execute {
 }
 
 function identifyOS {
+    local os_id=""
+    local os_codename=""
+    local os_description=""
+    local os_release=""
+    local os_major_release=""
+    local os_patchlevel=""
+    local arch=""
+
     if [[ -x "/usr/bin/lsb_release" ]]; then
-        local os_id=`lsb_release --short --id`
-        local os_codename=`lsb_release --short --codename`
-        local os_description=`lsb_release --short --description`
+        os_id=$(lsb_release --short --id)
+        os_codename=$(lsb_release --short --codename)
+        os_description=$(lsb_release --short --description)
 
         if [[ "$os_id" = "Debian" && "$os_codename" = "jessie" ]]; then
             log "Operating system identified as ${os_description}"
@@ -225,8 +233,8 @@ function identifyOS {
             abort "Operating system ${os_description} is not supported"
         fi
     elif [[ -f "/etc/debian_version" ]]; then
-        local os_release=`cat /etc/debian_version`
-        local os_major_release=`cat /etc/debian_version | awk -F "." '{print $1}'`
+        os_release=$(cat /etc/debian_version)
+        os_major_release=$(awk -F "." '{print $1}' /etc/debian_version)
 
         if [[ "$os_major_release" = "8" ]]; then
             log "Operating system identified as Debian GNU/Linux ${os_release} (jessie)"
@@ -239,8 +247,8 @@ function identifyOS {
             abort "Operating system Debian GNU/Linux ${os_release} is not supported"
         fi
     elif [[ -f "/etc/centos-release" ]]; then
-        local os_description=`cat /etc/centos-release`
-        local os_release=`cat /etc/centos-release | grep -o '[0-9]\.[0-9]'`
+        os_description=$(cat /etc/centos-release)
+        os_release=$(grep -o '[0-9]\.[0-9]' /etc/centos-release)
 
         if [[ "$os_release" = "7.3" ]]; then
             log "Operating system identified as CentOS ${os_release}"
@@ -252,8 +260,8 @@ function identifyOS {
         APACHE_USER="apache"
         APACHE_GROUP="apache"
     elif [[ -f "/etc/redhat-release" ]]; then
-        local os_description=`cat /etc/redhat-release`
-        local os_release=`cat /etc/redhat-release | grep -o '[0-9]\.[0-9]'`
+        os_description=$(cat /etc/redhat-release)
+        os_release=$(grep -o '[0-9]\.[0-9]' /etc/redhat-release)
 
         if [[ "$os_release" = "7.3" ]]; then
             log "Operating system identified as Red Hat Enterprise Linux (RHEL) ${os_release}"
@@ -268,9 +276,9 @@ function identifyOS {
         APACHE_USER="apache"
         APACHE_GROUP="apache"
     elif [[ -f "/etc/SuSE-release" ]]; then
-        local os_description=`cat /etc/SuSE-release | head -n1`
-        local os_release=`cat /etc/SuSE-release | grep "VERSION" | grep -o '[0-9]*'`
-        local os_patchlevel=`cat /etc/SuSE-release | grep "PATCHLEVEL" | grep -o '[0-9]'`
+        os_description=$(head -n1 /etc/SuSE-release)
+        os_release=$(grep "VERSION" /etc/SuSE-release | grep -o '[0-9]*')
+        os_patchlevel=$(grep "PATCHLEVEL" /etc/SuSE-release | grep -o '[0-9]')
 
         if [[ "$os_release" = "12" && "$os_patchlevel" = "2" ]]; then
             log "Operating system identified as SUSE Linux Enterprise Server ${os_release} SP${os_patchlevel}"
@@ -286,7 +294,7 @@ function identifyOS {
         abort "Unable to identify operating system"
     fi
 
-    local arch=`uname -m`
+    arch=$(uname -m)
 
     if [[ "$arch" != "x86_64" ]]; then
         log "Attention! The system architecture is not x86 64 bit, but ${arch}. This could cause unwanted behaviour."
@@ -294,11 +302,13 @@ function identifyOS {
 }
 
 function checkRequirements {
-    MARIADB_BIN=`which mysql`
-    SUDO_BIN=`which sudo`
-    UNZIP_BIN=`which unzip`
-    WGET_BIN=`which wget`
-    PHP_BIN=`which php`
+    local failed=0
+
+    MARIADB_BIN=$(which mysql)
+    SUDO_BIN=$(which sudo)
+    UNZIP_BIN=$(which unzip)
+    WGET_BIN=$(which wget)
+    PHP_BIN=$(which php)
 
     declare -A binaries
     binaries["mariabdb"]="$MARIADB_BIN"
@@ -306,11 +316,9 @@ function checkRequirements {
     binaries["unzip"]="$UNZIP_BIN"
     binaries["wget"]="$WGET_BIN"
     binaries["php"]="$PHP_BIN"
-    binaries["systemctl"]=`which systemctl`
-    binaries["apachectl"]=`which apachectl`
-    binaries["chronic"]=`which chronic`
-
-    local failed=0
+    binaries["systemctl"]=$(which systemctl)
+    binaries["apachectl"]=$(which apachectl)
+    binaries["chronic"]=$(which chronic)
 
     for bin in "${!binaries[@]}"; do
         if [[ ! -x "${binaries[$bin]}" ]]; then
@@ -357,7 +365,7 @@ function configureOS {
 function configureDebian8 {
     echo -n -e "Please enter a new password for MariaDB's super user 'root' [leave empty for '${MARIADB_SUPERUSER_PASSWORD}']: "
 
-    read answer
+    read -r answer
 
     if [[ -n "$answer" ]]; then
       MARIADB_SUPERUSER_PASSWORD="$answer"
@@ -475,7 +483,8 @@ function configureRHEL {
         abort "Unable to install PHP packages"
 
     log "Enable MariaDB repository"
-    cat > /etc/yum.repos.d/MariaDB.repo << EOF
+    cat << EOF > /etc/yum.repos.d/MariaDB.repo || \
+        abort "Unable to create and edit file '/etc/yum.repos.d/MariaDB.repo'"
 # MariaDB 10.1 repository list
 # http://downloads.mariadb.org/mariadb/repositories/
 [mariadb]
@@ -484,10 +493,6 @@ baseurl = $mariadb_url
 gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
 gpgcheck=1
 EOF
-
-    if [[ "$?" -gt 0 ]]; then
-        abort "Unable to create and edit file '/etc/yum.repos.d/MariaDB.repo'"
-    fi
 
     log "Install MariaDB packages"
     rpm --import --quiet https://yum.mariadb.org/RPM-GPG-KEY-MariaDB || \
@@ -527,12 +532,15 @@ EOF
 }
 
 function configureSLES12SP2 {
+    local dev_repos=""
+    local web_repos=""
+
     log "Keep your packages up-to-date"
     zypper --quiet --non-interactive refresh || abort "Unable to refresh software repositories"
     zypper --quiet --non-interactive update || abort "Unable to update software packages"
 
-    local dev_repos=`zypper repos -E | grep "SLE-SDK12-SP2" | wc -l`
-    local web_repos=`zypper repos -E | grep "SLE-Module-Web-Scripting12" | wc -l`
+    dev_repos=$(zypper repos -E | grep -c "SLE-SDK12-SP2")
+    web_repos=$(zypper repos -E | grep -c "SLE-Module-Web-Scripting12")
 
     if [[ "$dev_repos" -lt 2 || "$web_repos" -lt 2 ]]; then
         log "Please make sure that the following add-ons are activated in Yast:"
@@ -583,11 +591,13 @@ function configureSLES12SP2 {
 }
 
 function configurePHP {
-    log "Configure PHP"
-
     local ini_file=""
     local php_en_mod=""
-    local php_version=`php --version | head -n1 -c7 | tail -c3`
+    local php_version=""
+
+    log "Configure PHP"
+
+    php_version=$(php --version | head -n1 -c7 | tail -c3)
 
     if [[ "$OS" = "rhel73" || "$OS" = "rhel74" || "$OS" = "centos73" ]]; then
         ini_file="/etc/php.d/i-doit.ini"
@@ -595,21 +605,21 @@ function configurePHP {
         ini_file="/etc/php7/conf.d/i-doit.ini"
     elif [[ "$php_version" = "7.0" ]]; then
         ini_file="/etc/php/7.0/mods-available/i-doit.ini"
-        php_en_mod=`which phpenmod`
+        php_en_mod=$(which phpenmod)
     elif [[ "$php_version" = "5.6" ]]; then
         log "PHP 5.6 is installed, but 7.0 is recommended. Please consider to upgrade."
         ini_file="/etc/php5/mods-available/i-doit.ini"
-        php_en_mod=`which php5enmod`
+        php_en_mod=$(which php5enmod)
     elif [[ "$php_version" = "5.5" || "$php_version" = "5.4" ]]; then
         log "PHP ${php_version} is way too old. Please upgrade."
         ini_file="/etc/php5/mods-available/i-doit.ini"
-        php_en_mod=`which php5enmod`
+        php_en_mod=$(which php5enmod)
     else
         abort "PHP ${php_version} is not supported. Please upgrade/downgrade."
     fi
 
     log "Write PHP settings to '${ini_file}'"
-    cat > "$ini_file" << EOF
+    cat << EOF > "$ini_file" || abort "Unable to create and edit file '${ini_file}'"
 allow_url_fopen = Yes
 file_uploads = On
 magic_quotes_gpc = Off
@@ -633,10 +643,6 @@ date.timezone = Europe/Berlin
 session.gc_maxlifetime = 604800
 session.cookie_lifetime = 0
 EOF
-
-    if [[ "$?" -gt 0 ]]; then
-        abort "Unable to create and edit file '${ini_file}'"
-    fi
 
     log "Append path to MariaDB UNIX socket to PHP settings"
     case "$OS" in
@@ -663,19 +669,20 @@ EOF
 }
 
 function configureApache {
+    local a2_en_mod=""
+    local a2_en_site=""
+    local a2_dis_site=""
+
     log "Configure Apache Web server"
 
     case "$OS" in
         "rhel73"|"rhel74"|"centos73")
-            cat > /etc/httpd/conf.d/i-doit.conf << EOF
+            cat << EOF > /etc/httpd/conf.d/i-doit.conf || \
+                abort "Unable to create and edit file '/etc/httpd/conf.d/i-doit.conf'"
 <Directory /var/www/html/>
         AllowOverride All
 </Directory>
 EOF
-
-            if [[ "$?" -gt 0 ]]; then
-                abort "Unable to create and edit file '/etc/httpd/conf.d/i-doit.conf'"
-            fi
 
             test ! -d "$INSTALL_DIR" && (
                     mkdir -p "$INSTALL_DIR" || \
@@ -694,9 +701,10 @@ EOF
             systemctl -q restart httpd.service || abort "Unable to restart Apache Web server"
             ;;
         "sles12sp2")
-            local a2_en_mod=`which a2enmod`
+            a2_en_mod=$(which a2enmod)
 
-            cat > /etc/apache2/vhosts.d/i-doit.conf << EOF
+            cat << EOF > /etc/apache2/vhosts.d/i-doit.conf || \
+                abort "Unable to create and edit file '/etc/apache2/vhosts.d/i-doit.conf'"
 <VirtualHost *:80>
         ServerAdmin i-doit@example.net
 
@@ -712,10 +720,6 @@ EOF
         CustomLog /var/log/apache2/access.log combined
 </VirtualHost>
 EOF
-
-            if [[ "$?" -gt 0 ]]; then
-                abort "Unable to create and edit file '/etc/apache2/vhosts.d/i-doit.conf'"
-            fi
 
             log "Change directory ownership"
             chown "$APACHE_USER":"$APACHE_GROUP" -R "${INSTALL_DIR}/" || \
@@ -734,11 +738,12 @@ EOF
             systemctl -q restart apache2.service || abort "Unable to restart Apache Web server"
             ;;
         *)
-            local a2_en_site=`which a2ensite`
-            local a2_dis_site=`which a2dissite`
-            local a2_en_mod=`which a2enmod`
+            a2_en_site=$(which a2ensite)
+            a2_dis_site=$(which a2dissite)
+            a2_en_mod=$(which a2enmod)
 
-            cat > /etc/apache2/sites-available/i-doit.conf << EOF
+            cat << EOF > /etc/apache2/sites-available/i-doit.conf || \
+                abort "Unable to create and edit file '/etc/apache2/sites-available/i-doit.conf'"
 <VirtualHost *:80>
         ServerAdmin i-doit@example.net
 
@@ -754,10 +759,6 @@ EOF
         CustomLog \${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
 EOF
-
-            if [[ "$?" -gt 0 ]]; then
-                abort "Unable to create and edit file '/etc/apache2/sites-available/i-doit.conf'"
-            fi
 
             log "Disable default VHost"
             "$a2_dis_site" 000-default || abort "Unable to disable default VHost"
@@ -775,10 +776,10 @@ EOF
 }
 
 function configureMariaDB {
-    log "Configure MariaDB DBMS"
-
     local mariadb_config=""
     local mariadb_service="mysql.service"
+
+    log "Configure MariaDB DBMS"
 
     case "$OS" in
         "debian8")
@@ -815,14 +816,14 @@ function configureMariaDB {
     log "How many bytes of your RAM do you like to spend to MariaDB?"
     echo -n -e "You SHOULD give MariaDB ~ 50 per cent of your RAM [leave empty for '${MARIADB_INNODB_BUFFER_POOL_SIZE}']: "
 
-    read answer
+    read -r answer
 
     if [[ -n "$answer" ]]; then
         MARIADB_INNODB_BUFFER_POOL_SIZE="$answer"
     fi
 
     log "Configure MariaDB settings"
-    cat > "$mariadb_config" << EOF
+    cat << EOF > "$mariadb_config" || abort "Unable to create and edit file '${mariadb_config}'"
 [mysqld]
 
 # This is the number 1 setting to look at for any performance optimization
@@ -870,10 +871,6 @@ table_open_cache = 2048
 sql-mode = ""
 EOF
 
-    if [[ "$?" -gt 0 ]]; then
-        abort "Unable to create and edit file '${mariadb_config}'"
-    fi
-
     log "Start MariaDB"
     systemctl -q start "$mariadb_service" || abort "Unable to start MariaDB"
 }
@@ -882,7 +879,7 @@ function secureMariaDB {
     echo -n -e \
         "Please enter a new password for MariaDB's super user 'root' [leave empty for '${MARIADB_SUPERUSER_PASSWORD}']: "
 
-    read answer
+    read -r answer
 
     if [[ -n "$answer" ]]; then
         MARIADB_SUPERUSER_PASSWORD="$answer"
@@ -915,17 +912,20 @@ function secureMariaDB {
 
 function prepareIDoit {
     local file="${TMP_DIR}/i-doit.zip"
+    local update_file_url=""
+    local variant=""
+    local parse_updates_script=""
+    local url=""
+    local version=""
+    local release_date=""
 
     log "Cleanup VHost directory"
-    rm -rf "${INSTALL_DIR}"/* || abort "Unable to remove files"
+    rm -rf "${INSTALL_DIR:?}/"* || abort "Unable to remove files"
     rm -f "${INSTALL_DIR}"/.htaccess || abort "Unable to remove files"
 
     echo -n -e "Which variant of i-doit do you like to install? [PRO|open]: "
 
-    local update_file_url=""
-    local variant=""
-
-    read wanted_variant
+    read -r wanted_variant
 
     case "$wanted_variant" in
         ""|"PRO"|"Pro"|"pro")
@@ -948,32 +948,29 @@ function prepareIDoit {
         abort "Unable to fetch file from '${update_file_url}'"
     )
 
-    local parse_updates_script="${TMP_DIR}/parseupdates.php"
+    parse_updates_script="${TMP_DIR}/parseupdates.php"
 
-    cat > "$parse_updates_script" << EOF
+    cat << EOF > "$parse_updates_script" || \
+        abort "Unable to create and edit file '${parse_updates_script}'"
 <?php
 \$attribute = \$argv[1];
 \$xml = new SimpleXMLElement(trim(file_get_contents('${update_file_url}')));
 echo \$xml->updates->update[count(\$xml->updates->update) - 1]->\$attribute;
 EOF
 
-    if [[ "$?" -gt 0 ]]; then
-        abort "Unable to create and edit file '${parse_updates_script}'"
-    fi
-
-    local url=`$PHP_BIN "$parse_updates_script" "filename" | sed "s/-update.zip/.zip/"`
+    url=$($PHP_BIN "$parse_updates_script" "filename" | sed "s/-update.zip/.zip/")
 
     test -n "$url" || abort "Missing URL"
 
-    local version=`$PHP_BIN "$parse_updates_script" "version"`
+    version=$($PHP_BIN "$parse_updates_script" "version")
 
     test -n "$version" || abort "Missing version"
 
-    local release_date=`$PHP_BIN "$parse_updates_script" "release"`
+    release_date=$($PHP_BIN "$parse_updates_script" "release")
 
     test -n "$release_date" || abort "Missing release date"
 
-    log "Found i-doit $variant $version (released on ${release_date})"
+    log "Download i-doit $variant $version (released on ${release_date})"
 
     "$WGET_BIN" --quiet -O "$file" "$url" || \
         abort "Unable to download installation file"
@@ -982,7 +979,7 @@ EOF
         abort "Unable to copy installation file"
 
     log "Unzip package"
-    cd "$INSTALL_DIR"
+    cd "$INSTALL_DIR" || abort "Unable to change to installation directory '${INSTALL_DIR}'"
     "$UNZIP_BIN" -q i-doit.zip || abort "Unable to unzip file"
 
     log "Prepare files and directories"
@@ -990,33 +987,35 @@ EOF
     chown "$APACHE_USER":"$APACHE_GROUP" -R . || abort "Unable to change ownership"
     find . -type d -name \* -exec chmod 775 {} \; || abort "Unable to change directory permissions"
     find . -type f -exec chmod 664 {} \; || abort "Unable to change file permissions"
-    chmod 774 controller tenants import updatecheck *.sh setup/*.sh || \
+    chmod 774 controller tenants import updatecheck ./*.sh setup/*.sh || \
         abort "Unable to change executable permissions"
 }
 
 function installIDoit {
+    local config_file=""
+
     log "Install i-doit"
 
     echo -e -n "Please enter the MariaDB hostname [leave empty for '${MARIADB_HOSTNAME}']: "
-    read answer
+    read -r answer
     if [[ -n "$answer" ]]; then
         MARIADB_HOSTNAME="$answer"
     fi
 
     echo -e -n "Please enter the password for the new MariaDB user '${MARIADB_IDOIT_USERNAME}' [leave empty for '${MARIADB_IDOIT_PASSWORD}']: "
-    read answer
+    read -r answer
     if [[ -n "$answer" ]]; then
         MARIADB_IDOIT_PASSWORD="$answer"
     fi
 
     echo -e -n "Please enter the password for the i-doit Admin Center [leave empty for '${IDOIT_ADMIN_CENTER_PASSWORD}']: "
-    read answer
+    read -r answer
     if [[ -n "$answer" ]]; then
         IDOIT_ADMIN_CENTER_PASSWORD="$answer"
     fi
 
     echo -e -n "Please enter the name of the first tenant [leave empty for '${IDOIT_DEFAULT_TENANT}']: "
-    read answer
+    read -r answer
     if [[ -n "$answer" ]]; then
         IDOIT_DEFAULT_TENANT="$answer"
     fi
@@ -1043,7 +1042,7 @@ function installIDoit {
         -e"UPDATE idoit_system.isys_mandator SET isys_mandator__db_user = '${MARIADB_IDOIT_USERNAME}', isys_mandator__db_pass = '${MARIADB_IDOIT_PASSWORD}';" || \
         abort "Unable to fix tenant table"
 
-    local config_file="${INSTALL_DIR}/src/config.inc.php"
+    config_file="${INSTALL_DIR}/src/config.inc.php"
 
     log "Fix configuration file '${config_file}'"
 
@@ -1061,16 +1060,19 @@ function installIDoit {
 }
 
 function deployScriptSettings {
+    local settings_dir=""
+
     log "Deploy script settings"
 
-    local settings_dir=`dirname "$SCRIPT_SETTINGS"`
+    settings_dir=$(dirname "$SCRIPT_SETTINGS")
 
     test -d "$settings_dir" || (
         mkdir -p "$settings_dir" || abort "Unable to create directory '$settings_dir'"
     )
 
-    cat > "$SCRIPT_SETTINGS" << EOF
-CONTROLLER_BIN="/usr/local/bin/idoit"
+    cat << EOF > "$SCRIPT_SETTINGS" || \
+        abort "Unable to create and edit file '/etc/apache2/sites-available/i-doit.conf'"
+CONTROLLER_BIN="$CONTROLLER_BIN"
 APACHE_USER="$APACHE_USER"
 SYSTEM_DATABASE="idoit_system"
 TENANT_DATABASE="idoit_data"
@@ -1085,10 +1087,6 @@ BACKUP_DIR="$BACKUP_DIR"
 # Max. age of backup files (in days):
 BACKUP_AGE=30
 EOF
-
-    if [[ "$?" -gt 0 ]]; then
-        abort "Unable to create and edit file '/etc/apache2/sites-available/i-doit.conf'"
-    fi
 }
 
 function deployController {
@@ -1145,13 +1143,13 @@ function deployScript {
 }
 
 function setup {
-    test `whoami` = "root" || abort "Superuser rights required"
+    test "$(whoami)" = "root" || abort "Superuser rights required"
 
     mkdir -p "$TMP_DIR" || abort "Unable to create temporary directory"
 }
 
 function tearDown {
-    test -d "$TMP_DIR" && log "Cleanup" && ( rm -rf "$TMP_DIR" || echo "Failed" 1>&2 )
+    test -d "$TMP_DIR" && ( rm -rf "$TMP_DIR" || echo "Failed to cleanup" 1>&2 )
 }
 
 function showUsage {
@@ -1174,7 +1172,7 @@ function log {
 function askYesNo {
     echo -n -e "$1 [Y]es [n]o: "
 
-    read answer
+    read -r answer
 
     case "$answer" in
         ""|"Y"|"Yes"|"y"|"yes")
@@ -1190,46 +1188,46 @@ function askYesNo {
 }
 
 function finish {
-    tearDown
     log "Done. Have fun :-)"
     exit 0
 }
 
 function abort {
     echo -e "$1"  1>&2
-    tearDown
     echo "Operation failed. Please check what is wrong and try again." 1>&2
     exit 1
 }
 
 ##--------------------------------------------------------------------------------------------------
 
-trap tearDown EXIT
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+    trap tearDown EXIT
 
-ARGS=`getopt \
-    -o vh \
-    --long help,version -- "$@" 2> /dev/null`
+    ARGS=$(getopt \
+        -o vh \
+        --long help,version -- "$@" 2> /dev/null)
 
-eval set -- "$ARGS"
+    eval set -- "$ARGS"
 
-while true ; do
-    case "$1" in
-        -h|--help)
-            showUsage
-            exit 0
-            ;;
-        -v|--version)
-            showVersion
-            exit 0
-            ;;
-        --)
-            shift;
-            break;;
-        *)
-            log "Unkown option '${1}'."
-            printUsage
-            exit 1;;
-    esac
-done
+    while true ; do
+        case "$1" in
+            -h|--help)
+                showUsage
+                exit 0
+                ;;
+            -v|--version)
+                showVersion
+                exit 0
+                ;;
+            --)
+                shift;
+                break;;
+            *)
+                log "Unkown option '${1}'."
+                printUsage
+                exit 1;;
+        esac
+    done
 
-setup && execute && finish
+    setup && execute && finish
+fi
