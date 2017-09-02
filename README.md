@@ -2,6 +2,8 @@
 
 Useful scripts to maintain i-doit
 
+[![Build Status](https://travis-ci.org/bheisig/i-doit-scripts.svg?branch=master)](https://travis-ci.org/bheisig/i-doit-scripts)
+
 
 ##  About
 
