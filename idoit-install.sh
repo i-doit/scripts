@@ -373,7 +373,7 @@ function configureDebian8 {
 
     log "Keep your Debian packages up-to-date"
     apt-get -qq -y update || abort "Unable to update Debian package repositories"
-    apt-get -qq -y full-upgrade || abort "Unable to perform update of Debian packages"
+    apt-get -qq -y upgrade || abort "Unable to perform update of Debian packages"
     apt-get -qq -y clean || abort "Unable to cleanup Debian packages"
     apt-get -qq -y autoremove || abort "Unable to remove unnecessary Debian packages"
 
