@@ -372,10 +372,10 @@ function configureDebian8 {
     fi
 
     log "Keep your Debian packages up-to-date"
-    apt-get -qq --yes update || abort "Unable to update Debian package repositories"
-    apt-get -qq --yes full-upgrade || abort "Unable to perform update of Debian packages"
-    apt-get -qq --yes clean || abort "Unable to cleanup Debian packages"
-    apt-get -qq --yes autoremove || abort "Unable to remove unnecessary Debian packages"
+    apt-get -qq -y update || abort "Unable to update Debian package repositories"
+    apt-get -qq -y full-upgrade || abort "Unable to perform update of Debian packages"
+    apt-get -qq -y clean || abort "Unable to cleanup Debian packages"
+    apt-get -qq -y autoremove || abort "Unable to remove unnecessary Debian packages"
 
     log "Install required Debian packages"
     debconf-set-selections <<< \
@@ -384,7 +384,7 @@ function configureDebian8 {
     debconf-set-selections <<< \
         "mariadb-server-10.0 mysql-server/root_password_again password ${MARIADB_SUPERUSER_PASSWORD}" || \
         abort "Unable to set MariaDB super user password"
-    apt-get -qq --yes install \
+    apt-get -qq -y install \
         apache2 libapache2-mod-php5 \
         php5 php5-cli php5-common php5-curl php5-gd php5-json php5-ldap php5-mcrypt php5-mysqlnd \
         php5-pgsql php5-memcached \
