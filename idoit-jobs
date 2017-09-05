@@ -57,8 +57,8 @@ function execute {
     log ""
 
     log "Truncate search index"
-    eval "${prefix}/usr/bin/mysql -u$MARIADB_USERNAME -p$MARIADB_PASSWORD \
-        -eTRUNCATE TABLE ${TENANT_DATABASE}.isys_search_idx" || \
+    /usr/bin/mysql -u"$MARIADB_USERNAME" -p"$MARIADB_PASSWORD" \
+        -e"TRUNCATE TABLE ${TENANT_DATABASE}.isys_search_idx" || \
         abort "Unable truncate search index"
 
     log "Re-create search index"
