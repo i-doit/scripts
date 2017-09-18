@@ -26,7 +26,7 @@ on a **fresh installation of a GNU/Linux operating system**. Supported OSs are:
 *   Ubuntu Linux 17.04 "zesty"
 *   Red Hat Enterprise Linux (RHEL) 7.3 and 7.4
 *   CentOS 7.3
-*   SUSE Linux Enterprise Server 12 SP2
+*   SUSE Linux Enterprise Server 12 SP2 and SP3
 
 Before you execute this script you …
 

@@ -8,7 +8,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ##  [Unreleased]
 
-_tbd_
+
+### Added
+
+-   Support for SUSE Linux Enterprise Server (SLES) 12 SP3
+
+
+### Fixed
+
+-   Jobs: Truncate search index
+-   Installation: apt-get on Debian GNU/Linux 8
 
 
 ##  [0.7] – 2017-09-02
@@ -51,7 +60,7 @@ _tbd_
 
 ### Added
 
--   Support for SLES 12 SP2
+-   Support for SUSE Linux Enterprise Server (SLES) 12 SP2
 -   Scripts to backup and restore i-doit
 -   Dedicated MariaDB user for i-doit
 -   Require successful installation of i-doit before deploying scripts
@@ -76,7 +85,7 @@ _tbd_
 -   Question whether to reboot an Ubuntu OS
 -   Warning to read the documentation
 -   Warning not to edit the built-in configuration
--   Recommend Debian GNU/Linux 9 "Stretch"
+-   Recommend Debian GNU/Linux 9 "stretch"
 
 
 ##  [0.2] – 2017-07-07
@@ -84,7 +93,7 @@ _tbd_
 
 ### Added
 
--   Support for Ubuntu 16.10 and 17.04
+-   Support for Ubuntu Linux 16.10 and 17.04
 
 
 ##  0.1 – 2017-07-07

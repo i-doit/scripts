@@ -283,6 +283,9 @@ function identifyOS {
         if [[ "$os_release" = "12" && "$os_patchlevel" = "2" ]]; then
             log "Operating system identified as SUSE Linux Enterprise Server ${os_release} SP${os_patchlevel}"
             OS="sles12sp2"
+        elif [[ "$os_release" = "12" && "$os_patchlevel" = "3" ]]; then
+            log "Operating system identified as SUSE Linux Enterprise Server ${os_release} SP${os_patchlevel}"
+            OS="sles12sp3"
         else
             abort "Operating system ${os_description} is not supported"
         fi
@@ -354,8 +357,8 @@ function configureOS {
         "rhel73"|"rhel74"|"centos73")
             configureRHEL
             ;;
-        "sles12sp2")
-            configureSLES12SP2
+        "sles12sp2"|"sles12sp3")
+            configureSLES12
             ;;
         *)
             abort "Unkown operating system '${OS}'!?!"
@@ -531,21 +534,31 @@ EOF
     systemctl -q restart firewalld.service || abort "Unable to restart firewall"
 }
 
-function configureSLES12SP2 {
+function configureSLES12 {
     local dev_repos=""
     local web_repos=""
+    local service_pack=""
 
     log "Keep your packages up-to-date"
     zypper --quiet --non-interactive refresh || abort "Unable to refresh software repositories"
     zypper --quiet --non-interactive update || abort "Unable to update software packages"
 
-    dev_repos=$(zypper repos -E | grep -c "SLE-SDK12-SP2")
+    case "$OS" in
+        "sles12sp2")
+            service_pack="2"
+            ;;
+        "sles12sp3")
+            service_pack="3"
+            ;;
+    esac
+
+    dev_repos=$(zypper repos -E | grep -c "SLE-SDK12-SP${service_pack}")
     web_repos=$(zypper repos -E | grep -c "SLE-Module-Web-Scripting12")
 
     if [[ "$dev_repos" -lt 2 || "$web_repos" -lt 2 ]]; then
         log "Please make sure that the following add-ons are activated in Yast:"
         log ""
-        log "    SUSE Linux Enterprise Software Development Kit 12 SP2"
+        log "    SUSE Linux Enterprise Software Development Kit 12 SP${service_pack}"
         log "    Web and Scripting Module 12"
         log ""
         log "After activating these repositories run this script again."
@@ -601,7 +614,7 @@ function configurePHP {
 
     if [[ "$OS" = "rhel73" || "$OS" = "rhel74" || "$OS" = "centos73" ]]; then
         ini_file="/etc/php.d/i-doit.ini"
-    elif [[ "$OS" = "sles12sp2" ]]; then
+    elif [[ "$OS" = "sles12sp2" || "$OS" = "sles12sp3" ]]; then
         ini_file="/etc/php7/conf.d/i-doit.ini"
     elif [[ "$php_version" = "7.0" ]]; then
         ini_file="/etc/php/7.0/mods-available/i-doit.ini"
@@ -650,7 +663,7 @@ EOF
             echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" >> "$ini_file" || \
                 abort "Unable to alter PHP settings"
             ;;
-        "sles12sp2")
+        "sles12sp2"|"sles12sp3")
             echo "mysqli.default_socket = /var/run/mysql/mysql.sock" >> "$ini_file" || \
                 abort "Unable to alter PHP settings"
             ;;
@@ -700,7 +713,7 @@ EOF
             log "Restart Apache Web server"
             systemctl -q restart httpd.service || abort "Unable to restart Apache Web server"
             ;;
-        "sles12sp2")
+        "sles12sp2"|"sles12sp3")
             a2_en_mod=$(which a2enmod)
 
             cat << EOF > /etc/apache2/vhosts.d/i-doit.conf || \
@@ -796,7 +809,7 @@ function configureMariaDB {
             mariadb_config="/etc/my.cnf.d/99-i-doit.cnf"
             mariadb_service="mariadb.service"
             ;;
-        "sles12sp2")
+        "sles12sp2"|"sles12sp3")
             secureMariaDB
 
             mariadb_config="/etc/my.cnf.d/99-i-doit.cnf"
