@@ -51,7 +51,7 @@ JOBS_BIN="/usr/local/bin/idoit-jobs"
 CRON_FILE="/etc/cron.d/i-doit"
 BACKUP_DIR="/var/backups/i-doit"
 BASENAME=$(basename "$0")
-VERSION="0.7"
+VERSION="0.8"
 
 MARIADB_BIN=""
 SUDO_BIN=""
