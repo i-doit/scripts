@@ -208,31 +208,7 @@ function identifyOS {
     local os_patchlevel=""
     local arch=""
 
-    if [[ -x "/usr/bin/lsb_release" ]]; then
-        os_id=$(lsb_release --short --id)
-        os_codename=$(lsb_release --short --codename)
-        os_description=$(lsb_release --short --description)
-
-        if [[ "$os_id" = "Debian" && "$os_codename" = "jessie" ]]; then
-            log "Operating system identified as ${os_description}"
-            log "Version 9 is recommended. Please consider to upgrade."
-            OS="debian8"
-        elif [[ "$os_id" = "Debian" && "$os_codename" = "stretch" ]]; then
-            log "Operating system identified as ${os_description}"
-            OS="debian9"
-        elif [[ "$os_id" = "Ubuntu" && "$os_codename" = "xenial" ]]; then
-            log "Operating system identified as ${os_description}"
-            OS="ubuntu1604"
-        elif [[ "$os_id" = "Ubuntu" && "$os_codename" = "yakkety" ]]; then
-            log "Operating system identified as ${os_description}"
-            OS="ubuntu1610"
-        elif [[ "$os_id" = "Ubuntu" && "$os_codename" = "zesty" ]]; then
-            log "Operating system identified as ${os_description}"
-            OS="ubuntu1704"
-        else
-            abort "Operating system ${os_description} is not supported"
-        fi
-    elif [[ -f "/etc/debian_version" ]]; then
+    if [[ -f "/etc/debian_version" ]]; then
         os_release=$(cat /etc/debian_version)
         os_major_release=$(awk -F "." '{print $1}' /etc/debian_version)
 
@@ -293,6 +269,30 @@ function identifyOS {
         INSTALL_DIR="/srv/www/htdocs"
         APACHE_USER="wwwrun"
         APACHE_GROUP="www"
+    elif [[ -x "/usr/bin/lsb_release" ]]; then
+        os_id=$(lsb_release --short --id)
+        os_codename=$(lsb_release --short --codename)
+        os_description=$(lsb_release --short --description)
+
+        if [[ "$os_id" = "Debian" && "$os_codename" = "jessie" ]]; then
+            log "Operating system identified as ${os_description}"
+            log "Version 9 is recommended. Please consider to upgrade."
+            OS="debian8"
+        elif [[ "$os_id" = "Debian" && "$os_codename" = "stretch" ]]; then
+            log "Operating system identified as ${os_description}"
+            OS="debian9"
+        elif [[ "$os_id" = "Ubuntu" && "$os_codename" = "xenial" ]]; then
+            log "Operating system identified as ${os_description}"
+            OS="ubuntu1604"
+        elif [[ "$os_id" = "Ubuntu" && "$os_codename" = "yakkety" ]]; then
+            log "Operating system identified as ${os_description}"
+            OS="ubuntu1610"
+        elif [[ "$os_id" = "Ubuntu" && "$os_codename" = "zesty" ]]; then
+            log "Operating system identified as ${os_description}"
+            OS="ubuntu1704"
+        else
+            abort "Operating system ${os_description} is not supported"
+        fi
     else
         abort "Unable to identify operating system"
     fi
