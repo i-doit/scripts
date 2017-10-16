@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
--   Installer is unable to identify SLES properly, says this OS is unsupported
+-   Installer is unable to identify Ubuntu and SLES properly, says these OSs are unsupported
 
 
 ##  [0.8] – 2017-09-18

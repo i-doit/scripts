@@ -208,21 +208,7 @@ function identifyOS {
     local os_patchlevel=""
     local arch=""
 
-    if [[ -f "/etc/debian_version" ]]; then
-        os_release=$(cat /etc/debian_version)
-        os_major_release=$(awk -F "." '{print $1}' /etc/debian_version)
-
-        if [[ "$os_major_release" = "8" ]]; then
-            log "Operating system identified as Debian GNU/Linux ${os_release} (jessie)"
-            log "Version 9 is recommended. Please consider to upgrade."
-            OS="debian8"
-        elif [[ "$os_major_release" = "9" ]]; then
-            log "Operating system identified as Debian GNU/Linux ${os_release} (stretch)"
-            OS="debian9"
-        else
-            abort "Operating system Debian GNU/Linux ${os_release} is not supported"
-        fi
-    elif [[ -f "/etc/centos-release" ]]; then
+    if [[ -f "/etc/centos-release" ]]; then
         os_description=$(cat /etc/centos-release)
         os_release=$(grep -o '[0-9]\.[0-9]' /etc/centos-release)
 
@@ -292,6 +278,20 @@ function identifyOS {
             OS="ubuntu1704"
         else
             abort "Operating system ${os_description} is not supported"
+        fi
+    elif [[ -f "/etc/debian_version" ]]; then
+        os_release=$(cat /etc/debian_version)
+        os_major_release=$(awk -F "." '{print $1}' /etc/debian_version)
+
+        if [[ "$os_major_release" = "8" ]]; then
+            log "Operating system identified as Debian GNU/Linux ${os_release} (jessie)"
+            log "Version 9 is recommended. Please consider to upgrade."
+            OS="debian8"
+        elif [[ "$os_major_release" = "9" ]]; then
+            log "Operating system identified as Debian GNU/Linux ${os_release} (stretch)"
+            OS="debian9"
+        else
+            abort "Operating system is based on Debian GNU/Linux $os_release but is not supported"
         fi
     else
         abort "Unable to identify operating system"
