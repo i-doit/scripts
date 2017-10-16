@@ -96,6 +96,11 @@ function execute {
 
     log "\\n--------------------------------------------------------------------------------\\n"
 
+    log "This script needs Web access (HTTPS-only)."
+    askNoYes "Do you want to configure a proxy server?" || configureProxy
+
+    log "\\n--------------------------------------------------------------------------------\\n"
+
     askYesNo "Do you want to configure the operating system?" && configureOS
 
     checkRequirements
@@ -603,6 +608,25 @@ function configureSLES12 {
     cpanm --quiet --notest --install IPC::Run || abort "Unable to install Perl module IPC::Run"
 }
 
+function configureProxy {
+    if [[ -n "${https_proxy+x}" ]]; then
+        log "Found proxy settings in environment variable 'https_proxy': $https_proxy"
+
+        askYesNo "Do you want to use this setting?" && return 0
+    fi
+
+    echo -n -e "Provide proxy settings [schema: https://username:password@proxy:port]: "
+
+    read -r answer
+
+    if [[ -n "$answer" ]]; then
+        log "Set environment variable 'https_proxy' to '${answer}'"
+        export https_proxy="$answer"
+    else
+        log "No settings found. Skip it."
+    fi
+}
+
 function configurePHP {
     local ini_file=""
     local php_en_mod=""
@@ -957,7 +981,7 @@ function prepareIDoit {
 
     log "Identify latest version of i-doit $variant"
     test ! -f "$TMP_DIR/updates.xml" && (
-        "$WGET_BIN" --quiet -O "$TMP_DIR/updates.xml" "$update_file_url" || \
+        "$WGET_BIN" --quiet -O "${TMP_DIR}/updates.xml" "$update_file_url" || \
         abort "Unable to fetch file from '${update_file_url}'"
     )
 
@@ -967,7 +991,7 @@ function prepareIDoit {
         abort "Unable to create and edit file '${parse_updates_script}'"
 <?php
 \$attribute = \$argv[1];
-\$xml = new SimpleXMLElement(trim(file_get_contents('${update_file_url}')));
+\$xml = new SimpleXMLElement(trim(file_get_contents('${TMP_DIR}/updates.xml')));
 echo \$xml->updates->update[count(\$xml->updates->update) - 1]->\$attribute;
 EOF
 
@@ -1192,6 +1216,24 @@ function askYesNo {
             return 0
             ;;
         "No"|"no"|"n"|"N")
+            return 1
+            ;;
+        *)
+            log "Sorry, what do you mean?"
+            prntPrompt "$1"
+    esac
+}
+
+function askNoYes {
+    echo -n -e "$1 [y]es [N]o: "
+
+    read -r answer
+
+    case "$answer" in
+        ""|"No"|"no"|"n"|"N")
+            return 0
+            ;;
+        "Y"|"Yes"|"y"|"yes")
             return 1
             ;;
         *)

@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ##  [Unreleased]
 
 
+### Added
+
+-   Allow to configure settings to download files via proxy server
+
+
+### Changed
+
+-   Use already downloaded file `updates.xml` to check for latest i-doit version
+
+
 ### Fixed
 
 -   Installer is unable to identify Ubuntu and SLES properly, says these OSs are unsupported
