@@ -115,11 +115,11 @@ There are several steps you still need to do by yourself:
 2)  Document your IT (obviously ;-))
 
 
-##  Easy-use of the i-doit Controller
+##  Easy-use of the i-doit CLI
 
-i-doit is shipped with a commandline tool called **Controller**. It is a little bit complicated to execute it because you have to change to i-doit's installation directory and you need the user rights of the Apache Web server. Additionally, you need to login before using one of the useful "handlers".
+i-doit is shipped with a commandline tool called **console.php**. It is a little bit complicated to execute it because you have to change to i-doit's installation directory and you need the user rights of the Apache Web server. Additionally, you need to login before using one of the useful "commands".
 
-To make sysadmin's life easier you may wrap the **Controller** in a separate script called `idoit`. It changes to the right directory, gains proper rights and stores your credentials.
+To make sysadmin's life easier you may wrap the **console.php** in a separate script called `idoit`. It changes to the right directory, gains proper rights and stores your credentials.
 
 This script can be installed with `idoit-install.sh` and will be copied to `/usr/local/bin/`. Its configuration settings may be altered in a file located under `/etc/i-doit/i-doit.sh`.
 
@@ -132,13 +132,13 @@ idoit
 Call a handler with optional arguments:
 
 ~~~ {.bash}
-idoit HANDLER [OPTIONS]
+idoit COMMAND [OPTIONS]
 ~~~
 
-For example, use the `notifications` handler to send emails:
+For example, use the `notifications-send` handler to send emails:
 
 ~~~ {.bash}
-idoit notifications
+idoit notifications-send
 ~~~
 
 
@@ -199,7 +199,7 @@ As already mentioned before some scripts provide configuration settings. These s
 
 | Setting               | Default Value                                                         | Description
 | --------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------
-| `CONTROLLER_BIN`      | `/usr/local/bin/idoit`                                                | See "Easy-use of the i-doit Controller"                       |
+| `CONSOLE_BIN`         | `/usr/local/bin/idoit`                                                | See "Easy-use of the i-doit CLI"                              |
 | `APACHE_USER`         | `www-data` (Debian/Ubuntu), `apache` (RHEL/CentOS), `wwwrun` (SLES)   | User who runs Apache Web server                               |
 | `SYSTEM_DATABASE`     | `idoit_system`                                                        | i-doit's system database                                      |
 | `TENANT_DATABASE`     | `idoit_data`                                                          | i-doit's tenant database                                      |
@@ -208,7 +208,7 @@ As already mentioned before some scripts provide configuration settings. These s
 | `MARIADB_PASSWORD`    | `idoit`                                                               | Password for this user                                        |
 | `MARIADB_HOSTNAME`    | `localhost`                                                           | `localhost` uses a local UNIX socket for a better performance |
 | `INSTANCE_PATH`       | `/var/www/html` (Debian/Ubuntu/RHEL/CentOS), `/srv/www/htdocs` (SLES) | In which directory is i-doit located?                         |
-| `IDOIT_USERNAME`      | `admin`                                                               | i-doit user who executes controller handlers                  |
+| `IDOIT_USERNAME`      | `admin`                                                               | i-doit user who executes CLI commands                         |
 | `IDOIT_PASSWORD`      | `admin`                                                               | User's password                                               |
 | `BACKUP_DIR`          | `/var/backups/i-doit`                                                 | Directory for local backups                                   |
 | `BACKUP_AGE`          | `30`                                                                  | Max. age of backup files (in days); `0` disables it           |

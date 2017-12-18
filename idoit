@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ##
-## i-doit controller
+## i-doit console
 ##
 
 ##
@@ -34,11 +34,11 @@ ARGS="$*"
 
 function execute {
     local prefix=""
-    local controller="./controller -v -u $IDOIT_USERNAME -p $IDOIT_PASSWORD -i $TENANT_ID -m $ARGS"
+    local console="php console.php $ARGS"
 
     test "$(whoami)" != "$APACHE_USER" && prefix="sudo -u $APACHE_USER "
 
-    eval "${prefix}${controller}" || abort "i-doit controller exited with non-zero status"
+    eval "${prefix}${console}" || abort "i-doit console exited with non-zero status"
 }
 
 function setup {

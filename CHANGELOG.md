@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
+-   Switch from `controller` CLI to `php console.php`
 -   Use already downloaded file `updates.xml` to check for latest i-doit version
 
 
@@ -35,7 +36,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 -   Jobs: Truncate search index
--   Installation: apt-get on Debian GNU/Linux 8
+-   Use apt-get on Debian GNU/Linux 8
 
 
 ##  [0.7] – 2017-09-02

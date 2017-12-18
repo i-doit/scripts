@@ -46,7 +46,7 @@ UPDATE_FILE_PRO="https://i-doit.com/updates.xml"
 UPDATE_FILE_OPEN="https://i-doit.org/updates.xml"
 OS=""
 SCRIPT_SETTINGS="/etc/i-doit/i-doit.sh"
-CONTROLLER_BIN="/usr/local/bin/idoit"
+CONSOLE_BIN="/usr/local/bin/idoit"
 JOBS_BIN="/usr/local/bin/idoit-jobs"
 CRON_FILE="/etc/cron.d/i-doit"
 BACKUP_DIR="/var/backups/i-doit"
@@ -145,7 +145,7 @@ function execute {
 
         if askYesNo "Do you want to configure i-doit cron jobs?"; then
             deployScriptSettings
-            deployController
+            deployConsole
             deployJobScript
             deployCronJobs
 
@@ -153,7 +153,7 @@ function execute {
             log ""
             log "    $CRON_FILE"
             log ""
-            log "There is also a script available for all system users to execute the i-doit controller command line tool:"
+            log "There is also a script available for all system users to execute the i-doit console command line tool:"
             log ""
             log "    idoit"
             log ""
@@ -161,7 +161,7 @@ function execute {
             log ""
             log "    $JOBS_BIN"
             log ""
-            log "If needed you can change the settings of both the i-doit controller and the cron jobs:"
+            log "If needed you can change the settings of both the i-doit console and the cron jobs:"
             log ""
             log "    $SCRIPT_SETTINGS"
 
@@ -980,10 +980,10 @@ function prepareIDoit {
     log "Install i-doit $variant"
 
     log "Identify latest version of i-doit $variant"
-    test ! -f "$TMP_DIR/updates.xml" && (
-        "$WGET_BIN" --quiet -O "${TMP_DIR}/updates.xml" "$update_file_url" || \
+    test ! -f "$TMP_DIR/updates.xml" && \
+        "$WGET_BIN" --quiet -O "${TMP_DIR}/updates.xml" "$update_file_url"
+    test -f "$TMP_DIR/updates.xml" || \
         abort "Unable to fetch file from '${update_file_url}'"
-    )
 
     parse_updates_script="${TMP_DIR}/parseupdates.php"
 
@@ -1109,7 +1109,7 @@ function deployScriptSettings {
 
     cat << EOF > "$SCRIPT_SETTINGS" || \
         abort "Unable to create and edit file '/etc/apache2/sites-available/i-doit.conf'"
-CONTROLLER_BIN="$CONTROLLER_BIN"
+CONSOLE_BIN="$CONSOLE_BIN"
 APACHE_USER="$APACHE_USER"
 SYSTEM_DATABASE="idoit_system"
 TENANT_DATABASE="idoit_data"
@@ -1126,8 +1126,8 @@ BACKUP_AGE=30
 EOF
 }
 
-function deployController {
-    log "Deploy i-doit controller"
+function deployConsole {
+    log "Deploy i-doit console"
     deployScript idoit
 }
 

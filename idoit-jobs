@@ -34,26 +34,31 @@ CONFIGURATION_FILE="/etc/i-doit/i-doit.sh"
 
 function execute {
     local prefix=""
+    local suffix="--user $IDOIT_USERNAME --password $IDOIT_PASSWORD --tenantId $TENANT_ID"
 
     test "$(whoami)" != "$APACHE_USER" && prefix="sudo -u $APACHE_USER "
 
     log "Clear caches"
-    eval "${prefix}rm -rf ${INSTANCE_PATH}/temp/*" || abort "Unable to clear caches"
+    eval "${prefix}rm -rf ${INSTANCE_PATH}/temp/*" || \
+        abort "Unable to clear caches"
 
     log "Clear updates"
-    eval "${prefix}rm -rf ${INSTANCE_PATH}/updates/versions/*" || abort "Unable to clear updates"
+    eval "${prefix}rm -rf ${INSTANCE_PATH}/updates/versions/*" || \
+        abort "Unable to clear updates"
 
     log "Archive i-doit logbook"
-    eval "${prefix}${CONTROLLER_BIN} archivelog" || abort "Handler 'archivelog' failed"
+    eval "${prefix}${CONSOLE_BIN} logbook-archive $suffix" || \
+        abort "Command 'logbook-archive' failed"
     log ""
 
     log "Cleanup i-doit rights"
-    eval "${prefix}${CONTROLLER_BIN} cleanup_auth" || abort "Handler 'cleanup_auth' failed"
+    eval "${prefix}${CONSOLE_BIN} auth-cleanup $suffix" || \
+        abort "Command 'auth-cleanup' failed"
     log ""
 
     log "Purge unfinished objects"
-    eval "${prefix}${CONTROLLER_BIN} cleanup_objects -t 1" || \
-        abort "Handler 'cleanup_objects' failed"
+    eval "${prefix}${CONSOLE_BIN} system-objectcleanup --objectStatus 1 $suffix" || \
+        abort "Command 'system-objectcleanup' failed"
     log ""
 
     log "Truncate search index"
@@ -62,22 +67,27 @@ function execute {
         abort "Unable truncate search index"
 
     log "Re-create search index"
-    eval "${prefix}${CONTROLLER_BIN} search_index fullindex" || \
-        abort "Handler 'search_index' failed"
+    eval "${prefix}${CONSOLE_BIN} search-index --full $suffix" || \
+        abort "Command 'search-index' failed"
 
     log "Send notifications"
-    eval "${prefix}${CONTROLLER_BIN} notifications" || abort "Handler 'notifications' failed"
+    eval "${prefix}${CONSOLE_BIN} notifications-send $suffix" || \
+        abort "Command 'notifications-send' failed"
 }
 
 function setup {
-    test -f "$CONFIGURATION_FILE" || abort "Missing configuration file '${CONFIGURATION_FILE}'"
+    test -f "$CONFIGURATION_FILE" || \
+        abort "Missing configuration file '${CONFIGURATION_FILE}'"
 
     # shellcheck source=/dev/null
-    source "$CONFIGURATION_FILE" || abort "Unable to include configuration file"
+    source "$CONFIGURATION_FILE" || \
+        abort "Unable to include configuration file"
 
-    test -x "$CONTROLLER_BIN" || abort "Script '${CONTROLLER_BIN}' not found"
+    test -x "$CONSOLE_BIN" || \
+        abort "Script '${CONSOLE_BIN}' not found"
 
-    test -d "$INSTANCE_PATH" || abort "No i-doit instance found under '${INSTANCE_PATH}'"
+    test -d "$INSTANCE_PATH" || \
+        abort "No i-doit instance found under '${INSTANCE_PATH}'"
 }
 
 function log {
