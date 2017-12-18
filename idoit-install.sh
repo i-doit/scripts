@@ -905,6 +905,8 @@ table_open_cache = 2048
 # Only if your have MySQL 5.6 or higher, do not use with MariaDB!
 #table_open_cache_instances = 4
 
+innodb_stats_on_metadata = 0
+
 sql-mode = ""
 EOF
 
@@ -1108,7 +1110,7 @@ function deployScriptSettings {
     )
 
     cat << EOF > "$SCRIPT_SETTINGS" || \
-        abort "Unable to create and edit file '/etc/apache2/sites-available/i-doit.conf'"
+        abort "Unable to create and edit file '${SCRIPT_SETTINGS}'"
 CONSOLE_BIN="$CONSOLE_BIN"
 APACHE_USER="$APACHE_USER"
 SYSTEM_DATABASE="idoit_system"

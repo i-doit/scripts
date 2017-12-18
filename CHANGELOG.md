@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 -   Switch from `controller` CLI to `php console.php`
+-   Disable MariaDB setting `innodb_stats_on_metadata`
 -   Use already downloaded file `updates.xml` to check for latest i-doit version
 
 
