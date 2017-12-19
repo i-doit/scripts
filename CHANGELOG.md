@@ -8,10 +8,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ##  [Unreleased]
 
+_tbd_
+
+
+##  [0.9] – 2017-12-19
+
 
 ### Added
 
--   Allow to configure settings to download files via proxy server
+-   Download files via proxy server if needed
 
 
 ### Changed
@@ -121,7 +126,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 Initial release
 
 
-[Unreleased]: https://github.com/bheisig/i-doit-scripts/compare/0.8...HEAD
+[Unreleased]: https://github.com/bheisig/i-doit-scripts/compare/0.9...HEAD
+[0.9]: https://github.com/bheisig/i-doit-scripts/compare/0.8...0.9
 [0.8]: https://github.com/bheisig/i-doit-scripts/compare/0.7...0.8
 [0.7]: https://github.com/bheisig/i-doit-scripts/compare/0.6...0.7
 [0.6]: https://github.com/bheisig/i-doit-scripts/compare/0.5...0.6
