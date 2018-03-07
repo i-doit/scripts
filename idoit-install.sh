@@ -5,7 +5,7 @@
 ##
 
 ##
-## Copyright (C) 2017 synetics GmbH, <https://i-doit.com/>
+## Copyright (C) 2017-18 synetics GmbH, <https://i-doit.com/>
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU Affero General Public License as published by
@@ -312,11 +312,11 @@ function identifyOS {
 function checkRequirements {
     local failed=0
 
-    MARIADB_BIN=$(which mysql)
-    SUDO_BIN=$(which sudo)
-    UNZIP_BIN=$(which unzip)
-    WGET_BIN=$(which wget)
-    PHP_BIN=$(which php)
+    MARIADB_BIN=$(command -v mysql)
+    SUDO_BIN=$(command -v sudo)
+    UNZIP_BIN=$(command -v unzip)
+    WGET_BIN=$(command -v wget)
+    PHP_BIN=$(command -v php)
 
     declare -A binaries
     binaries["mariabdb"]="$MARIADB_BIN"
@@ -324,9 +324,9 @@ function checkRequirements {
     binaries["unzip"]="$UNZIP_BIN"
     binaries["wget"]="$WGET_BIN"
     binaries["php"]="$PHP_BIN"
-    binaries["systemctl"]=$(which systemctl)
-    binaries["apachectl"]=$(which apachectl)
-    binaries["chronic"]=$(which chronic)
+    binaries["systemctl"]=$(command -v systemctl)
+    binaries["apachectl"]=$(command -v apachectl)
+    binaries["chronic"]=$(command -v chronic)
 
     for bin in "${!binaries[@]}"; do
         if [[ ! -x "${binaries[$bin]}" ]]; then
@@ -640,15 +640,15 @@ function configurePHP {
         ini_file="/etc/php7/conf.d/i-doit.ini"
     elif [[ "$php_version" = "7.0" ]]; then
         ini_file="/etc/php/7.0/mods-available/i-doit.ini"
-        php_en_mod=$(which phpenmod)
+        php_en_mod=$(command -v phpenmod)
     elif [[ "$php_version" = "5.6" ]]; then
         log "PHP 5.6 is installed, but 7.0 is recommended. Please consider to upgrade."
         ini_file="/etc/php5/mods-available/i-doit.ini"
-        php_en_mod=$(which php5enmod)
+        php_en_mod=$(command -v php5enmod)
     elif [[ "$php_version" = "5.5" || "$php_version" = "5.4" ]]; then
         log "PHP ${php_version} is way too old. Please upgrade."
         ini_file="/etc/php5/mods-available/i-doit.ini"
-        php_en_mod=$(which php5enmod)
+        php_en_mod=$(command -v php5enmod)
     else
         abort "PHP ${php_version} is not supported. Please upgrade/downgrade."
     fi
@@ -736,7 +736,7 @@ EOF
             systemctl -q restart httpd.service || abort "Unable to restart Apache Web server"
             ;;
         "sles12sp2"|"sles12sp3")
-            a2_en_mod=$(which a2enmod)
+            a2_en_mod=$(command -v a2enmod)
 
             cat << EOF > /etc/apache2/vhosts.d/i-doit.conf || \
                 abort "Unable to create and edit file '/etc/apache2/vhosts.d/i-doit.conf'"
@@ -773,9 +773,9 @@ EOF
             systemctl -q restart apache2.service || abort "Unable to restart Apache Web server"
             ;;
         *)
-            a2_en_site=$(which a2ensite)
-            a2_dis_site=$(which a2dissite)
-            a2_en_mod=$(which a2enmod)
+            a2_en_site=$(command -v a2ensite)
+            a2_dis_site=$(command -v a2dissite)
+            a2_en_mod=$(command -v a2enmod)
 
             cat << EOF > /etc/apache2/sites-available/i-doit.conf || \
                 abort "Unable to create and edit file '/etc/apache2/sites-available/i-doit.conf'"
