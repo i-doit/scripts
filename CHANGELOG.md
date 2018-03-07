@@ -8,7 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ##  [Unreleased]
 
-_tbd_
+
+### Fixed
+
+-   Do not set executable bit for out-dated files (since i-doit 1.10.1)
 
 
 ##  [0.9] – 2017-12-19

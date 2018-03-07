@@ -386,11 +386,9 @@ function configureDebian8 {
     apt-get -qq -y autoremove || abort "Unable to remove unnecessary Debian packages"
 
     log "Install required Debian packages"
-    debconf-set-selections <<< \
-        "mariadb-server-10.0 mysql-server/root_password password ${MARIADB_SUPERUSER_PASSWORD}" || \
+    debconf-set-selections <<< "mariadb-server-10.0 mysql-server/root_password password ${MARIADB_SUPERUSER_PASSWORD}" || \
         abort "Unable to set MariaDB super user password"
-    debconf-set-selections <<< \
-        "mariadb-server-10.0 mysql-server/root_password_again password ${MARIADB_SUPERUSER_PASSWORD}" || \
+    debconf-set-selections <<< "mariadb-server-10.0 mysql-server/root_password_again password ${MARIADB_SUPERUSER_PASSWORD}" || \
         abort "Unable to set MariaDB super user password"
     apt-get -qq -y install \
         apache2 libapache2-mod-php5 \
@@ -1026,7 +1024,7 @@ EOF
     chown "$APACHE_USER":"$APACHE_GROUP" -R . || abort "Unable to change ownership"
     find . -type d -name \* -exec chmod 775 {} \; || abort "Unable to change directory permissions"
     find . -type f -exec chmod 664 {} \; || abort "Unable to change file permissions"
-    chmod 774 controller tenants import updatecheck ./*.sh setup/*.sh || \
+    chmod 774 controller ./*.sh setup/*.sh || \
         abort "Unable to change executable permissions"
 }
 
@@ -1222,7 +1220,7 @@ function askYesNo {
             ;;
         *)
             log "Sorry, what do you mean?"
-            prntPrompt "$1"
+            askYesNo "$1"
     esac
 }
 
@@ -1240,7 +1238,7 @@ function askNoYes {
             ;;
         *)
             log "Sorry, what do you mean?"
-            prntPrompt "$1"
+            askNoYes "$1"
     esac
 }
 
