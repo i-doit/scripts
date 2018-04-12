@@ -236,6 +236,9 @@ function identifyOS {
         elif [[ "$os_release" = "7.4" ]]; then
             log "Operating system identified as Red Hat Enterprise Linux (RHEL) ${os_release}"
             OS="rhel74"
+        elif [[ "$os_release" = "7.5" ]]; then
+            log "Operating system identified as Red Hat Enterprise Linux (RHEL) ${os_release}"
+            OS="rhel75"
         else
             abort "Operating system Red Hat Enterprise Linux (RHEL) $os_release is not supported"
         fi
@@ -359,7 +362,7 @@ function configureOS {
         "ubuntu1604"|"ubuntu1610"|"ubuntu1704")
             configureUbuntu1604
             ;;
-        "rhel73"|"rhel74"|"centos73")
+        "rhel73"|"rhel74"|"rhel75"|"centos73")
             configureRHEL
             ;;
         "sles12sp2"|"sles12sp3")
@@ -446,6 +449,11 @@ function configureRHEL {
             os_release="7.4"
             mariadb_url="http://yum.mariadb.org/10.1/rhel7-amd64"
             ;;
+        "rhel75")
+            os_description="Red Hat Enterprise Linux (RHEL)"
+            os_release="7.5"
+            mariadb_url="http://yum.mariadb.org/10.1/rhel7-amd64"
+            ;;
         "centos73")
             os_description="CentOS"
             os_release="7.3"
@@ -508,7 +516,7 @@ EOF
         abort "Unable to install MariaDB"
 
     case "$OS" in
-        "rhel73"|"rhel74")
+        "rhel73"|"rhel74"|"rhel75")
             log "Enable required repository 'rhel-7-server-eus-optional-rpms'"
             subscription-manager repos --enable=rhel-7-server-eus-optional-rpms || \
                 abort "Repository cannot be enabled"
@@ -634,7 +642,7 @@ function configurePHP {
 
     php_version=$(php --version | head -n1 -c7 | tail -c3)
 
-    if [[ "$OS" = "rhel73" || "$OS" = "rhel74" || "$OS" = "centos73" ]]; then
+    if [[ "$OS" = "rhel73" || "$OS" = "rhel74" || "$OS" = "rhel75" || "$OS" = "centos73" ]]; then
         ini_file="/etc/php.d/i-doit.ini"
     elif [[ "$OS" = "sles12sp2" || "$OS" = "sles12sp3" ]]; then
         ini_file="/etc/php7/conf.d/i-doit.ini"
@@ -681,7 +689,7 @@ EOF
 
     log "Append path to MariaDB UNIX socket to PHP settings"
     case "$OS" in
-        "rhel73"|"rhel74"|"centos73")
+        "rhel73"|"rhel74"|"rhel75"|"centos73")
             echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" >> "$ini_file" || \
                 abort "Unable to alter PHP settings"
             ;;
@@ -711,7 +719,7 @@ function configureApache {
     log "Configure Apache Web server"
 
     case "$OS" in
-        "rhel73"|"rhel74"|"centos73")
+        "rhel73"|"rhel74"|"rhel75"|"centos73")
             cat << EOF > /etc/httpd/conf.d/i-doit.conf || \
                 abort "Unable to create and edit file '/etc/httpd/conf.d/i-doit.conf'"
 <Directory /var/www/html/>
@@ -825,7 +833,7 @@ function configureMariaDB {
 
             mariadb_config="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
             ;;
-        "rhel73"|"rhel74"|"centos73")
+        "rhel73"|"rhel74"|"rhel75"|"centos73")
             secureMariaDB
 
             mariadb_config="/etc/my.cnf.d/99-i-doit.cnf"

@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ##  [Unreleased]
 
 
+### Added
+
+-   Support for Red Hat Enterprise Linux (RHEL) 7.5
+
+
 ### Fixed
 
 -   Do not set executable bit for out-dated files (since i-doit 1.10.1)
