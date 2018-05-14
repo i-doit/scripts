@@ -50,6 +50,8 @@ CONSOLE_BIN="/usr/local/bin/idoit"
 JOBS_BIN="/usr/local/bin/idoit-jobs"
 CRON_FILE="/etc/cron.d/i-doit"
 BACKUP_DIR="/var/backups/i-doit"
+MIN_CPU_CORES=2
+MIN_RAM=$((1024*1024*1024*2))
 BASENAME=$(basename "$0")
 VERSION="0.9"
 
@@ -314,6 +316,8 @@ function identifyOS {
 
 function checkRequirements {
     local failed=0
+    local cores=0
+    local ram=0
 
     MARIADB_BIN=$(command -v mysql)
     SUDO_BIN=$(command -v sudo)
@@ -337,6 +341,20 @@ function checkRequirements {
             ((failed++))
         fi
     done
+
+    cores=$(nproc)
+
+    if [[ "$cores" -lt "$MIN_CPU_CORES" ]]; then
+        log "Less than $MIN_CPU_CORES detected"
+        ((failed++))
+    fi
+
+    ram=$(vmstat --stats --unit b | grep -i "total memory" | awk '{print $1}')
+
+    if [[ "$ram" -lt "$MIN_RAM" ]]; then
+        log "Less than $MIN_RAM detected"
+        ((failed++))
+    fi
 
     case "$failed" in
         0)
