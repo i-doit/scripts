@@ -51,7 +51,8 @@ JOBS_BIN="/usr/local/bin/idoit-jobs"
 CRON_FILE="/etc/cron.d/i-doit"
 BACKUP_DIR="/var/backups/i-doit"
 MIN_CPU_CORES=2
-MIN_RAM=$((1024*1024*1024*2))
+## Be tolerant, use 1000 instead of 1024:
+MIN_RAM=$((1000*1000*1000*2))
 BASENAME=$(basename "$0")
 VERSION="0.9"
 
@@ -90,7 +91,7 @@ function execute {
     log "You may skip any step if you like."
     log ""
 
-    askYesNo "Do you really want to continue?" || ( log "Bye" && exit 0 )
+    askYesNo "Do you really want to continue?" || cancel
 
     log "\\n--------------------------------------------------------------------------------\\n"
 
@@ -319,6 +320,30 @@ function checkRequirements {
     local cores=0
     local ram=0
 
+    cores=$(nproc)
+
+    if [[ "$cores" -lt "$MIN_CPU_CORES" ]]; then
+        log "Less than $MIN_CPU_CORES CPU cores detected"
+        log "Found only $cores CPU core(s)."
+        log "Your system does not met the requirements. See:"
+        log ""
+        log "    <https://kb.i-doit.com/display/en/System+Requirements>"
+        log ""
+        askNoYes "Do you really want to continue?" && cancel
+    fi
+
+    ram=$(vmstat --stats --unit b | grep -i "total memory" | awk '{print $1}')
+
+    if [[ "$ram" -lt "$MIN_RAM" ]]; then
+        log "Less than $MIN_RAM bytes of total memory detected"
+        log "Found ony $ram bytes."
+        log "Your system does not met the requirements. See:"
+        log ""
+        log "    <https://kb.i-doit.com/display/en/System+Requirements>"
+        log ""
+        askNoYes "Do you really want to continue?" && cancel
+    fi
+
     MARIADB_BIN=$(command -v mysql)
     SUDO_BIN=$(command -v sudo)
     UNZIP_BIN=$(command -v unzip)
@@ -341,20 +366,6 @@ function checkRequirements {
             ((failed++))
         fi
     done
-
-    cores=$(nproc)
-
-    if [[ "$cores" -lt "$MIN_CPU_CORES" ]]; then
-        log "Less than $MIN_CPU_CORES detected"
-        ((failed++))
-    fi
-
-    ram=$(vmstat --stats --unit b | grep -i "total memory" | awk '{print $1}')
-
-    if [[ "$ram" -lt "$MIN_RAM" ]]; then
-        log "Less than $MIN_RAM detected"
-        ((failed++))
-    fi
 
     case "$failed" in
         0)
@@ -1277,6 +1288,11 @@ function abort {
     echo -e "$1"  1>&2
     echo "Operation failed. Please check what is wrong and try again." 1>&2
     exit 1
+}
+
+function cancel {
+    echo "Bye"
+    exit 0
 }
 
 ##--------------------------------------------------------------------------------------------------
