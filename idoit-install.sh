@@ -178,7 +178,8 @@ function execute {
         if askYesNo "Do you want to backup i-doit automatically?"; then
             deployBackupAndRestore
 
-            log "Backups are successfully activated. Each night a backup will be created. Backups will be kept for 30 days:"
+            log "Backups are successfully activated. Each night a backup will be created."
+            log "Backups will be kept for 30 days:"
             log ""
             log "    $BACKUP_DIR"
             log ""
@@ -500,7 +501,8 @@ function configureRHEL {
     yum --assumeyes --quiet install httpd unzip zip wget || \
         abort "Unable to install packages"
 
-    log "$os_description $os_release has out-dated packages for PHP and MariaDB. This script will fix this issue by enabling these 3rd party repositories:"
+    log "$os_description $os_release has out-dated packages for PHP and MariaDB."
+    log "This script will fix this issue by enabling these 3rd party repositories:"
     log ""
     log "    Webtatic.com for PHP 7.0"
     log "    Official MariaDB repository for MariaDB 10.1"
@@ -611,9 +613,10 @@ function configureSLES12 {
         apache2 apache2-mod_php7 \
         mariadb mariadb-client \
         memcached \
-        php7 php7-bcmath php7-ctype php7-curl php7-gd php7-gettext php7-json php7-ldap \
-        php7-mbstring php7-mcrypt php7-mysql php7-opcache php7-openssl php7-pdo php7-pgsql \
-        php7-phar php7-soap php7-sockets php7-sqlite php7-xsl php7-zip php7-zlib || \
+        php7 php7-bcmath php7-bz2 php7-ctype php7-curl php7-gd php7-gettext php7-json php7-ldap \
+        php7-mbstring php7-mcrypt php7-memcached php7-mysql php7-opcache php7-openssl php7-pdo \
+        php7-pgsql php7-phar php7-posix php7-soap php7-sockets php7-sqlite php7-xsl php7-zip \
+        php7-zlib || \
         abort "Unable to install required software packages"
 
     zypper --quiet --non-interactive clean || abort "Unable to clean up cached software packages"
