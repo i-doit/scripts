@@ -1,0 +1,93 @@
+#!/bin/bash
+
+##
+## i-doit hotfix
+##
+
+##
+## Copyright (C) 2018 synetics GmbH, <https://i-doit.com/>
+##
+## This program is free software: you can redistribute it and/or modify
+## it under the terms of the GNU Affero General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU Affero General Public License for more details.
+##
+## You should have received a copy of the GNU Affero General Public License
+## along with this program. If not, see <http://www.gnu.org/licenses/>.
+##
+
+set -euo pipefail
+IFS=$'\n\t'
+
+##
+## Configuration
+##
+
+CONFIGURATION_FILE="/etc/i-doit/i-doit.sh"
+HOTFIX_FILE="${1:-unknown}"
+
+##--------------------------------------------------------------------------------------------------
+
+function execute {
+    local prefix=""
+    local fileName=""
+
+    test "$(whoami)" != "$APACHE_USER" && prefix="sudo -u $APACHE_USER "
+
+    test "$HOTFIX_FILE" = "unknown" && printUsage && exit 2
+    test -r "$HOTFIX_FILE" || abort "Cannot find or read hotfix file $HOTFIX_FILE"
+
+    fileName="$(basename $HOTFIX_FILE)"
+
+    eval "${prefix}cp $HOTFIX_FILE $INSTANCE_PATH" || \
+        abort "Unable to copy file from $HOTFIX_FILE to $INSTANCE_PATH"
+
+    cd "$INSTANCE_PATH" || abort "Unable to change directory"
+
+    eval "${prefix}unzip -q -o $HOTFIX_FILE" || \
+        abort "Unable to extract hotfix $fileName in $INSTANCE_PATH"
+
+    eval "${prefix}rm $fileName" || \
+        abort "Unable to remove hotfix $fileName from $INSTANCE_PATH"
+}
+
+function setup {
+    test -f "$CONFIGURATION_FILE" || abort "Missing configuration file '${CONFIGURATION_FILE}'"
+
+    # shellcheck source=/dev/null
+    source "$CONFIGURATION_FILE" || abort "Unable to include configuration file"
+
+    test -d "$INSTANCE_PATH" || abort "No i-doit instance found under '${INSTANCE_PATH}'"
+}
+
+function log {
+    echo -e "$1"
+}
+
+function finish {
+    log "Done. Have fun :-)"
+    exit 0
+}
+
+function abort {
+    echo -e "$1"  1>&2
+    echo "Operation failed. Please check what is wrong and try again." 1>&2
+    exit 1
+}
+
+function printUsage {
+    log "Usage: ${BASH_SOURCE[0]} HOTFIX"
+    log ""
+    log "Example: ${BASH_SOURCE[0]} /tmp/ID-1234_ab42c23.zip"
+}
+
+##--------------------------------------------------------------------------------------------------
+
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+    setup && execute && finish
+fi
