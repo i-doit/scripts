@@ -44,7 +44,7 @@ function execute {
     test "$HOTFIX_FILE" = "unknown" && printUsage && exit 2
     test -r "$HOTFIX_FILE" || abort "Cannot find or read hotfix file $HOTFIX_FILE"
 
-    fileName="$(basename $HOTFIX_FILE)"
+    fileName="$(basename "$HOTFIX_FILE")"
 
     eval "${prefix}cp $HOTFIX_FILE $INSTANCE_PATH" || \
         abort "Unable to copy file from $HOTFIX_FILE to $INSTANCE_PATH"
