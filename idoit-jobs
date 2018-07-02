@@ -36,6 +36,8 @@ function execute {
     local prefix=""
     local suffix="--user $IDOIT_USERNAME --password $IDOIT_PASSWORD --tenantId $TENANT_ID"
 
+    log "Perform important background tasks for i-doit"
+
     test "$(whoami)" != "$APACHE_USER" && prefix="sudo -u $APACHE_USER "
 
     log "Clear caches"

@@ -37,6 +37,8 @@ function execute {
     local prefix=""
     local fileName=""
 
+    log "Deploy a hot fix for i-doit"
+
     test "$(whoami)" != "$APACHE_USER" && prefix="sudo -u $APACHE_USER "
 
     test "$HOTFIX_FILE" = "unknown" && printUsage && exit 2

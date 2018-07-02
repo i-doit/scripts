@@ -34,6 +34,8 @@ CONFIGURATION_FILE="/etc/i-doit/i-doit.sh"
 ##--------------------------------------------------------------------------------------------------
 
 function execute {
+    log "Restore latest backup"
+
     restoreDatabase system "$SYSTEM_DATABASE"
     restoreDatabase tenant "$TENANT_DATABASE"
 

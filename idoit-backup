@@ -35,6 +35,8 @@ DATE=$(date +%Y-%m-%d_%H-%M-%S)
 ##--------------------------------------------------------------------------------------------------
 
 function execute {
+    log "Create a backup of i-doit"
+
     dumpDatabase system "$SYSTEM_DATABASE"
 
     dumpDatabase tenant "$TENANT_DATABASE"
