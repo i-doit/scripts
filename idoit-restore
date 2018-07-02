@@ -38,7 +38,7 @@ function execute {
     restoreDatabase tenant "$TENANT_DATABASE"
 
     log "Restore i-doit instance located at '${INSTANCE_PATH}'"
-    rm -rf "${INSTANCE_PATH:?}"/* || abort "Unable to clean up instance"
+    rm -rf "${INSTANCE_PATH:?}"/* "${INSTANCE_PATH:?}"/.htaccess || abort "Unable to clean up instance"
     tar xzf "${BACKUP_DIR}/i-doit_latest.tar.gz" -C / || abort "Unable to exstract files"
 }
 
