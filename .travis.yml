@@ -9,11 +9,7 @@ before_install:
   - docker pull koalaman/shellcheck
 
 script:
-  - docker run -v $(pwd):/scripts koalaman/shellcheck /scripts/idoit
-  - docker run -v $(pwd):/scripts koalaman/shellcheck /scripts/idoit-backup
-  - docker run -v $(pwd):/scripts koalaman/shellcheck /scripts/idoit-install.sh
-  - docker run -v $(pwd):/scripts koalaman/shellcheck /scripts/idoit-jobs
-  - docker run -v $(pwd):/scripts koalaman/shellcheck /scripts/idoit-restore
+  - docker run -v $(pwd):/scripts koalaman/shellcheck /scripts/idoit*
 
 matrix:
   fast_finish: true
