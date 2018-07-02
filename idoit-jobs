@@ -61,13 +61,8 @@ function execute {
         abort "Command 'system-objectcleanup' failed"
     log ""
 
-    log "Truncate search index"
-    /usr/bin/mysql -u"$MARIADB_USERNAME" -p"$MARIADB_PASSWORD" \
-        -e"TRUNCATE TABLE ${TENANT_DATABASE}.isys_search_idx" || \
-        abort "Unable truncate search index"
-
     log "Re-create search index"
-    eval "${prefix}${CONSOLE_BIN} search-index --full $suffix" || \
+    eval "${prefix}${CONSOLE_BIN} search-index $suffix" || \
         abort "Command 'search-index' failed"
 
     log "Send notifications"
