@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ##  [Unreleased]
 
+_tbd_
+
+
+##  [0.10] – 2018-07-02
+
 
 ### Added
 
@@ -144,7 +149,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 Initial release
 
 
-[Unreleased]: https://github.com/bheisig/i-doit-scripts/compare/0.9...HEAD
+[Unreleased]: https://github.com/bheisig/i-doit-scripts/compare/0.10...HEAD
+[0.10]: https://github.com/bheisig/i-doit-scripts/compare/0.9...0.10
 [0.9]: https://github.com/bheisig/i-doit-scripts/compare/0.8...0.9
 [0.8]: https://github.com/bheisig/i-doit-scripts/compare/0.7...0.8
 [0.7]: https://github.com/bheisig/i-doit-scripts/compare/0.6...0.7

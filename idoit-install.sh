@@ -54,7 +54,7 @@ MIN_CPU_CORES=2
 ## Be tolerant, use 1000 instead of 1024:
 MIN_RAM=$((1000*1000*1000*2))
 BASENAME=$(basename "$0")
-VERSION="0.9"
+VERSION="0.10"
 
 MARIADB_BIN=""
 SUDO_BIN=""
