@@ -84,6 +84,12 @@ sudo ./idoit-install.sh
 
 The script will ask you several questions. All of them have default answers. This allows you to just hit `ENTER` whenever a user interaction is needed.
 
+It's also possible to run this script without any user interaction. For example, use `yes` to accept all default answers:
+
+~~~ {.bash}
+yes | ./idoit-install.sh
+~~~
+
 Here is an example recording how to install i-doit on a fresh + clean Debian GNU/Linux 9 "stretch" in under 2 minutes (click on the picture):
 
 [![asciicast](https://asciinema.org/a/130677.png)](https://asciinema.org/a/130677)
