@@ -920,7 +920,7 @@ sort_buffer_size = 262144 # default
 join_buffer_size = 262144 # default
 
 max_allowed_packet = 128M
-max_heap_table_size = 16M
+max_heap_table_size = 32M
 query_cache_min_res_unit = 4096
 query_cache_type = 1
 query_cache_limit = 5M
