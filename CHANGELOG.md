@@ -12,8 +12,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 -   Support for Red Hat Enterprise Linux (RHEL) 7.5
+-   Support for CentOS 7.4 and 7.5
 -   Match available CPU cores and RAM with requirements
 -   `idoit-hotfix`: Deploy hot fixes
+
+
+### Changed
+
+-   `idoit-jobs`: use improved search indexer since i-doit 1.11
 
 
 ### Fixed
