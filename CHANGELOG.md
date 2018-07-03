@@ -8,7 +8,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ##  [Unreleased]
 
-_tbd_
+
+##  Added
+
+-   `idoit-install`: Re-named file name
+-   `idoit-install`: Check for installed PHP extensions
+
+
+##  Fixed
+
+-   `idoit-install`: Install PHP extension `mbstring` on Debian GNU/Linux and Ubuntu Linux
 
 
 ##  [0.10] – 2018-07-02

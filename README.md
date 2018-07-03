@@ -12,7 +12,7 @@ Useful scripts to maintain i-doit
 
 ##  Install i-doit on a GNU/Linux operating system
 
-The script `idoit-install.sh` allows you to easily install the **latest version** of
+The script `idoit-install` allows you to easily install the **latest version** of
 
 -   i-doit pro or
 -   i-doit open
@@ -49,37 +49,37 @@ All steps are based on information provided by the [i-doit knowledge base](https
 
 ### Usage
 
-Connect to your freshly installed OS, for example via **SSH**. Download the script `idoit-install.sh` and execute it with super-user rights (`root`).
+Connect to your freshly installed OS, for example via **SSH**. Download the script `idoit-install` and execute it with super-user rights (`root`).
 
 Download:
 
 ~~~ {.bash}
-wget https://raw.githubusercontent.com/bheisig/i-doit-scripts/master/idoit-install.sh
+wget https://raw.githubusercontent.com/bheisig/i-doit-scripts/master/idoit-install
 ~~~
 
 Alternatively, use cURL for the download:
 
 ~~~ {.bash}
-curl -O https://raw.githubusercontent.com/bheisig/i-doit-scripts/master/idoit-install.sh
+curl -LO https://raw.githubusercontent.com/bheisig/i-doit-scripts/master/idoit-install
 ~~~
 
 Make the script executable:
 
 ~~~ {.bash}
-chmod 755 idoit-install.sh
+chmod 755 idoit-install
 ~~~
 
 Either run the script as `root`:
 
 ~~~ {.bash}
 su
-./idoit-install.sh
+./idoit-install
 ~~~
 
 Or run it with `sudo` if available:
 
 ~~~ {.bash}
-sudo ./idoit-install.sh
+sudo ./idoit-install
 ~~~
 
 The script will ask you several questions. All of them have default answers. This allows you to just hit `ENTER` whenever a user interaction is needed.
@@ -87,7 +87,7 @@ The script will ask you several questions. All of them have default answers. Thi
 It's also possible to run this script without any user interaction. For example, use `yes` to accept all default answers:
 
 ~~~ {.bash}
-yes | ./idoit-install.sh
+yes | ./idoit-install
 ~~~
 
 Here is an example recording how to install i-doit on a fresh + clean Debian GNU/Linux 9 "stretch" in under 2 minutes (click on the picture):
@@ -127,7 +127,7 @@ i-doit is shipped with a commandline tool called **console.php**. It is a little
 
 To make sysadmin's life easier you may wrap the **console.php** in a separate script called `idoit`. It changes to the right directory, gains proper rights and stores your credentials.
 
-This script can be installed with `idoit-install.sh` and will be copied to `/usr/local/bin/`. Its configuration settings may be altered in a file located under `/etc/i-doit/i-doit.sh`.
+This script can be installed with `idoit-install` and will be copied to `/usr/local/bin/`. Its configuration settings may be altered in a file located under `/etc/i-doit/i-doit.sh`.
 
 To display the usage run:
 
@@ -160,7 +160,7 @@ There are some jobs which are essential for keeping your CMDB in a good shape. T
 -   Re-create the search index
 -   Send notifications by email
 
-This script can be installed with `idoit-install.sh` and will be copied to `/usr/local/bin/`. Its configuration settings may be altered in a file located under `/etc/i-doit/i-doit.sh`.
+This script can be installed with `idoit-install` and will be copied to `/usr/local/bin/`. Its configuration settings may be altered in a file located under `/etc/i-doit/i-doit.sh`.
 
 Manually execute the jobs by running:
 
@@ -168,7 +168,7 @@ Manually execute the jobs by running:
 sudo idoit-jobs
 ~~~
 
-You may want to execute this script automatically by creating a new cron job. There is already a file for that called `cron` which can be copied to `/etc/cron.d/i-doit`. It can be deployed with `install.sh` and run the jobs every night.
+You may want to execute this script automatically by creating a new cron job. There is already a file for that called `cron` which can be copied to `/etc/cron.d/i-doit`. Deploy this script and pre-configured cron jobs with `idoit-install` to run the jobs every night.
 
 
 ##  Backup and restore i-doit
@@ -180,7 +180,7 @@ There are two useful scripts to backup and restore your i-doit instance. The bac
 
 Backups are compressed and stored under `/var/backup/i-doit/`. They will be kept for at least 30 days.
 
-Both scripts can easily be installed with `idoit-install.sh` and will be copied to `/usr/local/bin/`. Their configuration settings may be altered in a file located under `/etc/i-doit/i-doit.sh`.
+Both scripts can easily be installed with `idoit-install` and will be copied to `/usr/local/bin/`. Their configuration settings may be altered in a file located under `/etc/i-doit/i-doit.sh`.
 
 Create a backup manually by running:
 
@@ -194,7 +194,7 @@ To restore the latest backup run:
 sudo idoit-restore
 ~~~
 
-You may automate your backups with a cron job. `idoit-install.sh` can handle it (see above).
+You may automate your backups with a cron job. `idoit-install` can handle it (see above).
 
 Keep in mind that these scripts are just a little step for a good backup strategy. Consider to copy those backup files to another location. Additionally, if you installed i-doit within a virtual machine you should create snapshots.
 
@@ -230,7 +230,7 @@ As already mentioned before some scripts provide configuration settings. These s
 | `BACKUP_DIR`          | `/var/backups/i-doit`                                                 | Directory for local backups                                   |
 | `BACKUP_AGE`          | `30`                                                                  | Max. age of backup files (in days); `0` disables it           |
 
-The installation script `idoit-install.sh` will ask the user to change most of the default values. **Pro tip:** You should set your own passwords. ;-)
+The installation script `idoit-install` will ask the user to change most of the default values. **Pro tip:** You should set your own passwords. ;-)
 
 
 ##  Contribute & Support

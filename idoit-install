@@ -327,9 +327,13 @@ function checkRequirements {
     local cores=0
     local ram=0
 
+    log "Check hardware requirements…"
+
     cores=$(nproc)
 
-    if [[ "$cores" -lt "$MIN_CPU_CORES" ]]; then
+    if [[ "$cores" -ge "$MIN_CPU_CORES" ]]; then
+        log "$cores CPU cores detected; $MIN_CPU_CORES is required minimum"
+    else
         log "Less than $MIN_CPU_CORES CPU cores detected"
         log "Found only $cores CPU core(s)."
         log "Your system does not met the requirements. See:"
@@ -341,7 +345,9 @@ function checkRequirements {
 
     ram=$(vmstat --stats --unit b | grep -i "total memory" | awk '{print $1}')
 
-    if [[ "$ram" -lt "$MIN_RAM" ]]; then
+    if [[ "$ram" -ge "$MIN_RAM" ]]; then
+        log "$ram bytes of total memory detected; $MIN_RAM is required minimum"
+    else
         log "Less than $MIN_RAM bytes of total memory detected"
         log "Found ony $ram bytes."
         log "Your system does not met the requirements. See:"
@@ -350,6 +356,8 @@ function checkRequirements {
         log ""
         askNoYes "Do you really want to continue?" && cancel
     fi
+
+    log "Check for installed applications and services…"
 
     MARIADB_BIN=$(command -v mysql)
     SUDO_BIN=$(command -v sudo)
@@ -366,13 +374,32 @@ function checkRequirements {
     binaries["systemctl"]=$(command -v systemctl)
     binaries["apachectl"]=$(command -v apachectl)
     binaries["chronic"]=$(command -v chronic)
+    binaries["memcached"]=$(command -v memcached)
 
     for bin in "${!binaries[@]}"; do
-        if [[ ! -x "${binaries[$bin]}" ]]; then
-            log "$bin is missing"
+        if [[ -x "${binaries[$bin]}" ]]; then
+            log "$bin: found"
+        else
+            log "$bin: missing"
             ((failed++))
         fi
     done
+
+    if [[ -x "$PHP_BIN" ]]; then
+        log "Check for installed PHP extensions…"
+
+        local phpExtensions=(bcmath curl gd imagick json ldap mbstring mcrypt \
+            memcached mysqli mysqlnd pgsql soap xml zip)
+
+        for phpExtension in "${phpExtensions[@]}"; do
+            if "$PHP_BIN" -m | grep "$phpExtension" > /dev/null; then
+                log "PHP extension $phpExtension: found"
+            else
+                log "PHP extension $phpExtension: missing"
+                ((failed++))
+            fi
+        done
+    fi
 
     case "$failed" in
         0)
@@ -431,8 +458,8 @@ function configureDebian8 {
         abort "Unable to set MariaDB super user password"
     apt-get -qq -y install \
         apache2 libapache2-mod-php5 \
-        php5 php5-cli php5-common php5-curl php5-gd php5-json php5-ldap php5-mcrypt php5-mysqlnd \
-        php5-pgsql php5-memcached \
+        php5 php5-cli php5-common php5-curl php5-gd php5-json php5-ldap php5-mbstring php5-mcrypt \
+        php5-mysqlnd php5-pgsql php5-memcached \
         mariadb-server mariadb-client \
         memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
 }
@@ -448,8 +475,8 @@ function configureDebian9 {
     apt-get -qq --yes install \
         apache2 libapache2-mod-php \
         mariadb-client mariadb-server \
-        php php-bcmath php-cli php-common php-curl php-gd php-imagick php-json php-ldap php-mcrypt \
-        php-memcached php-mysql php-pgsql php-soap php-xml php-zip \
+        php php-bcmath php-cli php-common php-curl php-gd php-imagick php-json php-ldap \
+        php-mbstring php-mcrypt php-memcached php-mysql php-pgsql php-soap php-xml php-zip \
         memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
 }
 
@@ -464,8 +491,8 @@ function configureUbuntu1604 {
     apt-get -qq --yes install \
         apache2 libapache2-mod-php \
         mariadb-client mariadb-server \
-        php php-bcmath php-cli php-common php-curl php-gd php-imagick php-json php-ldap php-mcrypt \
-        php-memcached php-mysql php-pgsql php-soap php-xml php-zip \
+        php php-bcmath php-cli php-common php-curl php-gd php-imagick php-json php-ldap \
+        php-mbstring php-mcrypt php-memcached php-mysql php-pgsql php-soap php-xml php-zip \
         memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
 }
 
