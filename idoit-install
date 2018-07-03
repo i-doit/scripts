@@ -547,27 +547,30 @@ function configureRHEL {
     log "$os_description $os_release has out-dated packages for PHP and MariaDB."
     log "This script will fix this issue by enabling these 3rd party repositories:"
     log ""
-    log "    Webtatic.com for PHP 7.0"
+    log "    Webtatic.com for PHP 7.1"
     log "    Official MariaDB repository for MariaDB 10.1"
     log ""
 
     askYesNo "Do you agree with it?" || abort "Requirements for i-doit not met"
 
-    log "Enable Webtatic repository"
+    log "Import EPEL public GPG key"
     rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7 || \
-        abort "Unable to import GPG key from EPEL"
+        abort "Unable to import public GPG key from EPEL"
+    log "Add EPEL releases"
     rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm || \
-        abort "Unable to install EPEL"
+        abort "Unable to install epel-releases via yum"
+    log "Import Webtatic public GPG key"
     rpm --import --quiet https://mirror.webtatic.com/yum/RPM-GPG-KEY-webtatic-el7 || \
         abort "Unable to import GPG key from Webtatic"
+    log "Add Webtatic releases"
     rpm -Uvh --quiet https://mirror.webtatic.com/yum/el7/webtatic-release.rpm || \
-        abort "Unable to enable Webtatic"
+        abort "Unable to add Webtatic"
 
     log "Install PHP packages"
     yum --assumeyes --quiet install \
-        php70w php70w-bcmath php70w-cli php70w-common php70w-gd php70w-ldap php70w-mbstring \
-        php70w-mcrypt php70w-mysqlnd php70w-opcache php70w-pdo php70w-pecl-imagick \
-        php70w-pecl-memcached php70w-pgsql php70w-soap php70w-xml || \
+        php71w php71w-bcmath php71w-cli php71w-common php71w-gd php71w-ldap php71w-mbstring \
+        php71w-mcrypt php71w-mysqlnd php71w-opcache php71w-pdo php71w-pecl-imagick \
+        php71w-pecl-memcached php71w-pgsql php71w-soap php71w-xml || \
         abort "Unable to install PHP packages"
 
     log "Enable MariaDB repository"
@@ -723,17 +726,15 @@ function configurePHP {
         ini_file="/etc/php.d/i-doit.ini"
     elif [[ "$OS" = "sles12sp2" || "$OS" = "sles12sp3" ]]; then
         ini_file="/etc/php7/conf.d/i-doit.ini"
-    elif [[ "$php_version" = "7.0" ]]; then
-        ini_file="/etc/php/7.0/mods-available/i-doit.ini"
+    elif [[ "$php_version" = "7.0" || "$php_version" = "7.1" ]]; then
+        ini_file="/etc/php/${php_version}/mods-available/i-doit.ini"
         php_en_mod=$(command -v phpenmod)
     elif [[ "$php_version" = "5.6" ]]; then
-        log "PHP 5.6 is installed, but 7.0 is recommended. Please consider to upgrade."
+        log "PHP 5.6 is installed, but 7.1 is recommended. Please consider to upgrade."
         ini_file="/etc/php5/mods-available/i-doit.ini"
         php_en_mod=$(command -v php5enmod)
     elif [[ "$php_version" = "5.5" || "$php_version" = "5.4" ]]; then
-        log "PHP ${php_version} is way too old. Please upgrade."
-        ini_file="/etc/php5/mods-available/i-doit.ini"
-        php_en_mod=$(command -v php5enmod)
+        abort "PHP ${php_version} is way too old. Please upgrade."
     else
         abort "PHP ${php_version} is not supported. Please upgrade/downgrade."
     fi

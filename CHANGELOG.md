@@ -11,8 +11,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ##  Added
 
--   `idoit-install`: Re-named file name
+-   `idoit-install`: Re-name file name
 -   `idoit-install`: Check for installed PHP extensions
+-   `idoit-install`: Add support for PHP 7.1
+
+
+##  Changed
+
+-   `idoit-install`: Install PHP 7.1 from Webtatic.com on RHEL/CentOS
 
 
 ##  Fixed

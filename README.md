@@ -87,7 +87,7 @@ The script will ask you several questions. All of them have default answers. Thi
 It's also possible to run this script without any user interaction. For example, use `yes` to accept all default answers:
 
 ~~~ {.bash}
-yes | ./idoit-install
+yes "" | ./idoit-install
 ~~~
 
 Here is an example recording how to install i-doit on a fresh + clean Debian GNU/Linux 9 "stretch" in under 2 minutes (click on the picture):
