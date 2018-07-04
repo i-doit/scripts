@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 -   `idoit-install`: Re-name file name
 -   `idoit-install`: Check for installed PHP extensions
 -   `idoit-install`: Add support for PHP 7.1
+-   `idoit-support`: Collect data about i-doit, installed add-ons and your system
 
 
 ##  Changed
