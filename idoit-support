@@ -1,0 +1,188 @@
+#!/bin/bash
+
+##
+## i-doit support
+##
+
+##
+## Copyright (C) 2017-18 synetics GmbH, <https://i-doit.com/>
+##
+## This program is free software: you can redistribute it and/or modify
+## it under the terms of the GNU Affero General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU Affero General Public License for more details.
+##
+## You should have received a copy of the GNU Affero General Public License
+## along with this program. If not, see <http://www.gnu.org/licenses/>.
+##
+
+set -euo pipefail
+IFS=$'\n\t'
+
+##
+## Configuration
+##
+
+USER="root"
+CONFIGURATION_FILE="/etc/i-doit/i-doit.sh"
+DATE="$(date +%Y-%m-%d_%H-%M-%S)"
+TMP_DIR="/tmp/idoit-support_${DATE}"
+TARBALL="idoit-support_${DATE}.tar.gz"
+
+##--------------------------------------------------------------------------------------------------
+
+function execute {
+    log "Collect data about i-doit, installed add-ons and your system"
+
+    addTempDir
+    collectSystemEnvironment
+    collectVersions
+    collectDaemonStatus
+    collectLogs
+    collectPHPSettings
+    collectApacheSettings
+    collectMariaDBSettings
+    collectIdoitData
+    packData
+    cleanUp
+
+    log ""
+    log "Tarball created at ${INSTANCE_PATH}/$TARBALL"
+    log "Download it by URL http://$(ip route get 1 | awk '{print $NF;exit}')/$TARBALL"
+}
+
+function addTempDir {
+    log "Add temporary directory $TMP_DIR"
+    mkdir -p "$TMP_DIR" || \
+        abort "Unable to create temporary directory"
+}
+
+function collectSystemEnvironment {
+    log "Collect OS information"
+    uname && uname -a > "$TMP_DIR"/uname
+    test -x "$(command -v procinfo)" && \
+        procinfo > "$TMP_DIR"/procinfo
+    test -x "$(command -v netstat)" && \
+        netstat -tulpen > "$TMP_DIR"/netstat
+}
+
+function collectVersions {
+    log "Collect version information"
+    test -x "$(command -v lsb_release)" && \
+        lsb_release -a > "$TMP_DIR"/debian_version
+    test -x "$(command -v php)" && \
+        php --version > "$TMP_DIR"/php_version
+    test -x "$(command -v mysql)" && \
+        mysql --version > "$TMP_DIR"/mariadb_version
+    test -x "$(command -v openssl)" && \
+        openssl version > "$TMP_DIR"/openssl_version
+    test -x "$(command -v apachectl)" && \
+        apachectl -v > "$TMP_DIR"/apache_version
+    test -x "$(command -v memcached)" && \
+        memcached -V > "$TMP_DIR"/memcached_version
+}
+
+function collectDaemonStatus {
+    log "Check running daemons"
+    test -x "$(command -v systemctl)" && \
+        systemctl status mysql.service > "$TMP_DIR"/mariadb_service
+    test -x "$(command -v systemctl)" && \
+        systemctl status apache2.service > "$TMP_DIR"/apache_service
+    test -x "$(command -v systemctl)" && \
+        systemctl status memcached.service > "$TMP_DIR"/memcached_service
+}
+
+function collectLogs {
+    log "Collect log files"
+    test -f /var/log/mysql/error.log && \
+        cp /var/log/mysql/error.log "$TMP_DIR"/mariadb_errors
+    test -f /var/log/apache2/error.log && \
+        cp -f /var/log/apache2/error.log "$TMP_DIR"/apache_errors
+    cp -r "${INSTANCE_PATH}/log/" "$TMP_DIR"
+}
+
+function collectPHPSettings {
+    log "Collect PHP settings"
+    test -x "$(command -v php)" && \
+        php --info > "$TMP_DIR"/php_cli_info
+    test -x "$(command -v php)" && \
+        php -m > "$TMP_DIR"/php_modules
+    echo "<?php phpinfo(); ?>" > "$INSTANCE_PATH"/phpinfo.php
+    test -x "$(command -v wget)" && \
+        wget --quiet -O "$TMP_DIR"/php_web_info http://localhost/phpinfo.php
+    rm "$INSTANCE_PATH"/phpinfo.php
+}
+
+function collectApacheSettings {
+    log "Collect Apache Web server settings"
+    test -x "$(command -v apachectl)" && \
+        apachectl configtest 2> "$TMP_DIR"/apache_configtest
+    test -x "$(command -v apachectl)" && \
+        apachectl -M > "$TMP_DIR"/apache_modules
+}
+
+function collectMariaDBSettings {
+    log "Collect MariaDB settings"
+    test -x mysqladmin && mysqladmin variables \
+        -h"$MARIADB_HOSTNAME" -u"$MARIADB_USERNAME" -p"$MARIADB_PASSWORD"
+}
+
+function collectIdoitData {
+    log "Collect information about i-doit"
+    test -f "$INSTANCE_PATH"/VERSION && \
+        cp "$INSTANCE_PATH"/VERSION "$TMP_DIR"/idoit_version
+    test -f "$INSTANCE_PATH"/REVISION && \
+        cp "$INSTANCE_PATH"/REVISION "$TMP_DIR"/idoit_revision
+    test -d "$INSTANCE_PATH"/src/classes/modules/ && \
+        cd "$INSTANCE_PATH"/src/classes/modules/
+    test -d "$INSTANCE_PATH"/src/classes/modules/ && \
+        for i in */; do echo ${i%%/} >> "$TMP_DIR"/idoit_modules; done
+}
+
+function packData {
+    log "Pack data"
+    cd "$TMP_DIR"
+    tar czf "${INSTANCE_PATH}/$TARBALL" *
+}
+
+function cleanUp {
+    log "Clean up"
+    rm -r "${TMP_DIR:?}"/
+}
+
+function setup {
+    test "$(whoami)" = "$USER" || abort "Only user '${USER}' may execute this script"
+
+    test -f "$CONFIGURATION_FILE" || abort "Missing configuration file '${CONFIGURATION_FILE}'"
+
+    # shellcheck source=/dev/null
+    source "$CONFIGURATION_FILE" || abort "Unable to include configuration file"
+
+    test -d "$INSTANCE_PATH" || abort "No i-doit instance found under '${INSTANCE_PATH}'"
+}
+
+function log {
+    echo -e "$1"
+}
+
+function finish {
+    log "Done. Have fun :-)"
+    exit 0
+}
+
+function abort {
+    echo -e "$1" 1>&2
+    echo "Operation failed. Please check what is wrong and try again." 1>&2
+    exit 1
+}
+
+##--------------------------------------------------------------------------------------------------
+
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+    setup && execute && finish
+fi

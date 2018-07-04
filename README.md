@@ -199,7 +199,16 @@ You may automate your backups with a cron job. `idoit-install` can handle it (se
 Keep in mind that these scripts are just a little step for a good backup strategy. Consider to copy those backup files to another location. Additionally, if you installed i-doit within a virtual machine you should create snapshots.
 
 
-##  Deplox hot fixes
+##  Collect data about i-doit, installed add-ons and your system
+
+Works smoothly with the i-doit Virtual Appliance:
+
+~~~
+idoit-support
+~~~
+
+
+##  Deploy hot fixes
 
 Sometimes there is a chance to find an unwanted behavior (a.k.a. bug) within i-doit or its add-ons. You want it to be fixed as soon as possible. You cannot wait for the next release.
 
