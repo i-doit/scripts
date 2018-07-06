@@ -48,6 +48,8 @@ function execute {
     collectApacheSettings
     collectMariaDBSettings
     collectIdoitData
+    includeInstance
+    includeDatabases
     packData
     cleanUp
 
@@ -59,11 +61,14 @@ function execute {
 function addTempDir {
     mkdir -p "$TMP_DIR" || \
         abort "Unable to create temporary directory"
+
+    echo "Date: $DATE" >> "$TMP_DIR"/meta
 }
 
 function collectSystemEnvironment {
     log "Collect OS information"
-    uname && uname -a > "$TMP_DIR"/uname
+    test -x "$(command -v uname)" && \
+        uname -a > "$TMP_DIR"/uname
     test -x "$(command -v procinfo)" && \
         procinfo > "$TMP_DIR"/procinfo
     test -x "$(command -v netstat)" && \
@@ -73,7 +78,7 @@ function collectSystemEnvironment {
 function collectVersions {
     log "Collect version information"
     test -x "$(command -v lsb_release)" && \
-        lsb_release -a > "$TMP_DIR"/debian_version
+        lsb_release -a > "$TMP_DIR"/debian_version 2> /dev/null
     test -x "$(command -v php)" && \
         php --version > "$TMP_DIR"/php_version
     test -x "$(command -v mysql)" && \
@@ -87,7 +92,7 @@ function collectVersions {
 }
 
 function collectDaemonStatus {
-    log "Check running daemons"
+    log "Check services"
     test -x "$(command -v systemctl)" && \
         systemctl status mysql.service > "$TMP_DIR"/mariadb_service
     test -x "$(command -v systemctl)" && \
@@ -98,11 +103,9 @@ function collectDaemonStatus {
 
 function collectLogs {
     log "Collect log files"
-    test -f /var/log/mysql/error.log && \
-        cp /var/log/mysql/error.log "$TMP_DIR"/mariadb_errors
-    test -f /var/log/apache2/error.log && \
-        cp -f /var/log/apache2/error.log "$TMP_DIR"/apache_errors
-    cp -r "${INSTANCE_PATH}/log/" "$TMP_DIR"
+    copyFile /var/log/mysql/error.log mariadb_errors
+    copyFile /var/log/apache2/error.log apache_errors
+    copyDir "$INSTANCE_PATH"/log/
 }
 
 function collectPHPSettings {
@@ -115,32 +118,84 @@ function collectPHPSettings {
     test -x "$(command -v wget)" && \
         wget --quiet -O "$TMP_DIR"/php_web_info http://localhost/phpinfo.php
     rm "$INSTANCE_PATH"/phpinfo.php
+
+    askYesNo "Do you like to include /etc/php/?" || return
+    copyDir /etc/php/
 }
 
 function collectApacheSettings {
     log "Collect Apache Web server settings"
+
     test -x "$(command -v apachectl)" && \
         apachectl configtest 2> "$TMP_DIR"/apache_configtest
     test -x "$(command -v apachectl)" && \
         apachectl -M > "$TMP_DIR"/apache_modules 2> /dev/null
+
+    askYesNo "Do you like to include /etc/apache2/?" || return
+    copyDir /etc/apache2/
 }
 
 function collectMariaDBSettings {
     log "Collect MariaDB settings"
     test -x mysqladmin && mysqladmin variables \
         -h"$MARIADB_HOSTNAME" -u"$MARIADB_USERNAME" -p"$MARIADB_PASSWORD"
+
+    askYesNo "Do you like to include /etc/mysql/?" || return
+    copyDir /etc/mysql/
 }
 
 function collectIdoitData {
     log "Collect information about i-doit"
-    test -f "$INSTANCE_PATH"/VERSION && \
-        cp "$INSTANCE_PATH"/VERSION "$TMP_DIR"/idoit_version
-    test -f "$INSTANCE_PATH"/REVISION && \
-        cp "$INSTANCE_PATH"/REVISION "$TMP_DIR"/idoit_revision
+    copyFile "$INSTANCE_PATH"/VERSION idoit_version
+    copyFile "$INSTANCE_PATH"/REVISION idoit_revision
     test -d "$INSTANCE_PATH"/src/classes/modules/ && \
         cd "$INSTANCE_PATH"/src/classes/modules/
     test -d "$INSTANCE_PATH"/src/classes/modules/ && \
         for i in */; do echo "${i%%/}" >> "$TMP_DIR"/idoit_modules; done
+}
+
+function includeInstance {
+    askYesNo "Do you like to include your i-doit instance?" || return
+
+    copyDir "${INSTANCE_PATH:?}"/
+}
+
+function includeDatabases {
+    askYesNo "Do you like to include your i-doit databases?" || return
+
+    dumpDatabase "$SYSTEM_DATABASE"
+    dumpDatabase "$TENANT_DATABASE"
+}
+
+function dumpDatabase {
+    local dbName="$1"
+
+    log "Dump database $dbName"
+
+    /usr/bin/mysqldump \
+        -h"$MARIADB_HOSTNAME" -u"$MARIADB_USERNAME" -p"$MARIADB_PASSWORD" "$dbName" | \
+        gzip -9 > "${TMP_DIR}/${dbName}.sql.gz"
+}
+
+function copyFile {
+    local src="$1"
+    local dest="$2"
+
+    test -f "$src" || log "File $src does not exist"
+    test -f "$src" || return
+
+    log "Copy file $src"
+    cp "$src" "$TMP_DIR/$dest"
+}
+
+function copyDir {
+    local dir="$1"
+
+    test -d "$dir" || log "Directory $dir does not exist"
+    test -d "$dir" || return
+
+    log "Copy directory $dir"
+    cp -r "${dir:?}"/ "$TMP_DIR"
 }
 
 function packData {
@@ -152,6 +207,24 @@ function packData {
 function cleanUp {
     log "Clean up"
     rm -r "${TMP_DIR:?}"/
+}
+
+function askYesNo {
+    echo -n -e "$1 [Y]es [n]o: "
+
+    read -r answer
+
+    case "$answer" in
+        ""|"Y"|"Yes"|"y"|"yes")
+            return 0
+            ;;
+        "No"|"no"|"n"|"N")
+            return 1
+            ;;
+        *)
+            log "Sorry, what do you mean?"
+            askYesNo "$1"
+    esac
 }
 
 function setup {
