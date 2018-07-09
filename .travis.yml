@@ -14,6 +14,7 @@ script:
   - docker run -v $(pwd):/scripts koalaman/shellcheck /scripts/idoit-hotfix
   - docker run -v $(pwd):/scripts koalaman/shellcheck /scripts/idoit-install
   - docker run -v $(pwd):/scripts koalaman/shellcheck /scripts/idoit-jobs
+  - docker run -v $(pwd):/scripts koalaman/shellcheck /scripts/idoit-pwd
   - docker run -v $(pwd):/scripts koalaman/shellcheck /scripts/idoit-restore
   - docker run -v $(pwd):/scripts koalaman/shellcheck /scripts/idoit-support
 

@@ -208,6 +208,15 @@ idoit-support
 ~~~
 
 
+##  Alter passwords for various users and remove default users
+
+Works smoothly with the i-doit Virtual Appliance:
+
+~~~
+idoit-pwd
+~~~
+
+
 ##  Deploy hot fixes
 
 Sometimes there is a chance to find an unwanted behavior (a.k.a. bug) within i-doit or its add-ons. You want it to be fixed as soon as possible. You cannot wait for the next release.

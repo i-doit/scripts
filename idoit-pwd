@@ -1,0 +1,262 @@
+#!/bin/bash
+
+##
+## i-doit password generator
+##
+
+##
+## Copyright (C) 2017-18 synetics GmbH, <https://i-doit.com/>
+##
+## This program is free software: you can redistribute it and/or modify
+## it under the terms of the GNU Affero General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU Affero General Public License for more details.
+##
+## You should have received a copy of the GNU Affero General Public License
+## along with this program. If not, see <http://www.gnu.org/licenses/>.
+##
+
+set -euo pipefail
+IFS=$'\n\t'
+
+##
+## Configuration
+##
+
+USER="root"
+CONFIGURATION_FILE="/etc/i-doit/i-doit.sh"
+PWGEN_BIN="$(command -v pwgen) -c -n -s 16 1"
+MARIADB_SUPER_USERNAME="root"
+## Initiate password storage:
+export NEW_PASSWORD=""
+export MARIADB_SUPER_PASSWORD=""
+
+##--------------------------------------------------------------------------------------------------
+
+function execute {
+    log "Change your passwords"
+
+    changeOSPassword root
+    changeOSPassword idoit
+    changeMariaDBPasswords
+    changeAdminCenterPassword
+    deleteDefaultUser admin
+    deleteDefaultUser archivar
+    deleteDefaultUser author
+    deleteDefaultUser editor
+    deleteDefaultUser guest
+    deleteDefaultUser reader
+
+    # TODO i-doit tenant: admin
+    # TODO i-doit tenant: controller
+}
+
+function clearPasswordStorage {
+    export NEW_PASSWORD=""
+    export MARIADB_SUPER_PASSWORD=""
+}
+
+function changeOSPassword {
+    local user="$1"
+
+    askYesNo "Do you like to change the password for OS user '${user}'?" || return
+
+    passwd "$user"
+}
+
+function changeMariaDBPasswords {
+    local changed=0
+
+    askForNewPassword "MariaDB" "$MARIADB_SUPER_USERNAME"
+
+    if [[ -n "$NEW_PASSWORD" ]]; then
+        changeMariaDBPassword "$MARIADB_SUPER_USERNAME"
+        export MARIADB_SUPER_PASSWORD="$NEW_PASSWORD"
+        changed=1
+    fi
+
+    askForNewPassword "MariaDB" "$MARIADB_USERNAME"
+
+    if [[ -n "$NEW_PASSWORD" ]]; then
+        changeMariaDBPassword "$MARIADB_USERNAME"
+
+        /usr/bin/mysql -h"$MARIADB_HOSTNAME" \
+            -u"$MARIADB_SUPER_USERNAME" -p"$MARIADB_SUPER_PASSWORD" -e \
+            "UPDATE ${SYSTEM_DATABASE}.isys_mandator SET isys_mandator__db_pass = '${NEW_PASSWORD}';" || \
+            abort "Unable to alter tenant credentials in database"
+
+        sed -i \
+            "s/export MARIADB_PASSWORD=\".*\"/export MARIADB_PASSWORD=\"${NEW_PASSWORD}\"/" \
+            "$CONFIGURATION_FILE" || \
+            abort "Unable to change MariaDB password in file ${CONFIGURATION_FILE}"
+
+        changed=1
+    fi
+
+    if [[ "$changed" -eq 1 ]]; then
+        /usr/bin/mysql -h"$MARIADB_HOSTNAME" \
+            -u"$MARIADB_SUPER_USERNAME" -p"$MARIADB_SUPER_PASSWORD" -e \
+            "FLUSH PRIVILEGES;" || \
+            abort "Unable to flush MariaDB privileges"
+    fi
+}
+
+function askForMariaDBSuperPassword {
+    echo -e -n \
+        "Please enter current password for MariaDB super-user $MARIADB_SUPER_USERNAME: "
+    read -r answer
+    if [[ -n "$answer" ]]; then
+        export MARIADB_SUPER_PASSWORD="$answer"
+    fi
+}
+
+function changeMariaDBPassword {
+    local user="$1"
+
+    test -n "$MARIADB_SUPER_PASSWORD" || askForMariaDBSuperPassword
+
+    /usr/bin/mysql -h"$MARIADB_HOSTNAME" \
+        -u"$MARIADB_SUPER_USERNAME" -p"$MARIADB_SUPER_PASSWORD" -e \
+        "SET PASSWORD FOR '${user}'@'localhost' = PASSWORD('${NEW_PASSWORD}');" || \
+        abort "Unable to set new MariaDB password for user $user"
+}
+
+function changeAdminCenterPassword {
+    local user="admin"
+    local file="${INSTANCE_PATH}/src/config.inc.php"
+    #local hash=""
+
+    test -f "$file" || abort "File $file not found"
+
+    askForNewPassword "Admin Center" "$user"
+
+    test -n "$NEW_PASSWORD" || return
+
+    # TODO Does not work:
+    #hash="$(htpasswd -bnBC 10 "" "$NEW_PASSWORD")"
+
+    cat << EOF >> "$file" || \
+        abort "Unable to edit file ${file}"
+
+\$g_admin_auth = [
+    '${user}' => '${NEW_PASSWORD}',
+];
+EOF
+
+    chown "$APACHE_USER" "$file" || \
+        abort "Unable to change ownership for file $file"
+}
+
+function deleteDefaultUser {
+    local user="$1"
+
+    askYesNo \
+        "Do you like to delete user ${user} permanently from i-doit?" || \
+        return
+
+    test -n "$MARIADB_SUPER_PASSWORD" || askForMariaDBSuperPassword
+
+    /usr/bin/mysql -h"$MARIADB_HOSTNAME" \
+        -u"$MARIADB_SUPER_USERNAME" -p"$MARIADB_SUPER_PASSWORD" -e \
+        "DELETE FROM ${TENANT_DATABASE}.isys_obj WHERE isys_obj__title = '${user}';" || \
+        abort "Unable to i-doit user $user"
+}
+
+function askForNewPassword {
+    local topic="$1"
+    local user="$2"
+    local randomPassword=""
+    local password=""
+    local confirm=""
+
+    ## Reset password storage:
+    export NEW_PASSWORD=""
+
+    askYesNo "Do you like to change the password for $topic user '${user}'?" || return
+
+    randomPassword="$(eval "$PWGEN_BIN")"
+
+    echo -e -n "Please enter new password [leave empty for '${randomPassword}']: "
+    read -r answer
+    if [[ -n "$answer" ]]; then
+        password="$answer"
+    else
+        password="$randomPassword"
+    fi
+
+    echo -e -n "Confirm [leave empty for '${randomPassword}']: "
+    read -r answer
+    if [[ -n "$answer" ]]; then
+        confirm="$answer"
+    else
+        confirm="$randomPassword"
+    fi
+
+    if [[ "$password" != "$confirm" ]]; then
+        log "Password mismatch. Please re-try"
+        askForNewPassword
+    fi
+
+    export NEW_PASSWORD="$password"
+}
+
+function setup {
+    test "$(whoami)" = "$USER" || abort "Only user '${USER}' may execute this script"
+
+    test -f "$CONFIGURATION_FILE" || abort "Missing configuration file '${CONFIGURATION_FILE}'"
+
+    # shellcheck source=/dev/null
+    source "$CONFIGURATION_FILE" || abort "Unable to include configuration file"
+
+    test -d "$INSTANCE_PATH" || abort "No i-doit instance found under '${INSTANCE_PATH}'"
+
+    clearPasswordStorage
+}
+
+function askYesNo {
+    echo -n -e "$1 [Y]es [n]o: "
+
+    read -r answer
+
+    case "$answer" in
+        ""|"Y"|"Yes"|"y"|"yes")
+            return 0
+            ;;
+        "No"|"no"|"n"|"N")
+            return 1
+            ;;
+        *)
+            log "Sorry, what do you mean?"
+            askYesNo "$1"
+    esac
+}
+
+function log {
+    echo -e "$1"
+}
+
+function finish {
+    clearPasswordStorage
+
+    log "Done. Have fun :-)"
+    exit 0
+}
+
+function abort {
+    clearPasswordStorage
+
+    echo -e "$1" 1>&2
+    echo "Operation failed. Please check what is wrong and try again." 1>&2
+    exit 1
+}
+
+##--------------------------------------------------------------------------------------------------
+
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+    setup && execute && finish
+fi
