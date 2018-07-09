@@ -232,6 +232,8 @@ idoit-hotfix /path/to/hotfix.zip
 
 As already mentioned before some scripts provide configuration settings. These settings may be altered in a file located under `/etc/i-doit/i-doit.sh`.
 
+There is a default configuration file you may use: [`i-doit.sh`](i-doit.sh)
+
 | Setting               | Default Value                                                         | Description
 | --------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------
 | `CONSOLE_BIN`         | `/usr/local/bin/idoit`                                                | See "Easy-use of the i-doit CLI"                              |
@@ -248,7 +250,7 @@ As already mentioned before some scripts provide configuration settings. These s
 | `BACKUP_DIR`          | `/var/backups/i-doit`                                                 | Directory for local backups                                   |
 | `BACKUP_AGE`          | `30`                                                                  | Max. age of backup files (in days); `0` disables it           |
 
-The installation script `idoit-install` will ask the user to change most of the default values. **Pro tip:** You should set your own passwords. ;-)
+The installation script `idoit-install` will ask the user to change most of the default values. **Pro tip:** You should set your own passwords. ;-) You may alter them with `idoit-pwd`.
 
 
 ##  Contribute & Support
