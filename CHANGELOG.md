@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 -   `idoit-install`: Re-name file name
 -   `idoit-install`: Check for installed PHP extensions
 -   `idoit-install`: Add support for PHP 7.1
+-   `idoit-install`: Configure script by global variables
 -   `idoit-support`: Collect data about i-doit, installed add-ons and your system
 -   `idoit-pwd`: Alter passwords for various users and remove default users
 -   `i-doit.sh`: Default configuration file used by most scripts

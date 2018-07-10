@@ -27,29 +27,41 @@ IFS=$'\n\t'
 ##
 ## Configuration
 ##
-## You **should not** edit this config. You will be asked for your preferred settings.
+## You **should not** edit these settings.
+## You will be asked for your preferred settings.
+## To overwrite these settings export them before running this script.
+## For example:
+##     export MARIADB_INNODB_BUFFER_POOL_SIZE=2G
+##     ./idoit-install
 ##
 
-MARIADB_HOSTNAME="localhost"
-MARIADB_SUPERUSER_PASSWORD="idoit"
-MARIADB_INNODB_BUFFER_POOL_SIZE="1G"
+: "${MARIADB_HOSTNAME:="localhost"}"
+: "${MARIADB_SUPERUSER_PASSWORD:="idoit"}"
+: "${MARIADB_INNODB_BUFFER_POOL_SIZE:="1G"}"
+: "${IDOIT_ADMIN_CENTER_PASSWORD:="admin"}"
+: "${MARIADB_IDOIT_USERNAME:="idoit"}"
+: "${MARIADB_IDOIT_PASSWORD:="idoit"}"
+: "${IDOIT_DEFAULT_TENANT:="CMDB"}"
+: "${INSTALL_DIR:="/var/www/html"}"
+: "${UPDATE_FILE_PRO:="https://i-doit.com/updates.xml"}"
+: "${UPDATE_FILE_OPEN:="https://i-doit.org/updates.xml"}"
+: "${SCRIPT_SETTINGS:="/etc/i-doit/i-doit.sh"}"
+: "${CONSOLE_BIN:="/usr/local/bin/idoit"}"
+: "${JOBS_BIN:="/usr/local/bin/idoit-jobs"}"
+: "${CRON_FILE:="/etc/cron.d/i-doit"}"
+: "${BACKUP_DIR:="/var/backups/i-doit"}"
+
+##
+## Runtime settings
+##
+## DO NOT EDIT THESE SETTINGS.
+##
+
+OS=""
+DATE="$(date +%Y-%m-%d)"
+TMP_DIR="/tmp/i-doit_${DATE}"
 APACHE_USER="www-data"
 APACHE_GROUP="www-data"
-IDOIT_ADMIN_CENTER_PASSWORD="admin"
-MARIADB_IDOIT_USERNAME="idoit"
-MARIADB_IDOIT_PASSWORD="idoit"
-IDOIT_DEFAULT_TENANT="CMDB"
-INSTALL_DIR="/var/www/html"
-DATE=$(date +%Y-%m-%d)
-TMP_DIR="/tmp/i-doit_${DATE}"
-UPDATE_FILE_PRO="https://i-doit.com/updates.xml"
-UPDATE_FILE_OPEN="https://i-doit.org/updates.xml"
-OS=""
-SCRIPT_SETTINGS="/etc/i-doit/i-doit.sh"
-CONSOLE_BIN="/usr/local/bin/idoit"
-JOBS_BIN="/usr/local/bin/idoit-jobs"
-CRON_FILE="/etc/cron.d/i-doit"
-BACKUP_DIR="/var/backups/i-doit"
 MIN_CPU_CORES=2
 ## Be tolerant, use 1000 instead of 1024:
 MIN_RAM=$((1000*1000*1000*2))
