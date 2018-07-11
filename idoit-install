@@ -1274,7 +1274,7 @@ function deployScript {
             abort "Unable to fetch file from '${url}'"
     )
 
-    chmod 777 "$tmp_file" || abort "Unable to set read/write/executable bits"
+    chmod 775 "$tmp_file" || abort "Unable to set read/write/executable bits"
 
     mv "$tmp_file" "/usr/local/bin/$file" || abort "Unable to move file to '/usr/local/bin/'"
 }
