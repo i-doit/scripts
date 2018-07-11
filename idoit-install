@@ -902,6 +902,9 @@ EOF
             "$a2_en_site" i-doit || abort "Unable to enable VHost settings"
             log "Enable Apache module rewrite"
             "$a2_en_mod" rewrite || abort "Unable to enable Apache module rewrite"
+            log "Let every user read the logs"
+            chmod 755 /var/log/apache2
+            chmod 664 /var/log/apache2/*
             log "Restart Apache Web server"
             systemctl -q restart apache2.service || abort "Unable to restart Apache Web server"
             ;;
@@ -1005,6 +1008,10 @@ innodb_stats_on_metadata = 0
 
 sql-mode = ""
 EOF
+
+    log "Let every user read the logs"
+    chmod 755 /var/log/mysql
+    chmod 664 /var/log/mysql/*
 
     log "Start MariaDB"
     systemctl -q start "$mariadb_service" || abort "Unable to start MariaDB"
