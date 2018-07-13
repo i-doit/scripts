@@ -50,6 +50,7 @@ function execute {
     collectIdoitData
     includeInstance
     includeDatabases
+    collectApplianceData
     packData
     cleanUp
 
@@ -175,6 +176,12 @@ function dumpDatabase {
     /usr/bin/mysqldump \
         -h"$MARIADB_HOSTNAME" -u"$MARIADB_USERNAME" -p"$MARIADB_PASSWORD" "$dbName" | \
         gzip -9 > "${TMP_DIR}/${dbName}.sql.gz"
+}
+
+function collectApplianceData {
+    log "Collect information about the i-doit virtual appliance"
+
+    copyFile "/etc/appliance_version"
 }
 
 function copyFile {
