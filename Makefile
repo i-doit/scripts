@@ -1,6 +1,8 @@
 PREFIX ?= /usr/local
 
-shellcheck:
+VERSION ?= $(shell ./idoit-install --version)
+
+shellcheck :
 	shellcheck i-doit.sh
 	shellcheck idoit
 	shellcheck idoit-backup
@@ -11,10 +13,10 @@ shellcheck:
 	shellcheck idoit-restore
 	shellcheck idoit-support
 
-deb:
+deb :
 	fpm -s dir -t deb \
 	--name idoit-scripts \
-	--version 0.10 \
+	--version $(VERSION) \
 	--architecture all \
 	--license AGPLv3+ \
 	--maintainer "Benjamin Heisig <benjamin@heisig.name>" \
@@ -32,19 +34,20 @@ deb:
 	idoit-install=/usr/bin \
 	idoit-jobs=/usr/bin \
 	idoit-pwd=/usr/bin \
-	idoit-restore=/usr/bin
+	idoit-restore=/usr/bin \
+	idoit-support=/usr/bin
 
-lintian:
+lintian :
 	lintian *.deb
 
-install:
+install :
 	install idoit* $(PREFIX)/bin/
 	mkdir -p /etc/i-doit
 	install i-doit.sh /etc/i-doit
 
-uninstall:
+uninstall :
 	rm -f $(PREFIX)/bin/idoit*
 	rm -rf /etc/i-doit/
 
-clean:
+clean :
 	rm -f *.deb
