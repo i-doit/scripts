@@ -487,13 +487,9 @@ function configureDebian9 {
     apt-get -qq --yes install \
         apache2 libapache2-mod-fcgid \
         mariadb-client mariadb-server \
-        php php-bcmath php-cli php-common php-curl php-fpm php-gd php-imagick php-json php-ldap \
+        php-bcmath php-cli php-common php-curl php-fpm php-gd php-imagick php-json php-ldap \
         php-mbstring php-mcrypt php-memcached php-mysql php-pgsql php-soap php-xml php-zip \
         memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
-
-    log "Remove unwanted Apache module for PHP"
-    apt-get -qq --yes remove libapache2-mod-php7.0 || \
-        abort "Unable to remove package"
 }
 
 function configureUbuntu1604 {
