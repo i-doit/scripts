@@ -490,6 +490,10 @@ function configureDebian9 {
         php php-bcmath php-cli php-common php-curl php-fpm php-gd php-imagick php-json php-ldap \
         php-mbstring php-mcrypt php-memcached php-mysql php-pgsql php-soap php-xml php-zip \
         memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
+
+    log "Remove unwanted Apache module for PHP"
+    apt-get -qq --yes remove libapache2-mod-php7.0 || \
+        abort "Unable to remove package"
 }
 
 function configureUbuntu1604 {
@@ -811,6 +815,7 @@ EOF
 
 function configureApache {
     local a2_en_mod=""
+    local a2_dis_mod=""
     local a2_en_site=""
     local a2_dis_site=""
 
@@ -918,12 +923,12 @@ EOF
             RewriteRule .svn/ - [F]
             RewriteRule ^controller$ - [F]
             # Our code relies on the "controller.php" - See ID-5153
-            #RewriteRule ^controller\.php$ - [F]
-            RewriteRule ^console\.php$ - [F]
+            #RewriteRule ^controller\\.php$ - [F]
+            RewriteRule ^console\\.php$ - [F]
             RewriteRule ^(INSTALL|UPDATE|checkmk_transfer.sh|idoit-rights.sh|vendor)$ - [F]
 
             # favicon rewrite
-            RewriteRule favicon\.ico$ images/favicon.ico [L]
+            RewriteRule favicon\\.ico$ images/favicon.ico [L]
 
             # base rewriting
             RewriteCond %{REQUEST_FILENAME} !-l
@@ -938,23 +943,25 @@ EOF
     </Directory>
 
     <Directory ${INSTALL_DIR}/imports/>
-        <FilesMatch "\.(.*)$">
+        <FilesMatch "\\.(.*)$">
             Require all denied
         </FilesMatch>
     </Directory>
 
     <Directory ${INSTALL_DIR}/src/>
-        <Files ~ (.*?\.php)>
+        <Files ~ (.*?\\.php)>
             Require all denied
         </Files>
 
-        <Files ~ (rt\.php|barcode_window\.php|barcode\.php|qr\.php|qr_img\.php|js\.php|jsonrpc\.php)>
+        <Files ~ (rt\\.php|barcode_window\\.php|barcode\\.php|qr\\.php|qr_img\\.php|js\\.php|jsonrpc\\.php)>
             Require all granted
         </Files>
     </Directory>
 
-    <FilesMatch \.php$>
-        SetHandler "proxy:unix:/var/run/php/php7.0-fpm.sock|fcgi://localhost"
+    <FilesMatch "\\.php$">
+        <If "-f %{REQUEST_FILENAME}">
+            SetHandler "proxy:unix:/var/run/php/php7.0-fpm.sock|fcgi://localhost"
+        </If>
     </FilesMatch>
 
     LogLevel warn
@@ -978,11 +985,16 @@ EOF
             "$a2_dis_mod" mpm_prefork || abort "Unable to enable Apache module mpm_prefork"
             log "Enable Apache module mpm_event"
             "$a2_en_mod" mpm_event || abort "Unable to enable Apache module mpm_event"
+            log "Enable Apache module proxy"
+            "$a2_en_mod" proxy || abort "Unable to enable Apache module proxy"
+            log "Enable Apache module proxy_fcgi"
+            "$a2_en_mod" proxy_fcgi || abort "Unable to enable Apache module proxy_fcgi"
             log "Let every user read the logs"
             chmod 755 /var/log/apache2
             chmod 664 /var/log/apache2/*
             log "Restart Apache Web server"
-            systemctl -q restart apache2.service || abort "Unable to restart Apache Web server"
+            systemctl -q restart apache2.service || \
+                abort "Unable to restart Apache Web server"
             ;;
         *)
             a2_en_site=$(command -v a2ensite)
