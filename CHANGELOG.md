@@ -8,7 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ##  [Unreleased]
 
-_tbd_
+
+### Fixed
+
+-   `idoit-install`: Install missing PHP7 imagick module (SLES12)
 
 
 ##  [0.11] – 2018-07-13
