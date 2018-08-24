@@ -122,7 +122,7 @@ function execute {
 
     log "\\n--------------------------------------------------------------------------------\\n"
 
-    askYesNo "Do you want to configure the PHP environment?" && configurePHP
+    askYesNo "Do you want to configure the PHP environment?" && configurePHP && configurePHPFPM
 
     log "\\n--------------------------------------------------------------------------------\\n"
 
@@ -668,13 +668,13 @@ function configureSLES12 {
 
     log "Install software packages"
     zypper --quiet --non-interactive install \
-        apache2 apache2-mod_php7 \
+        apache2 \
         mariadb mariadb-client \
         memcached \
-        php7 php7-bcmath php7-bz2 php7-ctype php7-curl php7-gd php7-gettext php7-json php7-ldap \
-        php7-mbstring php7-mcrypt php7-memcached php7-mysql php7-opcache php7-openssl php7-pdo \
-        php7-pgsql php7-phar php7-posix php7-soap php7-sockets php7-sqlite php7-xsl php7-zip \
-        php7-zlib || \
+        php7 php7-bcmath php7-bz2 php7-ctype php7-curl php7-fpm php7-gd php7-gettext php7-json \
+        php7-ldap php7-mbstring php7-mcrypt php7-memcached php7-mysql php7-opcache php7-openssl \
+        php7-pdo php7-pgsql php7-phar php7-posix php7-soap php7-sockets php7-sqlite php7-xsl \
+        php7-zip php7-zlib || \
         abort "Unable to install required software packages"
 
     zypper --quiet --non-interactive clean || abort "Unable to clean up cached software packages"
@@ -799,12 +799,38 @@ EOF
         log "Enable PHP module for memcached"
         "$php_en_mod" memcached
     fi
+}
+
+function configurePHPFPM {
+    log "Configure PHP-FPM"
 
     case "$OS" in
         "debian9")
-            log "Restart PHP process"
+            log "Restart PHP FPM"
             systemctl -q restart php7.0-fpm || abort \
-                "Unable to restart PHP process"
+                "Unable to restart service"
+            ;;
+        "sles12sp2"|"sles12sp3")
+            log "Enable PHP FPM configuration files"
+            cp /etc/php7/fpm/php-fpm.conf{.default,} || \
+                abort "Unable to copy file"
+            cat << EOF > /etc/php7/fpm/php-fpm.d/i-doit.conf || abort "Unable to create and edit file '/etc/php7/fpm/php-fpm.d/i-doit.conf'"
+[i-doit]
+listen = /var/run/php-fpm.sock
+user = ${APACHE_USER}
+group = ${APACHE_GROUP}
+listen.owner = ${APACHE_USER}
+listen.group = ${APACHE_GROUP}
+pm = dynamic
+pm.max_children = 5
+pm.start_servers = 2
+pm.min_spare_servers = 1
+pm.max_spare_servers = 3
+security.limit_extensions = .php
+EOF
+            log "Start PHP FPM"
+            systemctl -q start php-fpm || abort \
+                "Unable to restart service"
             ;;
     esac
 }
@@ -848,18 +874,82 @@ EOF
             cat << EOF > /etc/apache2/vhosts.d/i-doit.conf || \
                 abort "Unable to create and edit file '/etc/apache2/vhosts.d/i-doit.conf'"
 <VirtualHost *:80>
-        ServerAdmin i-doit@example.net
+    ServerAdmin i-doit@example.net
 
-        DocumentRoot ${INSTALL_DIR}/
-        <Directory ${INSTALL_DIR}/>
-                # See ${INSTALL_DIR}/.htaccess for details
-                AllowOverride All
-                Require all granted
-        </Directory>
+    DirectoryIndex index.php
+    DocumentRoot ${INSTALL_DIR}/
+    <Directory ${INSTALL_DIR}/>
+        AllowOverride None
+        Options -Indexes +FollowSymlinks
+        Require all granted
 
-        LogLevel warn
-        ErrorLog /var/log/apache2/error.log
-        CustomLog /var/log/apache2/access.log combined
+        <IfModule mod_expires.c>
+            ExpiresActive On
+            ExpiresByType image/gif A2592000
+            ExpiresByType image/png A2592000
+            ExpiresByType image/jpg A2592000
+            ExpiresByType image/jpeg A2592000
+            ExpiresByType image/ico A2592000
+            ExpiresByType text/css A2592000
+            ExpiresByType text/javascript A2592000
+            ExpiresByType image/x-icon "access 1 year"
+            ExpiresDefault "access 2 week"
+            <IfModule mod_headers.c>
+                Header append Cache-Control "public"
+            </IfModule>
+        </IfModule>
+
+        <IfModule mod_rewrite.c>
+            RewriteEngine On
+
+            # security rules
+            RewriteRule .svn/ - [F]
+            RewriteRule ^controller$ - [F]
+            # Our code relies on the "controller.php" - See ID-5153
+            #RewriteRule ^controller\\.php$ - [F]
+            RewriteRule ^console\\.php$ - [F]
+            RewriteRule ^(INSTALL|UPDATE|checkmk_transfer.sh|idoit-rights.sh|vendor)$ - [F]
+
+            # favicon rewrite
+            RewriteRule favicon\\.ico$ images/favicon.ico [L]
+
+            # base rewriting
+            RewriteCond %{REQUEST_FILENAME} !-l
+            RewriteCond %{REQUEST_FILENAME} !-f
+            RewriteCond %{REQUEST_FILENAME} !-d
+            RewriteRule .* index.php [L,QSA]
+        </IfModule>
+
+        <Files *.yml>
+            Require all denied
+        </Files>
+    </Directory>
+
+    <Directory ${INSTALL_DIR}/imports/>
+        <FilesMatch "\\.(.*)$">
+            Require all denied
+        </FilesMatch>
+    </Directory>
+
+    <Directory ${INSTALL_DIR}/src/>
+        <Files ~ (.*?\\.php)>
+            Require all denied
+        </Files>
+
+        <Files ~ (rt\\.php|barcode_window\\.php|barcode\\.php|qr\\.php|qr_img\\.php|js\\.php|jsonrpc\\.php)>
+            Require all granted
+        </Files>
+    </Directory>
+
+    <FilesMatch "\\.php$">
+        <If "-f %{REQUEST_FILENAME}">
+            SetHandler "proxy:unix:/var/run/php-fpm.sock|fcgi://localhost"
+        </If>
+    </FilesMatch>
+
+    LogLevel warn
+    ErrorLog /var/log/apache2/error.log
+    CustomLog /var/log/apache2/access.log combined
 </VirtualHost>
 EOF
 
@@ -867,12 +957,12 @@ EOF
             chown "$APACHE_USER":"$APACHE_GROUP" -R "${INSTALL_DIR}/" || \
                 abort "Unable to change ownership"
 
-            log "Enable Apache module for PHP 7"
-            "$a2_en_mod" php7 || abort "Unable to enable Apache module php7"
-
+            log "Enable Apache module proxy"
+            "$a2_en_mod" proxy || abort "Unable to enable Apache module proxy"
+            log "Enable Apache module proxy_fcgi"
+            "$a2_en_mod" proxy_fcgi || abort "Unable to enable Apache module proxy_fcgi"
             log "Enable Apache module rewrite"
             "$a2_en_mod" rewrite || abort "Unable to enable Apache module rewrite"
-
             log "Enable Apache module mod_access_compat"
             "$a2_en_mod" mod_access_compat || abort "Unable to enable Apache module mod_access_compat"
 

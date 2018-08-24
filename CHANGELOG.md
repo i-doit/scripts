@@ -11,9 +11,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
--   `idoit-install`: Switch from Apache module php to fcgid with php-fpm (Debian GNU/Linux 9 only)
+-   `idoit-install`: Switch from Apache module php to fastcgi with php-fpm (Debian/SLES only)
+-   `idoit-install`: Merge i-doit's .htaccess files into Apache site configuration (Debian/SLES only)
 -   `idoit-install`: Switch from Apache module mpm_prefork to mpm_event (Debian GNU/Linux 9 only)
--   `idoit-install`: Merge i-doit's .htaccess files into Apache site configuration (Debian GNU/Linux 9 only)
 
 
 ##  [0.11] – 2018-07-13
