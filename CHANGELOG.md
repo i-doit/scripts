@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 -   `idoit-install`: Switch from Apache module mpm_prefork to mpm_event (Debian GNU/Linux 9 only)
 
 
+### Fixed
+
+-   `idoit-install`: Install missing PHP7 imagick module (SLES12)
+
+
 ##  [0.11] – 2018-07-13
 
 
