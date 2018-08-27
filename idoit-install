@@ -553,7 +553,7 @@ function configureRHEL {
     rm -rf /var/cache/yum || abort "Unable to remove orphaned yum caches"
 
     log "Install some important packages, for example Apache Web server"
-    yum --assumeyes --quiet install httpd unzip zip wget || \
+    yum --assumeyes --quiet install httpd memcached unzip wget zip || \
         abort "Unable to install packages"
 
     log "$os_description $os_release has out-dated packages for PHP and MariaDB."
@@ -580,7 +580,7 @@ function configureRHEL {
 
     log "Install PHP packages"
     yum --assumeyes --quiet install \
-        php71w php71w-bcmath php71w-cli php71w-common php71w-gd php71w-ldap php71w-mbstring \
+        php71w-bcmath php71w-cli php71w-common php71w-fpm php71w-gd php71w-ldap php71w-mbstring \
         php71w-mcrypt php71w-mysqlnd php71w-opcache php71w-pdo php71w-pecl-imagick \
         php71w-pecl-memcached php71w-pgsql php71w-soap php71w-xml || \
         abort "Unable to install PHP packages"
@@ -839,9 +839,31 @@ function configurePHPFPM {
             systemctl -q restart php7.0-fpm || abort \
                 "Unable to restart service"
             ;;
+        "rhel73"|"rhel74"|"rhel75"|"centos73"|"centos74"|"centos75")
+            log "Disable default configuration file"
+            mv /etc/php-fpm.d/www.conf{,.bak} || \
+                abort "Unable to disable default configuration file"
+            cat << EOF > /etc/php-fpm.d/i-doit.conf || abort "Unable to create and edit file '/etc/php-fpm.d/i-doit.conf'"
+[i-doit]
+listen = /var/run/php-fpm/php-fpm.sock
+user = ${APACHE_USER}
+group = ${APACHE_GROUP}
+listen.owner = ${APACHE_USER}
+listen.group = ${APACHE_GROUP}
+pm = dynamic
+pm.max_children = 50
+pm.start_servers = 5
+pm.min_spare_servers = 5
+pm.max_spare_servers = 35
+security.limit_extensions = .php
+EOF
+            log "Start PHP FPM"
+            systemctl -q start php-fpm || abort \
+                "Unable to restart service"
+            ;;
         "sles12sp2"|"sles12sp3")
             log "Enable PHP FPM configuration files"
-            cp /etc/php7/fpm/php-fpm.conf{.default,} || \
+            mv /etc/php7/fpm/php-fpm.conf{.default,} || \
                 abort "Unable to copy file"
             cat << EOF > /etc/php7/fpm/php-fpm.d/i-doit.conf || abort "Unable to create and edit file '/etc/php7/fpm/php-fpm.d/i-doit.conf'"
 [i-doit]
@@ -861,6 +883,8 @@ EOF
             systemctl -q start php-fpm || abort \
                 "Unable to restart service"
             ;;
+        *)
+            log "Nope. This OS will stuck on mod_php."
     esac
 }
 
@@ -876,9 +900,76 @@ function configureApache {
         "rhel73"|"rhel74"|"rhel75"|"centos73"|"centos74"|"centos75")
             cat << EOF > /etc/httpd/conf.d/i-doit.conf || \
                 abort "Unable to create and edit file '/etc/httpd/conf.d/i-doit.conf'"
-<Directory /var/www/html/>
-        AllowOverride All
+DirectoryIndex index.php
+DocumentRoot ${INSTALL_DIR}/
+<Directory ${INSTALL_DIR}/>
+    AllowOverride None
+    Options -Indexes +FollowSymlinks
+    Require all granted
+
+    <IfModule mod_expires.c>
+        ExpiresActive On
+        ExpiresByType image/gif A2592000
+        ExpiresByType image/png A2592000
+        ExpiresByType image/jpg A2592000
+        ExpiresByType image/jpeg A2592000
+        ExpiresByType image/ico A2592000
+        ExpiresByType text/css A2592000
+        ExpiresByType text/javascript A2592000
+        ExpiresByType image/x-icon "access 1 year"
+        ExpiresDefault "access 2 week"
+        <IfModule mod_headers.c>
+            Header append Cache-Control "public"
+        </IfModule>
+    </IfModule>
+
+    <IfModule mod_rewrite.c>
+        RewriteEngine On
+
+        # security rules
+        RewriteRule .svn/ - [F]
+        RewriteRule ^controller$ - [F]
+        # Our code relies on the "controller.php" - See ID-5153
+        #RewriteRule ^controller\\.php$ - [F]
+        RewriteRule ^console\\.php$ - [F]
+        RewriteRule ^(INSTALL|UPDATE|checkmk_transfer.sh|idoit-rights.sh|vendor)$ - [F]
+
+        # favicon rewrite
+        RewriteRule favicon\\.ico$ images/favicon.ico [L]
+
+        # base rewriting
+        RewriteCond %{REQUEST_FILENAME} !-l
+        RewriteCond %{REQUEST_FILENAME} !-f
+        RewriteCond %{REQUEST_FILENAME} !-d
+        RewriteRule .* index.php [L,QSA]
+    </IfModule>
+
+    <Files *.yml>
+        Require all denied
+    </Files>
 </Directory>
+
+<Directory ${INSTALL_DIR}/imports/>
+    <FilesMatch "\\.(.*)$">
+        Require all denied
+    </FilesMatch>
+</Directory>
+
+<Directory ${INSTALL_DIR}/src/>
+    <Files ~ (.*?\\.php)>
+        Require all denied
+    </Files>
+
+    <Files ~ (rt\\.php|barcode_window\\.php|barcode\\.php|qr\\.php|qr_img\\.php|js\\.php|jsonrpc\\.php)>
+        Require all granted
+    </Files>
+</Directory>
+
+<FilesMatch "\\.php$">
+    <If "-f %{REQUEST_FILENAME}">
+        SetHandler "proxy:unix:/var/run/php-fpm/php-fpm.sock|fcgi://localhost"
+    </If>
+</FilesMatch>
 EOF
 
             test ! -d "$INSTALL_DIR" && (
@@ -894,6 +985,12 @@ EOF
                 abort "Unable to give read permissions recursively"
             chcon -t httpd_sys_rw_content_t "${INSTALL_DIR}/" -R || \
                 abort "Unable to give write permissions recursively"
+            log "Disable MPM prefork"
+            sed -i "/.* mpm_prefork_module /s/^#*/#/" /etc/httpd/conf.modules.d/00-mpm.conf || \
+                abort "sed exited with error"
+            log "Enable MPM event"
+            sed -i "/^#.* mpm_event_module /s/^#//" /etc/httpd/conf.modules.d/00-mpm.conf || \
+                abort "sed exited with error"
             log "Restart Apache Web server"
             systemctl -q restart httpd.service || abort "Unable to restart Apache Web server"
             ;;
@@ -1119,18 +1216,18 @@ EOF
             cat << EOF > /etc/apache2/sites-available/i-doit.conf || \
                 abort "Unable to create and edit file '/etc/apache2/sites-available/i-doit.conf'"
 <VirtualHost *:80>
-        ServerAdmin i-doit@example.net
+    ServerAdmin i-doit@example.net
 
-        DocumentRoot ${INSTALL_DIR}/
-        <Directory ${INSTALL_DIR}/>
-                # See ${INSTALL_DIR}/.htaccess for details
-                AllowOverride All
-                Require all granted
-        </Directory>
+    DocumentRoot ${INSTALL_DIR}/
+    <Directory ${INSTALL_DIR}/>
+        # See ${INSTALL_DIR}/.htaccess for details
+        AllowOverride All
+        Require all granted
+    </Directory>
 
-        LogLevel warn
-        ErrorLog \${APACHE_LOG_DIR}/error.log
-        CustomLog \${APACHE_LOG_DIR}/access.log combined
+    LogLevel warn
+    ErrorLog \${APACHE_LOG_DIR}/error.log
+    CustomLog \${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
 EOF
 

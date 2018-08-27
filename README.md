@@ -36,9 +36,9 @@ Before you execute this script you …
 
 The script includes several steps which are essential for i-doit:
 
--   Install needed distribution packages (LAMP stack)
+-   Install needed distribution packages (LAMP stack incl. memcached)
 -   Configure PHP
--   Configure Apache Web server
+-   Configure Apache Web server (with PHP-FPM and Event MPM)
 -   Configure MariaDB DBMS
 -   Download and install the latest version of i-doit pro or open
 -   Deploy cron jobs and an easy-to-use CLI tool for your i-doit instance
