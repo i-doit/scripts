@@ -384,9 +384,17 @@ function checkRequirements {
     binaries["wget"]="$WGET_BIN"
     binaries["php"]="$PHP_BIN"
     binaries["systemctl"]=$(command -v systemctl)
-    binaries["apachectl"]=$(command -v apachectl)
     binaries["chronic"]=$(command -v chronic)
     binaries["memcached"]=$(command -v memcached)
+
+    case "$OS" in
+        "rhel73"|"rhel74"|"rhel75"|"centos73"|"centos74"|"centos75")
+            binaries["httpd"]=$(command -v httpd)
+            ;;
+        *)
+            binaries["apachectl"]=$(command -v apachectl)
+            ;;
+    esac
 
     for bin in "${!binaries[@]}"; do
         if [[ -x "${binaries[$bin]}" ]]; then
@@ -501,9 +509,9 @@ function configureUbuntu1604 {
 
     log "Install required Ubuntu packages"
     apt-get -qq --yes install \
-        apache2 libapache2-mod-php \
+        apache2 libapache2-mod-fcgid \
         mariadb-client mariadb-server \
-        php php-bcmath php-cli php-common php-curl php-gd php-imagick php-json php-ldap \
+        php-bcmath php-cli php-common php-curl php-fpm php-gd php-imagick php-json php-ldap \
         php-mbstring php-mcrypt php-memcached php-mysql php-pgsql php-soap php-xml php-zip \
         memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
 }
@@ -834,7 +842,7 @@ function configurePHPFPM {
     log "Configure PHP-FPM"
 
     case "$OS" in
-        "debian9")
+        "debian9"|"ubuntu1604"|"ubuntu1610"|"ubuntu1704")
             log "Restart PHP FPM"
             systemctl -q restart php7.0-fpm || abort \
                 "Unable to restart service"
@@ -1095,7 +1103,7 @@ EOF
             log "Restart Apache Web server"
             systemctl -q restart apache2.service || abort "Unable to restart Apache Web server"
             ;;
-        "debian9")
+        "debian9"|"ubuntu1604"|"ubuntu1610"|"ubuntu1704")
             a2_en_site=$(command -v a2ensite)
             a2_dis_site=$(command -v a2dissite)
             a2_en_mod=$(command -v a2enmod)
@@ -1106,6 +1114,7 @@ EOF
 <VirtualHost *:80>
     ServerAdmin i-doit@example.net
 
+    DirectoryIndex index.php
     DocumentRoot ${INSTALL_DIR}/
     <Directory ${INSTALL_DIR}/>
         AllowOverride None

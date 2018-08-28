@@ -11,10 +11,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
--   `idoit-install`: Switch from Apache module php to fastcgi with php-fpm (Debian/SLES/RHEL/CentOS only)
--   `idoit-install`: Merge i-doit's .htaccess files into Apache site configuration (Debian/SLES/RHEL/CentOS only)
--   `idoit-install`: Switch from Apache module mpm_prefork to mpm_event (Debian/RHEL only)
+-   `idoit-install`: Switch from Apache module php to fastcgi with php-fpm
+-   `idoit-install`: Merge i-doit's .htaccess files into Apache site configuration
+-   `idoit-install`: Switch from Apache module mpm_prefork to mpm_event (Debian/RHEL/Ubuntu only)
 -   `idoit-install`: Set locale to US or GB English because interaction with some commands would fail (for example, `vmstat` on Ubuntu Linux)
+-   `idoit-install`: To install PHP module imagick on SLES 3rd-party repository "server:php:extensions:php7" from OpenSUSE is required
 -   `idoit-install`: Do not abort installation if user doesn't enable EPEL on RHEL/CentOS
 
 
