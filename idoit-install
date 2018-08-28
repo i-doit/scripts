@@ -717,10 +717,12 @@ function configureSLES12 {
     log "Enable services"
     systemctl -q enable apache2.service || abort "Cannot enable Apache Web server"
     systemctl -q enable mysql.service || abort "Cannot enable MariaDB server"
+    systemctl -q enable memcached.service || abort "Cannot enable memcached server"
 
     log "Start services"
     systemctl -q start apache2.service || abort "Unable to start Apache Web server"
     systemctl -q start mysql.service || abort "Unable to start MariaDB server"
+    systemctl -q start memcached.service || abort "Unable to start memcached server"
 
     log "Allow incoming HTTP traffic"
     SuSEfirewall2 open EXT TCP http || "Unable to open port 80"
