@@ -111,7 +111,7 @@ function execute {
 
     log "\\n--------------------------------------------------------------------------------\\n"
 
-    log "This script needs Web access (HTTPS-only)."
+    log "This script needs Web access (HTTP/HTTPS on ports 80/443)."
     askNoYes "Do you want to configure a proxy server?" || configureProxy
 
     log "\\n--------------------------------------------------------------------------------\\n"
@@ -348,7 +348,7 @@ function checkRequirements {
     else
         log "Less than $MIN_CPU_CORES CPU cores detected"
         log "Found only $cores CPU core(s)."
-        log "Your system does not met the requirements. See:"
+        log "Your system does not meet the requirements. See:"
         log ""
         log "    <https://kb.i-doit.com/display/en/System+Requirements>"
         log ""
@@ -361,8 +361,8 @@ function checkRequirements {
         log "$ram bytes of total memory detected; $MIN_RAM is required minimum"
     else
         log "Less than $MIN_RAM bytes of total memory detected"
-        log "Found ony $ram bytes."
-        log "Your system does not met the requirements. See:"
+        log "Found only $ram bytes."
+        log "Your system does not meet the requirements. See:"
         log ""
         log "    <https://kb.i-doit.com/display/en/System+Requirements>"
         log ""
@@ -563,27 +563,27 @@ function configureRHEL {
     log "    Official MariaDB repository for MariaDB 10.1"
     log ""
 
-    askYesNo "Do you agree with it?" || abort "Requirements for i-doit not met"
+    if askYesNo "Do you agree with it?"; then
+        log "Import EPEL public GPG key"
+        rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7 || \
+            abort "Unable to import public GPG key from EPEL"
+        log "Add EPEL releases"
+        rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm || \
+            abort "Unable to install epel-releases via yum"
+        log "Import Webtatic public GPG key"
+        rpm --import --quiet https://mirror.webtatic.com/yum/RPM-GPG-KEY-webtatic-el7 || \
+            abort "Unable to import GPG key from Webtatic"
+        log "Add Webtatic releases"
+        rpm -Uvh --quiet https://mirror.webtatic.com/yum/el7/webtatic-release.rpm || \
+            abort "Unable to add Webtatic"
 
-    log "Import EPEL public GPG key"
-    rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7 || \
-        abort "Unable to import public GPG key from EPEL"
-    log "Add EPEL releases"
-    rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm || \
-        abort "Unable to install epel-releases via yum"
-    log "Import Webtatic public GPG key"
-    rpm --import --quiet https://mirror.webtatic.com/yum/RPM-GPG-KEY-webtatic-el7 || \
-        abort "Unable to import GPG key from Webtatic"
-    log "Add Webtatic releases"
-    rpm -Uvh --quiet https://mirror.webtatic.com/yum/el7/webtatic-release.rpm || \
-        abort "Unable to add Webtatic"
-
-    log "Install PHP packages"
-    yum --assumeyes --quiet install \
-        php71w-bcmath php71w-cli php71w-common php71w-fpm php71w-gd php71w-ldap php71w-mbstring \
-        php71w-mcrypt php71w-mysqlnd php71w-opcache php71w-pdo php71w-pecl-imagick \
-        php71w-pecl-memcached php71w-pgsql php71w-soap php71w-xml || \
-        abort "Unable to install PHP packages"
+        log "Install PHP packages"
+        yum --assumeyes --quiet install \
+            php71w-bcmath php71w-cli php71w-common php71w-fpm php71w-gd php71w-ldap php71w-mbstring \
+            php71w-mcrypt php71w-mysqlnd php71w-opcache php71w-pdo php71w-pecl-imagick \
+            php71w-pecl-memcached php71w-pgsql php71w-soap php71w-xml || \
+            abort "Unable to install PHP packages"
+    fi
 
     log "Enable MariaDB repository"
     cat << EOF > /etc/yum.repos.d/MariaDB.repo || \
@@ -1625,6 +1625,14 @@ function deployScript {
 }
 
 function setup {
+    if locale -a | grep "^en_US.utf8" > /dev/null; then
+        export LC_ALL="en_US.utf8"
+    elif locale -a | grep "^en_GB.utf8" > /dev/null; then
+        export LC_ALL="en_GB.utf8"
+    else
+        log "This script may fail because it depends on US/GB English locale. We try it anyway…"
+    fi
+
     test "$(whoami)" = "root" || abort "Superuser rights required"
 
     mkdir -p "$TMP_DIR" || abort "Unable to create temporary directory"
