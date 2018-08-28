@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 -   `idoit-install`: Install missing PHP7 imagick module (SLES12)
 -   `idoit-install`: Prevent MariaDB service failing on startup/shutdown (Ubuntu Linux)
+-   `idoit-install`: Enable and start memcached service (RHEL/CentOS)
 
 
 ##  [0.11] – 2018-07-13
