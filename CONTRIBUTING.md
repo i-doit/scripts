@@ -71,6 +71,12 @@ There you find the following file structure:
 ├── CODE_OF_CONDUCT.md  # Code of conduct
 ├── CONTRIBUTING.md     # This file
 ├── cron                # Pre-defined cron jobs
+├── docs                # Templates for GitHub
+│   ├── issue_template.md
+│   └── pull_request_template.md
+├── .editorconfig       # Editor configuration settings
+├── .gitattributes      # Git configuration settings
+├── .gitignore          # Files/directories to be ignored by git
 ├── idoit               # Easy-use of the i-doit CLI
 ├── idoit-backup        # Backup i-doit files and databases
 ├── idoit-hotfix        # Deploy hot fixes
@@ -82,7 +88,8 @@ There you find the following file structure:
 ├── idoit-support       # Collect data about i-doit, installed add-ons and your system
 ├── LICENSE             # License information
 ├── Makefile            # Make rules (see above)
-└── README.md           # Documentation
+├── README.md           # Documentation
+└── .travis.yml         # Configuration settings for Travis-CI continuous integration server
 ~~~
 
 Now your system is ready for your contributions. Do not forget to commit your changes. When you are done consider to make a pull requests.
@@ -96,7 +103,7 @@ There are no specific coding guidelines for shell scripts. But we encourage you 
 
 Run `make shellcheck` to check your code. This makes sure your code follows the coding guidelines mentioned above. If any error/warning occurs please fix it before sending a pull request.
 
-Don't forget to add new shell scripts to the [`Makefile`](Makefile). This is necessary for some make rules like `make shellsheck`
+Don't forget to add new shell scripts to the [`Makefile`](Makefile). This is necessary for some make rules like `make shellsheck`.
 
 If there are any questions just [raise an issue](https://github.com/bheisig/i-doit-scripts/issues).
 
