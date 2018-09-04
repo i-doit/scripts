@@ -18,17 +18,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 -   `idoit-install`: Switch from Apache module php to fastcgi with php-fpm
 -   `idoit-install`: Merge i-doit's .htaccess files into Apache site configuration
--   `idoit-install`: Switch from Apache module mpm_prefork to mpm_event (Debian/RHEL/Ubuntu only)
+-   `idoit-install`: Switch from Apache module mpm_prefork to mpm_event (except on SLES)
 -   `idoit-install`: Set locale to US or GB English because interaction with some commands would fail (for example, `vmstat` on Ubuntu Linux)
--   `idoit-install`: To install PHP module imagick on SLES 3rd-party repository "server:php:extensions:php7" from OpenSUSE is required
+-   `idoit-install`: To install PHP extension imagick on SLES the 3rd-party repository `server:php:extensions:php7` from OpenSUSE is required
 -   `idoit-install`: Do not abort installation if user doesn't enable EPEL on RHEL/CentOS
 
 
 ### Fixed
 
--   `idoit-install`: Install missing PHP7 imagick module (SLES12)
+-   `idoit-install`: Install missing PHP7 extensions fileinfo and imagick (SLES12)
 -   `idoit-install`: Prevent MariaDB service failing on startup/shutdown (Ubuntu Linux)
 -   `idoit-install`: Enable and start memcached service (RHEL/CentOS/SLES12)
+-   `idoit-install`: Install missing PHP OpCache on Debian GNU/Linux and Ubuntu
 
 
 ##  [0.11] – 2018-07-13
