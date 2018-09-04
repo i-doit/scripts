@@ -86,7 +86,7 @@ function execute {
     log "Attention:"
     log "This script alters your OS. It will install new packages and will change configuration settings."
     log "Only use it on a fresh installation of a GNU/Linux OS."
-    log "It comes with absolutely no warrenty."
+    log "It comes with absolutely no warranty."
     log "Read the documentation carefully before you continue:"
     log ""
     log "    https://github.com/bheisig/i-doit-scripts"
