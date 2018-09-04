@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ##  [Unreleased]
 
 
+### Changed
+
+-   `idoit-jobs`: Clear caches at the end of all jobs
+
+
 ### Fixed
 
 -   `idoit-install`: Install missing PHP7 imagick module (SLES12)

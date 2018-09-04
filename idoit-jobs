@@ -40,14 +40,6 @@ function execute {
 
     test "$(whoami)" != "$APACHE_USER" && prefix="sudo -u $APACHE_USER "
 
-    log "Clear caches"
-    eval "${prefix}rm -rf ${INSTANCE_PATH}/temp/*" || \
-        abort "Unable to clear caches"
-
-    log "Clear updates"
-    eval "${prefix}rm -rf ${INSTANCE_PATH}/updates/versions/*" || \
-        abort "Unable to clear updates"
-
     log "Archive i-doit logbook"
     eval "${prefix}${CONSOLE_BIN} logbook-archive $suffix" || \
         abort "Command 'logbook-archive' failed"
@@ -70,6 +62,14 @@ function execute {
     log "Send notifications"
     eval "${prefix}${CONSOLE_BIN} notifications-send $suffix" || \
         abort "Command 'notifications-send' failed"
+
+    log "Clear caches"
+    eval "${prefix}rm -rf ${INSTANCE_PATH}/temp/*" || \
+        abort "Unable to clear caches"
+
+    log "Clear updates"
+    eval "${prefix}rm -rf ${INSTANCE_PATH}/updates/versions/*" || \
+        abort "Unable to clear updates"
 }
 
 function setup {
