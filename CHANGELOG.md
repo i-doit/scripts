@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ##  [Unreleased]
 
 
+### Added
+
+-   `idoit-install`: Test more PHP extensions whether they are loaded
+
+
 ### Changed
 
 -   `idoit-install`: Switch from Apache module php to fastcgi with php-fpm

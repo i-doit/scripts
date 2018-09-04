@@ -409,8 +409,8 @@ function checkRequirements {
     if [[ -x "$PHP_BIN" ]]; then
         log "Check for installed PHP extensions…"
 
-        local phpExtensions=(bcmath curl gd imagick json ldap mbstring mcrypt \
-            memcached mysqli mysqlnd pgsql soap xml zip)
+        local phpExtensions=(bcmath ctype curl fileinfo gd imagick json ldap \
+            mbstring memcached mysqli mysqlnd pgsql session soap xml zip)
 
         for phpExtension in "${phpExtensions[@]}"; do
             if "$PHP_BIN" -m | grep "$phpExtension" > /dev/null; then
