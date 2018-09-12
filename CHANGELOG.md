@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
--   `idoit-support`: Collect information via systemd-analyze and dkpg
+-   `idoit-support`: Collect information about hardware, installed software and systemd
 
 
 ### Changed

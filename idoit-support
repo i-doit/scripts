@@ -67,6 +67,12 @@ function addTempDir {
 }
 
 function collectSystemEnvironment {
+    log "Collect hardware information"
+    test -x "$(command -v nproc)" && \
+        nproc > "$TMP_DIR"/nproc
+    test -x "$(command -v vmstat)" && \
+        vmstat --stats --unit M > "$TMP_DIR"/vmstat
+
     log "Collect OS information"
     test -x "$(command -v uname)" && \
         uname -a > "$TMP_DIR"/uname
