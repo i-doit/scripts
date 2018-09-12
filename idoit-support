@@ -74,6 +74,19 @@ function collectSystemEnvironment {
         procinfo > "$TMP_DIR"/procinfo
     test -x "$(command -v netstat)" && \
         netstat -tulpen > "$TMP_DIR"/netstat
+
+    log "Collect information about systemd units"
+    test -x "$(command -v systemd-analyze)" && \
+        systemd-analyze blame > "$TMP_DIR"/systemd-analyze-blame
+
+    log "Print systemd unit dependency graph"
+    test -x "$(command -v systemd-analyze)" && \
+        systemd-analyze dot 2> /dev/null | dot -Tsvg > \
+        "$TMP_DIR"/systemd-analyze-dot.svg
+
+    log "Collect installed Debian packages"
+    test -x "$(command -v dpkg)" && \
+        dpkg -l > "$TMP_DIR"/dpkg
 }
 
 function collectVersions {

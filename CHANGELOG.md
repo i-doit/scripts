@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ##  [Unreleased]
 
 
+### Added
+
+-   `idoit-support`: Collect information via systemd-analyze and dkpg
+
+
 ### Changed
 
 -   `idoit-jobs`: Clear caches at the end of all jobs
