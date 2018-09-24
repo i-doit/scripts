@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 -   `idoit-install`: Test more PHP extensions whether they are loaded
 -   `idoit-jobs`: Clear PHP OpCache via local HTTP request
+-   `idoit-jobs`: Re-cache by requesting i-doit Web GUI
 
 
 ### Changed

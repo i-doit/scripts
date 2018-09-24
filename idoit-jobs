@@ -59,9 +59,15 @@ if (function_exists('opcache_reset')) {
 EOF
     statusCode="$(curl -o /dev/null --silent --head --write-out '%{http_code}\n' --url "http://localhost/${phpFile}")"
     if [[ "$statusCode" != "200" ]]; then
-        abort "Unable to clear OpCache via HTTP request"
+        abort "Unable to clear OpCache by HTTP request"
     fi
     eval "${prefix}rm $phpFile" || abort "Unable to remove file"
+
+    log "Re-cache by requesting i-doit Web GUI"
+    statusCode="$(curl -o /dev/null --silent --head --write-out '%{http_code}\n' --url "http://localhost/")"
+    if [[ "$statusCode" != "200" ]]; then
+        abort "Unable to re-cache by HTTP request"
+    fi
 
     log "Clear updates"
     eval "${prefix}rm -rf ${INSTANCE_PATH}/updates/versions/*" || \
