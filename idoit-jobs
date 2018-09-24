@@ -35,14 +35,33 @@ CONFIGURATION_FILE="/etc/i-doit/i-doit.sh"
 function execute {
     local prefix=""
     local suffix="--user $IDOIT_USERNAME --password $IDOIT_PASSWORD --tenantId $TENANT_ID"
+    local randomString=""
+    randomString="$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 12)"
+    local phpFile="${INSTANCE_PATH}/${randomString}.php"
+    local statusCode=""
 
     log "Perform important background tasks for i-doit"
 
     test "$(whoami)" != "$APACHE_USER" && prefix="sudo -u $APACHE_USER "
 
-    log "Clear caches"
+    log "Clear i-doit caches"
     eval "${prefix}rm -rf ${INSTANCE_PATH}/temp/*" || \
         abort "Unable to clear caches"
+
+    log "Clear PHP opcache"
+    cat << EOF | eval "${prefix}tee $phpFile" > /dev/null || \
+        abort "Unable to create file $phpFile"
+<?php
+
+if (function_exists('opcache_reset')) {
+    opcache_reset() or exit(1);
+}
+EOF
+    statusCode="$(curl -o /dev/null --silent --head --write-out '%{http_code}\n' --url "http://localhost/${phpFile}")"
+    if [[ "$statusCode" != "200" ]]; then
+        abort "Unable to clear OpCache via HTTP request"
+    fi
+    eval "${prefix}rm $phpFile" || abort "Unable to remove file"
 
     log "Clear updates"
     eval "${prefix}rm -rf ${INSTANCE_PATH}/updates/versions/*" || \
