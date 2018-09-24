@@ -921,7 +921,7 @@ DirectoryIndex index.php
 DocumentRoot ${INSTALL_DIR}/
 <Directory ${INSTALL_DIR}/>
     AllowOverride None
-    Options -Indexes +FollowSymlinks
+    Options -Indexes
     Require all granted
 
     <IfModule mod_expires.c>
@@ -1023,7 +1023,7 @@ EOF
     DocumentRoot ${INSTALL_DIR}/
     <Directory ${INSTALL_DIR}/>
         AllowOverride None
-        Options -Indexes +FollowSymlinks
+        Options -Indexes
         Require all granted
 
         <IfModule mod_expires.c>
@@ -1127,7 +1127,7 @@ EOF
     DocumentRoot ${INSTALL_DIR}/
     <Directory ${INSTALL_DIR}/>
         AllowOverride None
-        Options -Indexes +FollowSymlinks
+        Options -Indexes
         Require all granted
 
         <IfModule mod_expires.c>
@@ -1219,6 +1219,8 @@ EOF
             "$a2_en_mod" proxy || abort "Unable to enable Apache module proxy"
             log "Enable Apache module proxy_fcgi"
             "$a2_en_mod" proxy_fcgi || abort "Unable to enable Apache module proxy_fcgi"
+            log "Enable Apache module setenvif"
+            "$a2_en_mod" setenvif || abort "Unable to enable Apache module setenvif"
             log "Let every user read the logs"
             chmod 755 /var/log/apache2
             chmod 664 /var/log/apache2/*
