@@ -66,6 +66,10 @@ APACHE_GROUP="www-data"
 MIN_CPU_CORES=2
 ## Be tolerant, use 1000 instead of 1024:
 MIN_RAM=$((1000*1000*1000*2))
+APACHE_UNIT=""
+MARIADB_UNIT=""
+MEMCACHED_UNIT=""
+PHP_FPM_UNIT=""
 APACHE_CONFIG_FILE=""
 MARIADB_CONFIG_FILE=""
 PHP_CONFIG_FILE=""
@@ -260,6 +264,10 @@ function identifyOS {
         PHP_CONFIG_FILE="/etc/php.d/i-doit.ini"
         MARIADB_SOCKET="/var/lib/mysql/mysql.sock"
         PHP_FPM_SOCKET="/var/run/php-fpm/php-fpm.sock"
+        APACHE_UNIT="httpd"
+        MARIADB_UNIT="mariadb"
+        MEMCACHED_UNIT="memcached"
+        PHP_FPM_UNIT="php-fpm"
     elif [[ -f "/etc/redhat-release" ]]; then
         os_description=$(cat /etc/redhat-release)
         os_release=$(grep -o '[0-9]\.[0-9]' /etc/redhat-release)
@@ -283,6 +291,10 @@ function identifyOS {
         PHP_CONFIG_FILE="/etc/php.d/i-doit.ini"
         MARIADB_SOCKET="/var/lib/mysql/mysql.sock"
         PHP_FPM_SOCKET="/var/run/php-fpm/php-fpm.sock"
+        APACHE_UNIT="httpd"
+        MARIADB_UNIT="mariadb"
+        MEMCACHED_UNIT="memcached"
+        PHP_FPM_UNIT="php-fpm"
     elif [[ -f "/etc/SuSE-release" ]]; then
         os_description=$(head -n1 /etc/SuSE-release)
         os_release=$(grep "VERSION" /etc/SuSE-release | grep -o '[0-9]*')
@@ -309,6 +321,10 @@ function identifyOS {
         PHP_CONFIG_FILE="/etc/php7/conf.d/i-doit.ini"
         MARIADB_SOCKET="/var/run/mysql/mysql.sock"
         PHP_FPM_SOCKET="/var/run/php-fpm.sock"
+        APACHE_UNIT="apache2"
+        MARIADB_UNIT="mysql"
+        MEMCACHED_UNIT="memcached"
+        PHP_FPM_UNIT="php-fpm"
     elif [[ -f "/etc/os-release" ]]; then
         ## This file comes with these variables:
         ## NAME, VERSION, PRETTY_NAME and some more…
@@ -330,6 +346,10 @@ function identifyOS {
         PHP_CONFIG_FILE="/etc/php7/conf.d/i-doit.ini"
         MARIADB_SOCKET="/var/run/mysql/mysql.sock"
         PHP_FPM_SOCKET="/var/run/php-fpm.sock"
+        APACHE_UNIT="apache2"
+        MARIADB_UNIT="mysql"
+        MEMCACHED_UNIT="memcached"
+        PHP_FPM_UNIT="php-fpm"
     elif [[ -x "/usr/bin/lsb_release" ]]; then
         os_id=$(lsb_release --short --id)
         os_codename=$(lsb_release --short --codename)
@@ -339,6 +359,10 @@ function identifyOS {
         MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
         MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
         PHP_FPM_SOCKET="/var/run/php/php7.0-fpm.sock"
+        APACHE_UNIT="apache2"
+        MARIADB_UNIT="mysql"
+        MEMCACHED_UNIT="memcached"
+        PHP_FPM_UNIT="php7.0-fpm"
 
         if [[ "$os_id" = "Debian" && "$os_codename" = "jessie" ]]; then
             log "Operating system identified as ${os_description}"
@@ -359,6 +383,7 @@ function identifyOS {
             OS="ubuntu1804"
             PHP_CONFIG_FILE="/etc/php/7.2/mods-available/i-doit.ini"
             PHP_FPM_SOCKET="/var/run/php/php7.2-fpm.sock"
+            PHP_FPM_UNIT="php7.2-fpm"
         else
             abort "Operating system ${os_description} is not supported"
         fi
@@ -369,6 +394,10 @@ function identifyOS {
         APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
         MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
         MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
+        APACHE_UNIT="apache2"
+        MARIADB_UNIT="mysql"
+        MEMCACHED_UNIT="memcached"
+        PHP_FPM_UNIT="php7.0-fpm"
 
         if [[ "$os_major_release" = "8" ]]; then
             log "Operating system identified as Debian GNU/Linux ${os_release} (jessie)"
@@ -376,7 +405,6 @@ function identifyOS {
             OS="debian8"
             MARIADB_CONFIG_FILE="/etc/mysql/conf.d/99-i-doit.cnf"
             PHP_CONFIG_FILE="/etc/php5/mods-available/i-doit.ini"
-            PHP_FPM_SOCKET="/var/run/php/php7.0-fpm.sock"
         elif [[ "$os_major_release" = "9" ]]; then
             log "Operating system identified as Debian GNU/Linux ${os_release} (stretch)"
             OS="debian9"
@@ -740,23 +768,21 @@ EOF
     yum --assumeyes --quiet install moreutils || \
         abort "Unable to install packages"
 
-    log "Enable services"
-    systemctl -q enable httpd.service || abort "Cannot enable Apache Web server"
-    systemctl -q enable mariadb.service || abort "Cannot enable MariaDB server"
-    systemctl -q enable memcached.service || abort "Cannot enable memcached server"
+    unitctl "enable" "$APACHE_UNIT"
+    unitctl "enable" "$MARIADB_UNIT"
+    unitctl "enable" "$MEMCACHED_UNIT"
 
-    log "Start services"
-    systemctl -q start httpd.service || abort "Unable to start Apache Web server"
-    systemctl -q start mariadb.service || abort "Unable to start MariaDB server"
-    systemctl -q start memcached.service || abort "Unable to start memcached server"
+    unitctl "start" "$APACHE_UNIT"
+    unitctl "start" "$MARIADB_UNIT"
+    unitctl "start" "$MEMCACHED_UNIT"
 
     log "Allow incoming HTTP traffic"
     systemctl -q is-active firewalld.service || (
-        log "Firewall is inactive. Start unit"
-        systemctl -q start firewalld.service || abort "Unable to activate firewall"
+        log "Firewall is inactive."
+        unitctl "start" "firewalld"
     )
     firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
-    systemctl -q restart firewalld.service || abort "Unable to restart firewall"
+    unitctl "restart" "firewalld"
 }
 
 function configureSLES12 {
@@ -831,15 +857,13 @@ function configureSLES12 {
 
     zypper --quiet --non-interactive clean || abort "Unable to clean up cached software packages"
 
-    log "Enable services"
-    systemctl -q enable apache2.service || abort "Cannot enable Apache Web server"
-    systemctl -q enable mysql.service || abort "Cannot enable MariaDB server"
-    systemctl -q enable memcached.service || abort "Cannot enable memcached server"
+    unitctl "enable" "$APACHE_UNIT"
+    unitctl "enable" "$MARIADB_UNIT"
+    unitctl "enable" "$MEMCACHED_UNIT"
 
-    log "Start services"
-    systemctl -q start apache2.service || abort "Unable to start Apache Web server"
-    systemctl -q start mysql.service || abort "Unable to start MariaDB server"
-    systemctl -q start memcached.service || abort "Unable to start memcached server"
+    unitctl "start" "$APACHE_UNIT"
+    unitctl "start" "$MARIADB_UNIT"
+    unitctl "start" "$MEMCACHED_UNIT"
 
     log "Allow incoming HTTP traffic"
     SuSEfirewall2 open EXT TCP http || "Unable to open port 80"
@@ -925,15 +949,13 @@ function configureSLES15 {
 
     zypper --quiet --non-interactive clean || abort "Unable to clean up cached software packages"
 
-    log "Enable services"
-    systemctl -q enable apache2.service || abort "Cannot enable Apache Web server"
-    systemctl -q enable mariadb.service || abort "Cannot enable MariaDB server"
-    systemctl -q enable memcached.service || abort "Cannot enable memcached server"
+    unitctl "enable" "$APACHE_UNIT"
+    unitctl "enable" "$MARIADB_UNIT"
+    unitctl "enable" "$MEMCACHED_UNIT"
 
-    log "Start services"
-    systemctl -q start apache2.service || abort "Unable to start Apache Web server"
-    systemctl -q start mariadb.service || abort "Unable to start MariaDB server"
-    systemctl -q start memcached.service || abort "Unable to start memcached server"
+    unitctl "start" "$APACHE_UNIT"
+    unitctl "start" "$MARIADB_UNIT"
+    unitctl "start" "$MEMCACHED_UNIT"
 
     log "Allow incoming HTTP traffic"
     SuSEfirewall2 open EXT TCP http || "Unable to open port 80"
@@ -1036,15 +1058,8 @@ function configurePHPFPM {
     log "Configure PHP-FPM"
 
     case "$OS" in
-        "debian9"|"ubuntu1604")
-            log "Restart PHP-FPM"
-            systemctl -q restart php7.0-fpm || abort \
-                "Unable to restart service"
-            ;;
-        "ubuntu1804")
-            log "Restart PHP-FPM"
-            systemctl -q restart php7.2-fpm || abort \
-                "Unable to restart service"
+        "debian9"|"ubuntu1604"|"ubuntu1804")
+            unitctl "restart" "$PHP_FPM_UNIT"
             ;;
         "rhel73"|"rhel74"|"rhel75"|"rhel76"|"centos73"|"centos74"|"centos75"|"centos76")
             log "Disable default configuration file"
@@ -1065,9 +1080,7 @@ pm.min_spare_servers = 5
 pm.max_spare_servers = 35
 security.limit_extensions = .php
 EOF
-            log "Start PHP FPM"
-            systemctl -q start php-fpm || abort \
-                "Unable to restart service"
+            unitctl "start" "$PHP_FPM_UNIT"
             ;;
         "sles12sp2"|"sles12sp3"|"sles12sp4"|"sles15")
             log "Enable PHP FPM configuration files"
@@ -1088,13 +1101,8 @@ pm.max_spare_servers = 3
 security.limit_extensions = .php
 EOF
 
-            log "Enable PHP FPM"
-            systemctl -q enable php-fpm || \
-                abort "Unable to enable service"
-
-            log "Start PHP FPM"
-            systemctl -q start php-fpm || \
-                abort "Unable to restart service"
+            unitctl "enable" "$PHP_FPM_UNIT"
+            unitctl "start" "$PHP_FPM_UNIT"
             ;;
         *)
             log "Nope. This OS will stuck on mod_php."
@@ -1154,9 +1162,7 @@ EOF
             log "Enable MPM event"
             sed -i "/^#.* mpm_event_module /s/^#//" /etc/httpd/conf.modules.d/00-mpm.conf || \
                 abort "sed exited with error"
-            log "Restart Apache Web server"
-            systemctl -q restart httpd.service || \
-                abort "Unable to restart Apache Web server"
+            unitctl "restart" "$APACHE_UNIT"
             ;;
         "sles12sp2"|"sles12sp3"|"sles12sp4"|"sles15")
             a2_en_mod=$(command -v a2enmod)
@@ -1205,9 +1211,7 @@ EOF
             log "Enable Apache module mod_access_compat"
             "$a2_en_mod" mod_access_compat || abort "Unable to enable Apache module mod_access_compat"
 
-            log "Restart Apache Web server"
-            systemctl -q restart apache2.service || \
-                abort "Unable to restart Apache Web server"
+            unitctl "restart" "$APACHE_UNIT"
             ;;
         "debian9"|"ubuntu1604"|"ubuntu1804")
             a2_en_site=$(command -v a2ensite)
@@ -1270,9 +1274,7 @@ EOF
             log "Let every user read the logs"
             chmod 755 /var/log/apache2
             chmod 664 /var/log/apache2/*
-            log "Restart Apache Web server"
-            systemctl -q restart apache2.service || \
-                abort "Unable to restart Apache Web server"
+            unitctl "restart" "$APACHE_UNIT"
             ;;
         *)
             a2_en_site=$(command -v a2ensite)
@@ -1311,19 +1313,12 @@ EOF
             log "Let every user read the logs"
             chmod 755 /var/log/apache2
             chmod 664 /var/log/apache2/*
-            log "Restart Apache Web server"
-            systemctl -q restart apache2.service || abort "Unable to restart Apache Web server"
+            unitctl "restart" "$APACHE_UNIT"
             ;;
     esac
 }
 
 function configureMariaDB {
-    local mariadb_service="mysql.service"
-
-    if [[ "$OS" = "sles15" ]]; then
-        mariadb_service="mariadb.service"
-    fi
-
     log "Configure MariaDB DBMS"
 
     echo -e -n "Please enter the MariaDB hostname [leave empty for '${MARIADB_HOSTNAME}']: "
@@ -1342,8 +1337,7 @@ function configureMariaDB {
         -u"$MARIADB_SUPERUSER_USERNAME" -p"$MARIADB_SUPERUSER_PASSWORD" \
         -e"SET GLOBAL innodb_fast_shutdown = 0" || \
         abort "Unable to prepare shutdown"
-    log "Stop MariaDB"
-    systemctl -q stop "$mariadb_service" || abort "Unable to stop MariaDB"
+    unitctl "stop" "$MARIADB_UNIT"
     log "Move old MariaDB log files"
     mv /var/lib/mysql/ib_logfile[01] "$TMP_DIR" || abort "Unable to remove old log files"
 
@@ -1411,8 +1405,7 @@ EOF
     chmod 755 /var/log/mysql
     chmod 664 /var/log/mysql/*
 
-    log "Start MariaDB"
-    systemctl -q start "$mariadb_service" || abort "Unable to start MariaDB"
+    unitctl "start" "$MARIADB_UNIT"
 }
 
 function secureMariaDB {
@@ -1545,6 +1538,10 @@ EOF
 function updateApacheConfig {
     local htaccessFile="${INSTALL_DIR}/.htaccess"
 
+    if [[ "$OS" = "debian8" ]]; then
+        return 0
+    fi
+
     log "Update Apache's VHost config from i-doit's htaccess file"
 
     sed -i \
@@ -1555,23 +1552,7 @@ function updateApacheConfig {
         "$APACHE_CONFIG_FILE" || \
         abort "Unable to change config file"
 
-    case "$OS" in
-        "rhel73"|"rhel74"|"rhel75"|"rhel76"|"centos73"|"centos74"|"centos75"|"centos76")
-            log "Restart Apache Web server"
-            systemctl -q restart httpd.service || \
-                abort "Unable to restart Apache Web server"
-            ;;
-        "sles12sp2"|"sles12sp3"|"sles12sp4"|"sles15")
-            log "Restart Apache Web server"
-            systemctl -q restart apache2.service || \
-                abort "Unable to restart Apache Web server"
-            ;;
-        "debian9"|"ubuntu1604"|"ubuntu1804")
-            log "Restart Apache Web server"
-            systemctl -q restart apache2.service || \
-                abort "Unable to restart Apache Web server"
-            ;;
-    esac
+    unitctl "restart" "$APACHE_UNIT"
 }
 
 function installIDoit {
@@ -1735,6 +1716,16 @@ function deployScript {
     chmod 775 "$tmp_file" || abort "Unable to set read/write/executable bits"
 
     mv "$tmp_file" "/usr/local/bin/$file" || abort "Unable to move file to '/usr/local/bin/'"
+}
+
+function unitctl {
+    local action="$1"
+    local unit="$2"
+
+    log "${action^} $unit"
+
+    systemctl -q "$action" "${unit}.service" || \
+        abort "Failed to $action $unit"
 }
 
 function setup {
