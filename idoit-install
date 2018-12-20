@@ -147,7 +147,7 @@ function execute {
         updateApacheConfig
         installIDoit
 
-        ip_address=$(ip route get 1 | awk '{print $NF;exit}')
+        ip_address=$(ip route get 1 | sed 's/^.*src \([^ ]*\).*$/\1/;q')
 
         log "Your setup is ready. Navigate to"
         log ""
