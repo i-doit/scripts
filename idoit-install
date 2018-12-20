@@ -69,6 +69,8 @@ MIN_RAM=$((1000*1000*1000*2))
 APACHE_CONFIG_FILE=""
 MARIADB_CONFIG_FILE=""
 PHP_CONFIG_FILE=""
+MARIADB_SOCKET=""
+PHP_FPM_SOCKET=""
 APACHE_HTACCESS_SUBSTITUTION="## Insert content from .htaccess file"
 BASENAME=$(basename "$0")
 VERSION="0.11"
@@ -234,7 +236,6 @@ function identifyOS {
     local os_release=""
     local os_major_release=""
     local os_patchlevel=""
-    local arch=""
 
     if [[ -f "/etc/centos-release" ]]; then
         os_description=$(cat /etc/centos-release)
@@ -257,6 +258,8 @@ function identifyOS {
         APACHE_CONFIG_FILE="/etc/httpd/conf.d/i-doit.conf"
         MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
         PHP_CONFIG_FILE="/etc/php.d/i-doit.ini"
+        MARIADB_SOCKET="/var/lib/mysql/mysql.sock"
+        PHP_FPM_SOCKET="/var/run/php-fpm/php-fpm.sock"
     elif [[ -f "/etc/redhat-release" ]]; then
         os_description=$(cat /etc/redhat-release)
         os_release=$(grep -o '[0-9]\.[0-9]' /etc/redhat-release)
@@ -278,6 +281,8 @@ function identifyOS {
         APACHE_CONFIG_FILE="/etc/httpd/conf.d/i-doit.conf"
         MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
         PHP_CONFIG_FILE="/etc/php.d/i-doit.ini"
+        MARIADB_SOCKET="/var/lib/mysql/mysql.sock"
+        PHP_FPM_SOCKET="/var/run/php-fpm/php-fpm.sock"
     elif [[ -f "/etc/SuSE-release" ]]; then
         os_description=$(head -n1 /etc/SuSE-release)
         os_release=$(grep "VERSION" /etc/SuSE-release | grep -o '[0-9]*')
@@ -302,6 +307,8 @@ function identifyOS {
         APACHE_CONFIG_FILE="/etc/apache2/vhosts.d/i-doit.conf"
         MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
         PHP_CONFIG_FILE="/etc/php7/conf.d/i-doit.ini"
+        MARIADB_SOCKET="/var/run/mysql/mysql.sock"
+        PHP_FPM_SOCKET="/var/run/php-fpm.sock"
     elif [[ -x "/usr/bin/lsb_release" ]]; then
         os_id=$(lsb_release --short --id)
         os_codename=$(lsb_release --short --codename)
@@ -309,6 +316,8 @@ function identifyOS {
 
         APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
         MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
+        MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
+        PHP_FPM_SOCKET="/var/run/php/php7.0-fpm.sock"
 
         if [[ "$os_id" = "Debian" && "$os_codename" = "jessie" ]]; then
             log "Operating system identified as ${os_description}"
@@ -324,6 +333,11 @@ function identifyOS {
             log "Operating system identified as ${os_description}"
             OS="ubuntu1604"
             PHP_CONFIG_FILE="/etc/php/7.0/mods-available/i-doit.ini"
+        elif [[ "$os_id" = "Ubuntu" && "$os_codename" = "bionic" ]]; then
+            log "Operating system identified as ${os_description}"
+            OS="ubuntu1804"
+            PHP_CONFIG_FILE="/etc/php/7.2/mods-available/i-doit.ini"
+            PHP_FPM_SOCKET="/var/run/php/php7.2-fpm.sock"
         else
             abort "Operating system ${os_description} is not supported"
         fi
@@ -333,23 +347,35 @@ function identifyOS {
 
         APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
         MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
+        MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
 
         if [[ "$os_major_release" = "8" ]]; then
             log "Operating system identified as Debian GNU/Linux ${os_release} (jessie)"
             log "Version 9 is recommended. Please consider to upgrade."
             OS="debian8"
             MARIADB_CONFIG_FILE="/etc/mysql/conf.d/99-i-doit.cnf"
-            PHP_CONFIG_FILE=""
+            PHP_CONFIG_FILE="/etc/php5/mods-available/i-doit.ini"
+            PHP_FPM_SOCKET="/var/run/php/php7.0-fpm.sock"
         elif [[ "$os_major_release" = "9" ]]; then
             log "Operating system identified as Debian GNU/Linux ${os_release} (stretch)"
             OS="debian9"
             PHP_CONFIG_FILE="/etc/php/7.0/mods-available/i-doit.ini"
+            PHP_FPM_SOCKET="/var/run/php/php7.0-fpm.sock"
         else
             abort "Operating system is based on Debian GNU/Linux $os_release but is not supported"
         fi
     else
         abort "Unable to identify operating system"
     fi
+}
+
+function checkRequirements {
+    local failed=0
+    local cores=0
+    local ram=0
+    local arch=""
+
+    log "Check hardware requirements…"
 
     arch=$(uname -m)
 
@@ -358,14 +384,6 @@ function identifyOS {
 
         askYesNo "Do you really want to continue?" || cancel
     fi
-}
-
-function checkRequirements {
-    local failed=0
-    local cores=0
-    local ram=0
-
-    log "Check hardware requirements…"
 
     cores=$(nproc)
 
@@ -474,6 +492,9 @@ function configureOS {
         "ubuntu1604")
             configureUbuntu1604
             ;;
+        "ubuntu1804")
+            configureUbuntu1804
+            ;;
         "rhel73"|"rhel74"|"rhel75"|"rhel76")
             configureRHEL
             ;;
@@ -548,6 +569,24 @@ function configureUbuntu1604 {
         php7.0-bcmath php7.0-cli php7.0-common php7.0-curl php7.0-fpm php7.0-gd php7.0-json \
         php7.0-ldap php7.0-mbstring php7.0-mcrypt php7.0-mysql php7.0-opcache php7.0-pgsql \
         php7.0-soap php7.0-xml php7.0-zip \
+        php-imagick php-memcached \
+        memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
+}
+
+function configureUbuntu1804 {
+    log "Keep your Ubuntu packages up-to-date"
+    apt-get -qq --yes update || abort "Unable to update Ubuntu package repositories"
+    apt-get -qq --yes full-upgrade || abort "Unable to perform update of Ubuntu packages"
+    apt-get -qq --yes clean || abort "Unable to cleanup Ubuntu packages"
+    apt-get -qq --yes autoremove || abort "Unable to remove unnecessary Ubuntu packages"
+
+    log "Install required Ubuntu packages"
+    apt-get -qq --yes install \
+        apache2 libapache2-mod-fcgid \
+        mariadb-client mariadb-server \
+        php7.2-bcmath php7.2-cli php7.2-common php7.2-curl php7.2-fpm php7.2-gd php7.2-json \
+        php7.2-ldap php7.2-mbstring php7.2-mysql php7.2-opcache php7.2-pgsql \
+        php7.2-soap php7.2-xml php7.2-zip \
         php-imagick php-memcached \
         memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
 }
@@ -857,27 +896,8 @@ default_socket_timeout = 60
 date.timezone = Europe/Berlin
 session.gc_maxlifetime = 604800
 session.cookie_lifetime = 0
+mysqli.default_socket = ${MARIADB_SOCKET}
 EOF
-
-    log "Append path to MariaDB UNIX socket to PHP settings"
-    case "$OS" in
-        "rhel73"|"rhel74"|"rhel75"|"rhel76")
-            echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" >> "$PHP_CONFIG_FILE" || \
-                abort "Unable to alter PHP settings"
-            ;;
-        "centos73"|"centos74"|"centos75"|"centos76")
-            echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" >> "$PHP_CONFIG_FILE" || \
-                abort "Unable to alter PHP settings"
-            ;;
-        "sles12sp2"|"sles12sp3"|"sles12sp4")
-            echo "mysqli.default_socket = /var/run/mysql/mysql.sock" >> "$PHP_CONFIG_FILE" || \
-                abort "Unable to alter PHP settings"
-            ;;
-        *)
-            echo "mysqli.default_socket = /var/run/mysqld/mysqld.sock" >> "$PHP_CONFIG_FILE" || \
-                abort "Unable to alter PHP settings"
-            ;;
-    esac
 
     if [[ -n "$php_en_mod" ]]; then
         log "Enable PHP settings"
@@ -896,6 +916,11 @@ function configurePHPFPM {
             systemctl -q restart php7.0-fpm || abort \
                 "Unable to restart service"
             ;;
+        "ubuntu1804")
+            log "Restart PHP-FPM"
+            systemctl -q restart php7.2-fpm || abort \
+                "Unable to restart service"
+            ;;
         "rhel73"|"rhel74"|"rhel75"|"rhel76"|"centos73"|"centos74"|"centos75"|"centos76")
             log "Disable default configuration file"
             mv /etc/php-fpm.d/www.conf{,.bak} || \
@@ -903,7 +928,7 @@ function configurePHPFPM {
             cat << EOF > /etc/php-fpm.d/i-doit.conf || \
                 abort "Unable to create and edit file '/etc/php-fpm.d/i-doit.conf'"
 [i-doit]
-listen = /var/run/php-fpm/php-fpm.sock
+listen = ${PHP_FPM_SOCKET}
 user = ${APACHE_USER}
 group = ${APACHE_GROUP}
 listen.owner = ${APACHE_USER}
@@ -922,10 +947,10 @@ EOF
         "sles12sp2"|"sles12sp3"|"sles12sp4")
             log "Enable PHP FPM configuration files"
             mv /etc/php7/fpm/php-fpm.conf{.default,} || \
-                abort "Unable to copy file"
+                abort "Unable to move file"
             cat << EOF > /etc/php7/fpm/php-fpm.d/i-doit.conf || abort "Unable to create and edit file '/etc/php7/fpm/php-fpm.d/i-doit.conf'"
 [i-doit]
-listen = /var/run/php-fpm.sock
+listen = ${PHP_FPM_SOCKET}
 user = ${APACHE_USER}
 group = ${APACHE_GROUP}
 listen.owner = ${APACHE_USER}
@@ -975,7 +1000,7 @@ ProxyTimeout 600
 
 <FilesMatch "\\.php$">
     <If "-f %{REQUEST_FILENAME}">
-        SetHandler "proxy:unix:/var/run/php-fpm/php-fpm.sock|fcgi://localhost"
+        SetHandler "proxy:unix:${PHP_FPM_SOCKET}|fcgi://localhost"
     </If>
 </FilesMatch>
 EOF
@@ -1027,7 +1052,7 @@ ServerName ${hostname}
 
     <FilesMatch "\\.php$">
         <If "-f %{REQUEST_FILENAME}">
-            SetHandler "proxy:unix:/var/run/php-fpm.sock|fcgi://localhost"
+            SetHandler "proxy:unix:${PHP_FPM_SOCKET}|fcgi://localhost"
         </If>
     </FilesMatch>
 
@@ -1054,7 +1079,7 @@ EOF
             systemctl -q restart apache2.service || \
                 abort "Unable to restart Apache Web server"
             ;;
-        "debian9"|"ubuntu1604")
+        "debian9"|"ubuntu1604"|"ubuntu1804")
             a2_en_site=$(command -v a2ensite)
             a2_dis_site=$(command -v a2dissite)
             a2_en_mod=$(command -v a2enmod)
@@ -1081,7 +1106,7 @@ ServerName ${hostname}
 
     <FilesMatch "\\.php$">
         <If "-f %{REQUEST_FILENAME}">
-            SetHandler "proxy:unix:/var/run/php/php7.0-fpm.sock|fcgi://localhost"
+            SetHandler "proxy:unix:${PHP_FPM_SOCKET}|fcgi://localhost"
         </If>
     </FilesMatch>
 
@@ -1407,7 +1432,7 @@ function updateApacheConfig {
             systemctl -q restart apache2.service || \
                 abort "Unable to restart Apache Web server"
             ;;
-        "debian9"|"ubuntu1604")
+        "debian9"|"ubuntu1604"|"ubuntu1804")
             log "Restart Apache Web server"
             systemctl -q restart apache2.service || \
                 abort "Unable to restart Apache Web server"
