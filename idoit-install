@@ -610,7 +610,7 @@ function configureRHEL {
     log "$os_description $os_release has out-dated packages for PHP and MariaDB."
     log "This script will fix this issue by enabling these 3rd party repositories:"
     log ""
-    log "    Webtatic.com for PHP 7.1"
+    log "    Webtatic.com for PHP 7.2"
     log "    Official MariaDB repository for MariaDB 10.1"
     log ""
 
@@ -630,9 +630,9 @@ function configureRHEL {
 
         log "Install PHP packages"
         yum --assumeyes --quiet install \
-            php71w-bcmath php71w-cli php71w-common php71w-fpm php71w-gd php71w-ldap php71w-mbstring \
-            php71w-mcrypt php71w-mysqlnd php71w-opcache php71w-pdo php71w-pecl-imagick \
-            php71w-pecl-memcached php71w-pgsql php71w-soap php71w-xml || \
+            php72w-bcmath php72w-cli php72w-common php72w-fpm php72w-gd php72w-ldap php72w-mbstring \
+            php72w-mcrypt php72w-mysqlnd php72w-opcache php72w-pdo php72w-pecl-imagick \
+            php72w-pecl-memcached php72w-pgsql php72w-soap php72w-xml || \
             abort "Unable to install PHP packages"
     fi
 
