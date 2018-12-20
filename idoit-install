@@ -66,6 +66,9 @@ APACHE_GROUP="www-data"
 MIN_CPU_CORES=2
 ## Be tolerant, use 1000 instead of 1024:
 MIN_RAM=$((1000*1000*1000*2))
+APACHE_CONFIG_FILE=""
+MARIADB_CONFIG_FILE=""
+PHP_CONFIG_FILE=""
 APACHE_HTACCESS_SUBSTITUTION="## Insert content from .htaccess file"
 BASENAME=$(basename "$0")
 VERSION="0.11"
@@ -252,6 +255,9 @@ function identifyOS {
 
         APACHE_USER="apache"
         APACHE_GROUP="apache"
+        APACHE_CONFIG_FILE="/etc/httpd/conf.d/i-doit.conf"
+        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
+        PHP_CONFIG_FILE="/etc/php.d/i-doit.ini"
     elif [[ -f "/etc/redhat-release" ]]; then
         os_description=$(cat /etc/redhat-release)
         os_release=$(grep -o '[0-9]\.[0-9]' /etc/redhat-release)
@@ -271,6 +277,9 @@ function identifyOS {
 
         APACHE_USER="apache"
         APACHE_GROUP="apache"
+        APACHE_CONFIG_FILE="/etc/httpd/conf.d/i-doit.conf"
+        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
+        PHP_CONFIG_FILE="/etc/php.d/i-doit.ini"
     elif [[ -f "/etc/SuSE-release" ]]; then
         os_description=$(head -n1 /etc/SuSE-release)
         os_release=$(grep "VERSION" /etc/SuSE-release | grep -o '[0-9]*')
@@ -289,27 +298,39 @@ function identifyOS {
         INSTALL_DIR="/srv/www/htdocs"
         APACHE_USER="wwwrun"
         APACHE_GROUP="www"
+        APACHE_CONFIG_FILE="/etc/apache2/vhosts.d/i-doit.conf"
+        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
+        PHP_CONFIG_FILE="/etc/php7/conf.d/i-doit.ini"
     elif [[ -x "/usr/bin/lsb_release" ]]; then
         os_id=$(lsb_release --short --id)
         os_codename=$(lsb_release --short --codename)
         os_description=$(lsb_release --short --description)
 
+        APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
+        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
+
         if [[ "$os_id" = "Debian" && "$os_codename" = "jessie" ]]; then
             log "Operating system identified as ${os_description}"
             log "Version 9 is recommended. Please consider to upgrade."
             OS="debian8"
+            MARIADB_CONFIG_FILE="/etc/mysql/conf.d/99-i-doit.cnf"
+            PHP_CONFIG_FILE="/etc/php5/mods-available/i-doit.ini"
         elif [[ "$os_id" = "Debian" && "$os_codename" = "stretch" ]]; then
             log "Operating system identified as ${os_description}"
             OS="debian9"
+            PHP_CONFIG_FILE="/etc/php/7.0/mods-available/i-doit.ini"
         elif [[ "$os_id" = "Ubuntu" && "$os_codename" = "xenial" ]]; then
             log "Operating system identified as ${os_description}"
             OS="ubuntu1604"
+            PHP_CONFIG_FILE="/etc/php/7.0/mods-available/i-doit.ini"
         elif [[ "$os_id" = "Ubuntu" && "$os_codename" = "yakkety" ]]; then
             log "Operating system identified as ${os_description}"
             OS="ubuntu1610"
+            PHP_CONFIG_FILE="/etc/php/7.0/mods-available/i-doit.ini"
         elif [[ "$os_id" = "Ubuntu" && "$os_codename" = "zesty" ]]; then
             log "Operating system identified as ${os_description}"
             OS="ubuntu1704"
+            PHP_CONFIG_FILE="/etc/php/7.0/mods-available/i-doit.ini"
         else
             abort "Operating system ${os_description} is not supported"
         fi
@@ -317,13 +338,19 @@ function identifyOS {
         os_release=$(cat /etc/debian_version)
         os_major_release=$(awk -F "." '{print $1}' /etc/debian_version)
 
+        APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
+        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
+
         if [[ "$os_major_release" = "8" ]]; then
             log "Operating system identified as Debian GNU/Linux ${os_release} (jessie)"
             log "Version 9 is recommended. Please consider to upgrade."
             OS="debian8"
+            MARIADB_CONFIG_FILE="/etc/mysql/conf.d/99-i-doit.cnf"
+            PHP_CONFIG_FILE=""
         elif [[ "$os_major_release" = "9" ]]; then
             log "Operating system identified as Debian GNU/Linux ${os_release} (stretch)"
             OS="debian9"
+            PHP_CONFIG_FILE="/etc/php/7.0/mods-available/i-doit.ini"
         else
             abort "Operating system is based on Debian GNU/Linux $os_release but is not supported"
         fi
@@ -335,6 +362,8 @@ function identifyOS {
 
     if [[ "$arch" != "x86_64" ]]; then
         log "Attention! The system architecture is not x86 64 bit, but ${arch}. This could cause unwanted behaviour."
+
+        askYesNo "Do you really want to continue?" || cancel
     fi
 }
 
@@ -773,7 +802,6 @@ function configureProxy {
 }
 
 function configurePHP {
-    local ini_file=""
     local php_en_mod=""
     local php_version=""
 
@@ -781,27 +809,20 @@ function configurePHP {
 
     php_version=$(php --version | head -n1 -c7 | tail -c3)
 
-    if [[ "$OS" = "rhel73" || "$OS" = "rhel74" || "$OS" = "rhel75" ]]; then
-        ini_file="/etc/php.d/i-doit.ini"
-    elif [[ "$OS" = "centos73" || "$OS" = "centos74" || "$OS" = "centos75" ]]; then
-        ini_file="/etc/php.d/i-doit.ini"
-    elif [[ "$OS" = "sles12sp2" || "$OS" = "sles12sp3" ]]; then
-        ini_file="/etc/php7/conf.d/i-doit.ini"
-    elif [[ "$php_version" = "7.0" || "$php_version" = "7.1" || "$php_version" = "7.2" ]]; then
-        ini_file="/etc/php/${php_version}/mods-available/i-doit.ini"
+    if [[ "$php_version" = "7.0" || "$php_version" = "7.1" || "$php_version" = "7.2" ]]; then
         php_en_mod=$(command -v phpenmod)
     elif [[ "$php_version" = "5.6" ]]; then
         log "PHP 5.6 is installed, but this version is deprecated. Please consider to upgrade. We recommend version 7.2."
-        ini_file="/etc/php5/mods-available/i-doit.ini"
         php_en_mod=$(command -v php5enmod)
     elif [[ "$php_version" = "5.5" || "$php_version" = "5.4" ]]; then
         abort "PHP ${php_version} is way too old. Please upgrade."
     else
-        abort "PHP ${php_version} is not supported. Please upgrade/downgrade."
+        abort "PHP ${php_version} is not supported. Please follow the system requirements."
     fi
 
-    log "Write PHP settings to '${ini_file}'"
-    cat << EOF > "$ini_file" || abort "Unable to create and edit file '${ini_file}'"
+    log "Write PHP settings to '${PHP_CONFIG_FILE}'"
+    cat << EOF > "$PHP_CONFIG_FILE" || \
+        abort "Unable to create and edit file '${PHP_CONFIG_FILE}'"
 allow_url_fopen = Yes
 file_uploads = On
 magic_quotes_gpc = Off
@@ -829,15 +850,15 @@ EOF
     log "Append path to MariaDB UNIX socket to PHP settings"
     case "$OS" in
         "rhel73"|"rhel74"|"rhel75"|"centos73"|"centos74"|"centos75")
-            echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" >> "$ini_file" || \
+            echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" >> "$PHP_CONFIG_FILE" || \
                 abort "Unable to alter PHP settings"
             ;;
         "sles12sp2"|"sles12sp3")
-            echo "mysqli.default_socket = /var/run/mysql/mysql.sock" >> "$ini_file" || \
+            echo "mysqli.default_socket = /var/run/mysql/mysql.sock" >> "$PHP_CONFIG_FILE" || \
                 abort "Unable to alter PHP settings"
             ;;
         *)
-            echo "mysqli.default_socket = /var/run/mysqld/mysqld.sock" >> "$ini_file" || \
+            echo "mysqli.default_socket = /var/run/mysqld/mysqld.sock" >> "$PHP_CONFIG_FILE" || \
                 abort "Unable to alter PHP settings"
             ;;
     esac
@@ -921,8 +942,8 @@ function configureApache {
 
     case "$OS" in
         "rhel73"|"rhel74"|"rhel75"|"centos73"|"centos74"|"centos75")
-            cat << EOF > /etc/httpd/conf.d/i-doit.conf || \
-                abort "Unable to create and edit file '/etc/httpd/conf.d/i-doit.conf'"
+            cat << EOF > ${APACHE_CONFIG_FILE} || \
+                abort "Unable to create and edit file '${APACHE_CONFIG_FILE}'"
 DirectoryIndex index.php
 DocumentRoot ${INSTALL_DIR}/
 
@@ -968,8 +989,8 @@ EOF
         "sles12sp2"|"sles12sp3")
             a2_en_mod=$(command -v a2enmod)
 
-            cat << EOF > /etc/apache2/vhosts.d/i-doit.conf || \
-                abort "Unable to create and edit file '/etc/apache2/vhosts.d/i-doit.conf'"
+            cat << EOF > ${APACHE_CONFIG_FILE} || \
+                abort "Unable to create and edit file '${APACHE_CONFIG_FILE}'"
 ServerName ${hostname}
 
 <VirtualHost *:80>
@@ -1022,8 +1043,8 @@ EOF
             a2_en_mod=$(command -v a2enmod)
             a2_dis_mod=$(command -v a2dismod)
 
-            cat << EOF > /etc/apache2/sites-available/i-doit.conf || \
-                abort "Unable to create and edit file '/etc/apache2/sites-available/i-doit.conf'"
+            cat << EOF > ${APACHE_CONFIG_FILE} || \
+                abort "Unable to create and edit file '${APACHE_CONFIG_FILE}'"
 ServerName ${hostname}
 
 <VirtualHost *:80>
@@ -1086,8 +1107,8 @@ EOF
             a2_dis_site=$(command -v a2dissite)
             a2_en_mod=$(command -v a2enmod)
 
-            cat << EOF > /etc/apache2/sites-available/i-doit.conf || \
-                abort "Unable to create and edit file '/etc/apache2/sites-available/i-doit.conf'"
+            cat << EOF > ${APACHE_CONFIG_FILE} || \
+                abort "Unable to create and edit file '${APACHE_CONFIG_FILE}'"
 ServerName ${hostname}
 
 <VirtualHost *:80>
@@ -1125,7 +1146,6 @@ EOF
 }
 
 function configureMariaDB {
-    local mariadb_config=""
     local mariadb_service="mysql.service"
 
     log "Configure MariaDB DBMS"
@@ -1136,29 +1156,9 @@ function configureMariaDB {
         MARIADB_HOSTNAME="$answer"
     fi
 
-    case "$OS" in
-        "debian8")
-            mariadb_config="/etc/mysql/conf.d/99-i-doit.cnf"
-            ;;
-        "debian9"|"ubuntu1604"|"ubuntu1610"|"ubuntu1704")
-            secureMariaDB
-
-            mariadb_config="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
-            ;;
-        "rhel73"|"rhel74"|"rhel75"|"centos73"|"centos74"|"centos75")
-            secureMariaDB
-
-            mariadb_config="/etc/my.cnf.d/99-i-doit.cnf"
-            mariadb_service="mariadb.service"
-            ;;
-        "sles12sp2"|"sles12sp3")
-            secureMariaDB
-
-            mariadb_config="/etc/my.cnf.d/99-i-doit.cnf"
-            ;;
-        *)
-            abort "Unkown operating system '${OS}'!?!"
-    esac
+    if [[ "$OS" != "debian8" ]]; then
+        secureMariaDB
+    fi
 
     log "Prepare shutdown of MariaDB"
     "$MARIADB_BIN" \
@@ -1181,7 +1181,7 @@ function configureMariaDB {
     fi
 
     log "Configure MariaDB settings"
-    cat << EOF > "$mariadb_config" || abort "Unable to create and edit file '${mariadb_config}'"
+    cat << EOF > "$MARIADB_CONFIG_FILE" || abort "Unable to create and edit file '${MARIADB_CONFIG_FILE}'"
 [mysqld]
 
 # This is the number 1 setting to look at for any performance optimization
@@ -1368,28 +1368,15 @@ EOF
 
 function updateApacheConfig {
     local htaccessFile="${INSTALL_DIR}/.htaccess"
-    local apacheConfigFile=""
 
     log "Update Apache's VHost config from i-doit's htaccess file"
-
-    case "$OS" in
-        "rhel73"|"rhel74"|"rhel75"|"centos73"|"centos74"|"centos75")
-            apacheConfigFile="/etc/httpd/conf.d/i-doit.conf"
-            ;;
-        "sles12sp2"|"sles12sp3")
-            apacheConfigFile="/etc/apache2/vhosts.d/i-doit.conf"
-            ;;
-        "debian9"|"ubuntu1604"|"ubuntu1610"|"ubuntu1704")
-            apacheConfigFile="/etc/apache2/sites-available/i-doit.conf"
-            ;;
-    esac
 
     sed -i \
         -e "/${APACHE_HTACCESS_SUBSTITUTION}/ {" \
         -e "r ${htaccessFile}" \
         -e "d" \
         -e "}" \
-        "$apacheConfigFile" || \
+        "$APACHE_CONFIG_FILE" || \
         abort "Unable to change config file"
 
     case "$OS" in

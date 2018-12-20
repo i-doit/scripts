@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 -   `idoit-install`: Set locale to US or GB English because interaction with some commands would fail (for example, `vmstat` on Ubuntu Linux)
 -   `idoit-install`: To install PHP extension imagick on SLES the 3rd-party repository `server:php:extensions:php7` from OpenSUSE is required
 -   `idoit-install`: Do not abort installation if user doesn't enable EPEL on RHEL/CentOS
+-   `idoit-install`: Ask user to continue if architecture is not x86 64 bit
 
 
 ### Fixed
