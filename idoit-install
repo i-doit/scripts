@@ -309,6 +309,27 @@ function identifyOS {
         PHP_CONFIG_FILE="/etc/php7/conf.d/i-doit.ini"
         MARIADB_SOCKET="/var/run/mysql/mysql.sock"
         PHP_FPM_SOCKET="/var/run/php-fpm.sock"
+    elif [[ -f "/etc/os-release" ]]; then
+        ## This file comes with these variables:
+        ## NAME, VERSION, PRETTY_NAME and some more…
+        # shellcheck source=/dev/null
+        source "/etc/os-release"
+
+        if [[ "$NAME" = "SLES" && "$VERSION" = "15" ]]; then
+            log "Operating system identified as ${PRETTY_NAME}"
+            OS="sles15"
+        else
+            abort "Operating system ${PRETTY_NAME} is not supported"
+        fi
+
+        INSTALL_DIR="/srv/www/htdocs"
+        APACHE_USER="wwwrun"
+        APACHE_GROUP="www"
+        APACHE_CONFIG_FILE="/etc/apache2/vhosts.d/i-doit.conf"
+        MARIADB_CONFIG_FILE="/etc/my.cnf.d/99-i-doit.cnf"
+        PHP_CONFIG_FILE="/etc/php7/conf.d/i-doit.ini"
+        MARIADB_SOCKET="/var/run/mysql/mysql.sock"
+        PHP_FPM_SOCKET="/var/run/php-fpm.sock"
     elif [[ -x "/usr/bin/lsb_release" ]]; then
         os_id=$(lsb_release --short --id)
         os_codename=$(lsb_release --short --codename)
@@ -455,8 +476,14 @@ function checkRequirements {
     if [[ -x "$PHP_BIN" ]]; then
         log "Check for installed PHP extensions…"
 
-        local phpExtensions=(bcmath ctype curl fileinfo gd imagick json ldap \
-            mbstring memcached mysqli mysqlnd pgsql session soap xml zip)
+        ## TODO Failed to install php7-imagick on SLES 15:
+        if [[ "$OS" = "sles15" ]]; then
+            local phpExtensions=(bcmath ctype curl fileinfo gd json ldap \
+                mbstring memcached mysqli mysqlnd pgsql session soap xml zip)
+        else
+            local phpExtensions=(bcmath ctype curl fileinfo gd imagick json ldap \
+                mbstring memcached mysqli mysqlnd pgsql session soap xml zip)
+        fi
 
         for phpExtension in "${phpExtensions[@]}"; do
             if "$PHP_BIN" -m | grep "$phpExtension" > /dev/null; then
@@ -503,6 +530,9 @@ function configureOS {
             ;;
         "sles12sp2"|"sles12sp3"|"sles12sp4")
             configureSLES12
+            ;;
+        "sles15")
+            configureSLES15
             ;;
         *)
             abort "Unkown operating system '${OS}'!?!"
@@ -833,6 +863,100 @@ function configureSLES12 {
     fi
 }
 
+function configureSLES15 {
+    local dev_repos=""
+    local web_repos=""
+    local service_pack=""
+    local openSuseRepo=""
+
+    log "Keep your packages up-to-date"
+    zypper --quiet --non-interactive refresh || abort "Unable to refresh software repositories"
+    zypper --quiet --non-interactive update || abort "Unable to update software packages"
+
+    dev_repos=$(zypper repos -E | grep -c "Development_Tools_Module_15_x86_64")
+    web_repos=$(zypper repos -E | grep -c "Web_and_Scripting_Module_15_x86_64")
+
+    if [[ "$dev_repos" -lt 2 || "$web_repos" -lt 2 ]]; then
+        log "Please make sure that the following modules are activated in Yast:"
+        log ""
+        log "    DevTools"
+        log "    Web Scripting"
+        log ""
+        log "After activating these repositories run this script again."
+
+        abort "Essential software repositories are missing"
+    fi
+
+    log "Install software packages"
+    zypper --quiet --non-interactive install \
+        apache2 \
+        mariadb mariadb-client \
+        memcached \
+        php7 php7-bcmath php7-bz2 php7-ctype php7-curl php7-fpm php7-gd php7-gettext php7-fileinfo \
+        php7-json php7-ldap php7-mbstring php7-mysql php7-opcache php7-openssl php7-pdo php7-pgsql \
+        php7-phar php7-posix php7-soap php7-sockets php7-sqlite php7-xsl php7-zip php7-zlib || \
+        abort "Unable to install required software packages"
+
+    openSuseRepo=$(zypper repos -E | grep -c "server_php_extensions_php7")
+
+    if [[ "$openSuseRepo" -lt 1 ]]; then
+        log "i-doit requires PHP module for imagick and memcached"
+        log "But these PHP modules are not available in SLE standard repositories"
+        log "They will be installed from a 3rd-party repository from openSUSE:"
+        log ""
+        log "    server:php:extensions:php7"
+        log ""
+        log "Details:"
+        log ""
+        log "    https://software.opensuse.org/download.html?project=server%3Aphp%3Aextensions%3Aphp7&package=php7-imagick"
+
+        zypper --quiet --non-interactive addrepo \
+            --gpgcheck --refresh \
+            https://download.opensuse.org/repositories/server:php:extensions:php7/SLE_15/server:php:extensions:php7.repo || \
+            abort "Unable to add repository"
+        zypper --quiet --non-interactive --gpg-auto-import-keys refresh || \
+            abort "Unable to refresh software repositories"
+
+        ## TODO Unable to install package "php7-imagick":
+        ## "Problem: nothing provides libMagickCore-7.Q16HDRI.so.5()(64bit) needed by php7-imagick-3.4.3-21.1.x86_64"
+        zypper --quiet --non-interactive install php7-memcached || \
+            abort "Unable to install required software package"
+    fi
+
+    zypper --quiet --non-interactive clean || abort "Unable to clean up cached software packages"
+
+    log "Enable services"
+    systemctl -q enable apache2.service || abort "Cannot enable Apache Web server"
+    systemctl -q enable mariadb.service || abort "Cannot enable MariaDB server"
+    systemctl -q enable memcached.service || abort "Cannot enable memcached server"
+
+    log "Start services"
+    systemctl -q start apache2.service || abort "Unable to start Apache Web server"
+    systemctl -q start mariadb.service || abort "Unable to start MariaDB server"
+    systemctl -q start memcached.service || abort "Unable to start memcached server"
+
+    log "Allow incoming HTTP traffic"
+    SuSEfirewall2 open EXT TCP http || "Unable to open port 80"
+    SuSEfirewall2 start || abort "Unable to restart firewall"
+
+    if [[ ! -x "$(command -v chronic)" ]]; then
+        log "Install 'chronic'"
+        ## TODO: I know, this seems to be pretty ugly, but:
+        ## Why the hack is moreutils not included in the standard repositories?!?
+        wget --quiet -O "${TMP_DIR}/chronic" \
+            https://git.joeyh.name/index.cgi/moreutils.git/plain/chronic || \
+            abort "Unable to download 'chronic'"
+        chmod +x "${TMP_DIR}/chronic" || \
+            abort "Unable to set executable bit"
+        mv "${TMP_DIR}/chronic" /usr/bin || \
+            abort "Unable to move 'chronic' to '/usr/bin'"
+        wget --quiet -O - https://cpanmin.us | perl - App::cpanminus || \
+            abort "Unable to install cpanminus"
+        cpanm --quiet --notest --install IPC::Run || \
+            abort "Unable to install Perl module IPC::Run"
+    fi
+}
+
 function configureProxy {
     if [[ -n "${https_proxy+x}" ]]; then
         log "Found proxy settings in environment variable 'https_proxy': $https_proxy"
@@ -899,6 +1023,7 @@ session.cookie_lifetime = 0
 mysqli.default_socket = ${MARIADB_SOCKET}
 EOF
 
+    ## SLES has no phpenmod:
     if [[ -n "$php_en_mod" ]]; then
         log "Enable PHP settings"
         "$php_en_mod" i-doit
@@ -944,7 +1069,7 @@ EOF
             systemctl -q start php-fpm || abort \
                 "Unable to restart service"
             ;;
-        "sles12sp2"|"sles12sp3"|"sles12sp4")
+        "sles12sp2"|"sles12sp3"|"sles12sp4"|"sles15")
             log "Enable PHP FPM configuration files"
             mv /etc/php7/fpm/php-fpm.conf{.default,} || \
                 abort "Unable to move file"
@@ -962,9 +1087,14 @@ pm.min_spare_servers = 1
 pm.max_spare_servers = 3
 security.limit_extensions = .php
 EOF
+
+            log "Enable PHP FPM"
+            systemctl -q enable php-fpm || \
+                abort "Unable to enable service"
+
             log "Start PHP FPM"
-            systemctl -q start php-fpm || abort \
-                "Unable to restart service"
+            systemctl -q start php-fpm || \
+                abort "Unable to restart service"
             ;;
         *)
             log "Nope. This OS will stuck on mod_php."
@@ -1028,7 +1158,7 @@ EOF
             systemctl -q restart httpd.service || \
                 abort "Unable to restart Apache Web server"
             ;;
-        "sles12sp2"|"sles12sp3"|"sles12sp4")
+        "sles12sp2"|"sles12sp3"|"sles12sp4"|"sles15")
             a2_en_mod=$(command -v a2enmod)
 
             cat << EOF > ${APACHE_CONFIG_FILE} || \
@@ -1189,6 +1319,10 @@ EOF
 
 function configureMariaDB {
     local mariadb_service="mysql.service"
+
+    if [[ "$OS" = "sles15" ]]; then
+        mariadb_service="mariadb.service"
+    fi
 
     log "Configure MariaDB DBMS"
 
@@ -1427,7 +1561,7 @@ function updateApacheConfig {
             systemctl -q restart httpd.service || \
                 abort "Unable to restart Apache Web server"
             ;;
-        "sles12sp2"|"sles12sp3"|"sles12sp4")
+        "sles12sp2"|"sles12sp3"|"sles12sp4"|"sles15")
             log "Restart Apache Web server"
             systemctl -q restart apache2.service || \
                 abort "Unable to restart Apache Web server"

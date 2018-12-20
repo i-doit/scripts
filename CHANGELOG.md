@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 -   `idoit-install`: Add support for Ubuntu Linux 18.04 LTS "bionic"
 -   `idoit-install`: Add support for CentOS 7.6
 -   `idoit-install`: Add support for RHEL 7.6
+-   `idoit-install`: Add support for SLES 15
 -   `idoit-install`: Add support for SLES 12 SP4
 -   `idoit-install`: Test more PHP extensions whether they are loaded
 -   `idoit-jobs`: Clear PHP OpCache via local HTTP request
