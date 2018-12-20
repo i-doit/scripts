@@ -22,8 +22,6 @@ on a **fresh installation of a GNU/Linux operating system**. Supported OSs are:
 -   Debian GNU/Linux 8 "jessie"
 -   Debian GNU/Linux 9 "stretch" (**recommended**)
 -   Ubuntu Linux 16.04 LTS "xenial"
--   Ubuntu Linux 16.10 "yakkety"
--   Ubuntu Linux 17.04 "zesty"
 -   Red Hat Enterprise Linux (RHEL) 7.3, 7.4 and 7.5
 -   CentOS 7.3, 7.4, 7.5
 -   SUSE Linux Enterprise Server 12 SP2 and SP3

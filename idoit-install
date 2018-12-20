@@ -219,7 +219,7 @@ function execute {
     log "\\n--------------------------------------------------------------------------------\\n"
 
     case "$OS" in
-        "ubuntu1604"|"ubuntu1610"|"ubuntu1704")
+        "ubuntu1604")
             log "To garantee that all your changes take effect you should restart your system."
 
             askYesNo "Do you want to restart your system NOW?" && systemctl -q reboot
@@ -322,14 +322,6 @@ function identifyOS {
         elif [[ "$os_id" = "Ubuntu" && "$os_codename" = "xenial" ]]; then
             log "Operating system identified as ${os_description}"
             OS="ubuntu1604"
-            PHP_CONFIG_FILE="/etc/php/7.0/mods-available/i-doit.ini"
-        elif [[ "$os_id" = "Ubuntu" && "$os_codename" = "yakkety" ]]; then
-            log "Operating system identified as ${os_description}"
-            OS="ubuntu1610"
-            PHP_CONFIG_FILE="/etc/php/7.0/mods-available/i-doit.ini"
-        elif [[ "$os_id" = "Ubuntu" && "$os_codename" = "zesty" ]]; then
-            log "Operating system identified as ${os_description}"
-            OS="ubuntu1704"
             PHP_CONFIG_FILE="/etc/php/7.0/mods-available/i-doit.ini"
         else
             abort "Operating system ${os_description} is not supported"
@@ -475,7 +467,7 @@ function configureOS {
         "debian9")
             configureDebian9
             ;;
-        "ubuntu1604"|"ubuntu1610"|"ubuntu1704")
+        "ubuntu1604")
             configureUbuntu1604
             ;;
         "rhel73"|"rhel74"|"rhel75"|"centos73"|"centos74"|"centos75")
@@ -875,7 +867,7 @@ function configurePHPFPM {
     log "Configure PHP-FPM"
 
     case "$OS" in
-        "debian9"|"ubuntu1604"|"ubuntu1610"|"ubuntu1704")
+        "debian9"|"ubuntu1604")
             log "Restart PHP-FPM"
             systemctl -q restart php7.0-fpm || abort \
                 "Unable to restart service"
@@ -1037,7 +1029,7 @@ EOF
             systemctl -q restart apache2.service || \
                 abort "Unable to restart Apache Web server"
             ;;
-        "debian9"|"ubuntu1604"|"ubuntu1610"|"ubuntu1704")
+        "debian9"|"ubuntu1604")
             a2_en_site=$(command -v a2ensite)
             a2_dis_site=$(command -v a2dissite)
             a2_en_mod=$(command -v a2enmod)
@@ -1390,7 +1382,7 @@ function updateApacheConfig {
             systemctl -q restart apache2.service || \
                 abort "Unable to restart Apache Web server"
             ;;
-        "debian9"|"ubuntu1604"|"ubuntu1610"|"ubuntu1704")
+        "debian9"|"ubuntu1604")
             log "Restart Apache Web server"
             systemctl -q restart apache2.service || \
                 abort "Unable to restart Apache Web server"

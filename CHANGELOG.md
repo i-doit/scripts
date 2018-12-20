@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 -   `idoit-install`: To install PHP extension imagick on SLES the 3rd-party repository `server:php:extensions:php7` from OpenSUSE is required
 -   `idoit-install`: Do not abort installation if user doesn't enable EPEL on RHEL/CentOS
 -   `idoit-install`: Ask user to continue if architecture is not x86 64 bit
+-   `idoit-install`: Remove support for EOL distribution Ubuntu Linux 16.10 "yakkety"
+-   `idoit-install`: Remove support for EOL distribution Ubuntu Linux 17.04 "zesty"
 
 
 ### Fixed
