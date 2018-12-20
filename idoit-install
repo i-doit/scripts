@@ -784,11 +784,11 @@ function configurePHP {
         ini_file="/etc/php.d/i-doit.ini"
     elif [[ "$OS" = "sles12sp2" || "$OS" = "sles12sp3" ]]; then
         ini_file="/etc/php7/conf.d/i-doit.ini"
-    elif [[ "$php_version" = "7.0" || "$php_version" = "7.1" ]]; then
+    elif [[ "$php_version" = "7.0" || "$php_version" = "7.1" || "$php_version" = "7.2" ]]; then
         ini_file="/etc/php/${php_version}/mods-available/i-doit.ini"
         php_en_mod=$(command -v phpenmod)
     elif [[ "$php_version" = "5.6" ]]; then
-        log "PHP 5.6 is installed, but 7.1 is recommended. Please consider to upgrade."
+        log "PHP 5.6 is installed, but this version is deprecated. Please consider to upgrade. We recommend version 7.2."
         ini_file="/etc/php5/mods-available/i-doit.ini"
         php_en_mod=$(command -v php5enmod)
     elif [[ "$php_version" = "5.5" || "$php_version" = "5.4" ]]; then
@@ -852,7 +852,7 @@ function configurePHPFPM {
 
     case "$OS" in
         "debian9"|"ubuntu1604"|"ubuntu1610"|"ubuntu1704")
-            log "Restart PHP FPM"
+            log "Restart PHP-FPM"
             systemctl -q restart php7.0-fpm || abort \
                 "Unable to restart service"
             ;;
