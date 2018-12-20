@@ -22,8 +22,8 @@ on a **fresh installation of a GNU/Linux operating system**. Supported OSs are:
 -   Debian GNU/Linux 8 "jessie"
 -   Debian GNU/Linux 9 "stretch" (**recommended**)
 -   Ubuntu Linux 16.04 LTS "xenial"
--   Red Hat Enterprise Linux (RHEL) 7.3, 7.4 and 7.5
--   CentOS 7.3, 7.4, 7.5
+-   Red Hat Enterprise Linux (RHEL) 7.3, 7.4, 7.5 and 7.6
+-   CentOS 7.3, 7.4, 7.5 and 7.6
 -   SUSE Linux Enterprise Server 12 SP2 and SP3
 
 Before you execute this script you …
