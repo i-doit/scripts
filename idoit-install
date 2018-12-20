@@ -66,6 +66,7 @@ APACHE_GROUP="www-data"
 MIN_CPU_CORES=2
 ## Be tolerant, use 1000 instead of 1024:
 MIN_RAM=$((1000*1000*1000*2))
+APACHE_HTACCESS_SUBSTITUTION="## Insert content from .htaccess file"
 BASENAME=$(basename "$0")
 VERSION="0.11"
 
@@ -74,6 +75,7 @@ SUDO_BIN=""
 UNZIP_BIN=""
 WGET_BIN=""
 PHP_BIN=""
+
 
 ##--------------------------------------------------------------------------------------------------
 
@@ -137,6 +139,7 @@ function execute {
 
     if askYesNo "Do you want to download and install i-doit automatically?"; then
         prepareIDoit
+        updateApacheConfig
         installIDoit
 
         ip_address=$(ip route get 1 | awk '{print $NF;exit}')
@@ -910,8 +913,11 @@ function configureApache {
     local a2_dis_mod=""
     local a2_en_site=""
     local a2_dis_site=""
+    local hostname=""
 
     log "Configure Apache Web server"
+
+    hostname="$(cat /etc/hostname)"
 
     case "$OS" in
         "rhel73"|"rhel74"|"rhel75"|"centos73"|"centos74"|"centos75")
@@ -919,68 +925,15 @@ function configureApache {
                 abort "Unable to create and edit file '/etc/httpd/conf.d/i-doit.conf'"
 DirectoryIndex index.php
 DocumentRoot ${INSTALL_DIR}/
+
 <Directory ${INSTALL_DIR}/>
     AllowOverride None
-    Options -Indexes
-    Require all granted
 
-    <IfModule mod_expires.c>
-        ExpiresActive On
-        ExpiresByType image/gif A2592000
-        ExpiresByType image/png A2592000
-        ExpiresByType image/jpg A2592000
-        ExpiresByType image/jpeg A2592000
-        ExpiresByType image/ico A2592000
-        ExpiresByType text/css A2592000
-        ExpiresByType text/javascript A2592000
-        ExpiresByType image/x-icon "access 1 year"
-        ExpiresDefault "access 2 week"
-        <IfModule mod_headers.c>
-            Header append Cache-Control "public"
-        </IfModule>
-    </IfModule>
-
-    <IfModule mod_rewrite.c>
-        RewriteEngine On
-
-        # security rules
-        RewriteRule .svn/ - [F]
-        RewriteRule ^controller$ - [F]
-        # Our code relies on the "controller.php" - See ID-5153
-        #RewriteRule ^controller\\.php$ - [F]
-        RewriteRule ^console\\.php$ - [F]
-        RewriteRule ^(INSTALL|UPDATE|checkmk_transfer.sh|idoit-rights.sh|vendor)$ - [F]
-
-        # favicon rewrite
-        RewriteRule favicon\\.ico$ images/favicon.ico [L]
-
-        # base rewriting
-        RewriteCond %{REQUEST_FILENAME} !-l
-        RewriteCond %{REQUEST_FILENAME} !-f
-        RewriteCond %{REQUEST_FILENAME} !-d
-        RewriteRule .* index.php [L,QSA]
-    </IfModule>
-
-    <Files *.yml>
-        Require all denied
-    </Files>
+    ${APACHE_HTACCESS_SUBSTITUTION}
 </Directory>
 
-<Directory ${INSTALL_DIR}/imports/>
-    <FilesMatch "\\.(.*)$">
-        Require all denied
-    </FilesMatch>
-</Directory>
-
-<Directory ${INSTALL_DIR}/src/>
-    <Files ~ (.*?\\.php)>
-        Require all denied
-    </Files>
-
-    <Files ~ (rt\\.php|barcode_window\\.php|barcode\\.php|qr\\.php|qr_img\\.php|js\\.php|jsonrpc\\.php)>
-        Require all granted
-    </Files>
-</Directory>
+TimeOut 600
+ProxyTimeout 600
 
 <FilesMatch "\\.php$">
     <If "-f %{REQUEST_FILENAME}">
@@ -1009,80 +962,30 @@ EOF
             sed -i "/^#.* mpm_event_module /s/^#//" /etc/httpd/conf.modules.d/00-mpm.conf || \
                 abort "sed exited with error"
             log "Restart Apache Web server"
-            systemctl -q restart httpd.service || abort "Unable to restart Apache Web server"
+            systemctl -q restart httpd.service || \
+                abort "Unable to restart Apache Web server"
             ;;
         "sles12sp2"|"sles12sp3")
             a2_en_mod=$(command -v a2enmod)
 
             cat << EOF > /etc/apache2/vhosts.d/i-doit.conf || \
                 abort "Unable to create and edit file '/etc/apache2/vhosts.d/i-doit.conf'"
+ServerName ${hostname}
+
 <VirtualHost *:80>
     ServerAdmin i-doit@example.net
 
     DirectoryIndex index.php
     DocumentRoot ${INSTALL_DIR}/
+
     <Directory ${INSTALL_DIR}/>
         AllowOverride None
-        Options -Indexes
-        Require all granted
 
-        <IfModule mod_expires.c>
-            ExpiresActive On
-            ExpiresByType image/gif A2592000
-            ExpiresByType image/png A2592000
-            ExpiresByType image/jpg A2592000
-            ExpiresByType image/jpeg A2592000
-            ExpiresByType image/ico A2592000
-            ExpiresByType text/css A2592000
-            ExpiresByType text/javascript A2592000
-            ExpiresByType image/x-icon "access 1 year"
-            ExpiresDefault "access 2 week"
-            <IfModule mod_headers.c>
-                Header append Cache-Control "public"
-            </IfModule>
-        </IfModule>
-
-        <IfModule mod_rewrite.c>
-            RewriteEngine On
-
-            # security rules
-            RewriteRule .svn/ - [F]
-            RewriteRule ^controller$ - [F]
-            # Our code relies on the "controller.php" - See ID-5153
-            #RewriteRule ^controller\\.php$ - [F]
-            RewriteRule ^console\\.php$ - [F]
-            RewriteRule ^(INSTALL|UPDATE|checkmk_transfer.sh|idoit-rights.sh|vendor)$ - [F]
-
-            # favicon rewrite
-            RewriteRule favicon\\.ico$ images/favicon.ico [L]
-
-            # base rewriting
-            RewriteCond %{REQUEST_FILENAME} !-l
-            RewriteCond %{REQUEST_FILENAME} !-f
-            RewriteCond %{REQUEST_FILENAME} !-d
-            RewriteRule .* index.php [L,QSA]
-        </IfModule>
-
-        <Files *.yml>
-            Require all denied
-        </Files>
+        ${APACHE_HTACCESS_SUBSTITUTION}
     </Directory>
 
-    <Directory ${INSTALL_DIR}/imports/>
-        <FilesMatch "\\.(.*)$">
-            Require all denied
-        </FilesMatch>
-    </Directory>
-
-    <Directory ${INSTALL_DIR}/src/>
-        <Files ~ (.*?\\.php)>
-            Require all denied
-        </Files>
-
-        <Files ~ (rt\\.php|barcode_window\\.php|barcode\\.php|qr\\.php|qr_img\\.php|js\\.php|jsonrpc\\.php)>
-            Require all granted
-        </Files>
-    </Directory>
+    TimeOut 600
+    ProxyTimeout 600
 
     <FilesMatch "\\.php$">
         <If "-f %{REQUEST_FILENAME}">
@@ -1110,7 +1013,8 @@ EOF
             "$a2_en_mod" mod_access_compat || abort "Unable to enable Apache module mod_access_compat"
 
             log "Restart Apache Web server"
-            systemctl -q restart apache2.service || abort "Unable to restart Apache Web server"
+            systemctl -q restart apache2.service || \
+                abort "Unable to restart Apache Web server"
             ;;
         "debian9"|"ubuntu1604"|"ubuntu1610"|"ubuntu1704")
             a2_en_site=$(command -v a2ensite)
@@ -1120,73 +1024,22 @@ EOF
 
             cat << EOF > /etc/apache2/sites-available/i-doit.conf || \
                 abort "Unable to create and edit file '/etc/apache2/sites-available/i-doit.conf'"
+ServerName ${hostname}
+
 <VirtualHost *:80>
     ServerAdmin i-doit@example.net
 
     DirectoryIndex index.php
     DocumentRoot ${INSTALL_DIR}/
+
     <Directory ${INSTALL_DIR}/>
         AllowOverride None
-        Options -Indexes
-        Require all granted
 
-        <IfModule mod_expires.c>
-            ExpiresActive On
-            ExpiresByType image/gif A2592000
-            ExpiresByType image/png A2592000
-            ExpiresByType image/jpg A2592000
-            ExpiresByType image/jpeg A2592000
-            ExpiresByType image/ico A2592000
-            ExpiresByType text/css A2592000
-            ExpiresByType text/javascript A2592000
-            ExpiresByType image/x-icon "access 1 year"
-            ExpiresDefault "access 2 week"
-            <IfModule mod_headers.c>
-                Header append Cache-Control "public"
-            </IfModule>
-        </IfModule>
-
-        <IfModule mod_rewrite.c>
-            RewriteEngine On
-
-            # security rules
-            RewriteRule .svn/ - [F]
-            RewriteRule ^controller$ - [F]
-            # Our code relies on the "controller.php" - See ID-5153
-            #RewriteRule ^controller\\.php$ - [F]
-            RewriteRule ^console\\.php$ - [F]
-            RewriteRule ^(INSTALL|UPDATE|checkmk_transfer.sh|idoit-rights.sh|vendor)$ - [F]
-
-            # favicon rewrite
-            RewriteRule favicon\\.ico$ images/favicon.ico [L]
-
-            # base rewriting
-            RewriteCond %{REQUEST_FILENAME} !-l
-            RewriteCond %{REQUEST_FILENAME} !-f
-            RewriteCond %{REQUEST_FILENAME} !-d
-            RewriteRule .* index.php [L,QSA]
-        </IfModule>
-
-        <Files *.yml>
-            Require all denied
-        </Files>
+        ${APACHE_HTACCESS_SUBSTITUTION}
     </Directory>
 
-    <Directory ${INSTALL_DIR}/imports/>
-        <FilesMatch "\\.(.*)$">
-            Require all denied
-        </FilesMatch>
-    </Directory>
-
-    <Directory ${INSTALL_DIR}/src/>
-        <Files ~ (.*?\\.php)>
-            Require all denied
-        </Files>
-
-        <Files ~ (rt\\.php|barcode_window\\.php|barcode\\.php|qr\\.php|qr_img\\.php|js\\.php|jsonrpc\\.php)>
-            Require all granted
-        </Files>
-    </Directory>
+    TimeOut 600
+    ProxyTimeout 600
 
     <FilesMatch "\\.php$">
         <If "-f %{REQUEST_FILENAME}">
@@ -1235,6 +1088,8 @@ EOF
 
             cat << EOF > /etc/apache2/sites-available/i-doit.conf || \
                 abort "Unable to create and edit file '/etc/apache2/sites-available/i-doit.conf'"
+ServerName ${hostname}
+
 <VirtualHost *:80>
     ServerAdmin i-doit@example.net
 
@@ -1509,6 +1364,51 @@ EOF
     find . -type f -exec chmod 664 {} \; || abort "Unable to change file permissions"
     chmod 774 controller ./*.sh setup/*.sh || \
         abort "Unable to change executable permissions"
+}
+
+function updateApacheConfig {
+    local htaccessFile="${INSTALL_DIR}/.htaccess"
+    local apacheConfigFile=""
+
+    log "Update Apache's VHost config from i-doit's htaccess file"
+
+    case "$OS" in
+        "rhel73"|"rhel74"|"rhel75"|"centos73"|"centos74"|"centos75")
+            apacheConfigFile="/etc/httpd/conf.d/i-doit.conf"
+            ;;
+        "sles12sp2"|"sles12sp3")
+            apacheConfigFile="/etc/apache2/vhosts.d/i-doit.conf"
+            ;;
+        "debian9"|"ubuntu1604"|"ubuntu1610"|"ubuntu1704")
+            apacheConfigFile="/etc/apache2/sites-available/i-doit.conf"
+            ;;
+    esac
+
+    sed -i \
+        -e "/${APACHE_HTACCESS_SUBSTITUTION}/ {" \
+        -e "r ${htaccessFile}" \
+        -e "d" \
+        -e "}" \
+        "$apacheConfigFile" || \
+        abort "Unable to change config file"
+
+    case "$OS" in
+        "rhel73"|"rhel74"|"rhel75"|"centos73"|"centos74"|"centos75")
+            log "Restart Apache Web server"
+            systemctl -q restart httpd.service || \
+                abort "Unable to restart Apache Web server"
+            ;;
+        "sles12sp2"|"sles12sp3")
+            log "Restart Apache Web server"
+            systemctl -q restart apache2.service || \
+                abort "Unable to restart Apache Web server"
+            ;;
+        "debian9"|"ubuntu1604"|"ubuntu1610"|"ubuntu1704")
+            log "Restart Apache Web server"
+            systemctl -q restart apache2.service || \
+                abort "Unable to restart Apache Web server"
+            ;;
+    esac
 }
 
 function installIDoit {
