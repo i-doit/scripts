@@ -289,6 +289,9 @@ function identifyOS {
         elif [[ "$os_release" = "12" && "$os_patchlevel" = "3" ]]; then
             log "Operating system identified as SUSE Linux Enterprise Server ${os_release} SP${os_patchlevel}"
             OS="sles12sp3"
+        elif [[ "$os_release" = "12" && "$os_patchlevel" = "4" ]]; then
+            log "Operating system identified as SUSE Linux Enterprise Server ${os_release} SP${os_patchlevel}"
+            OS="sles12sp4"
         else
             abort "Operating system ${os_description} is not supported"
         fi
@@ -477,7 +480,7 @@ function configureOS {
         "centos73"|"centos74"|"centos75"|"centos76")
             configureRHEL
             ;;
-        "sles12sp2"|"sles12sp3")
+        "sles12sp2"|"sles12sp3"|"sles12sp4")
             configureSLES12
             ;;
         *)
@@ -704,6 +707,9 @@ function configureSLES12 {
         "sles12sp3")
             service_pack="3"
             ;;
+        "sles12sp4")
+            service_pack="4"
+            ;;
     esac
 
     dev_repos=$(zypper repos -E | grep -c "SLE-SDK12-SP${service_pack}")
@@ -863,7 +869,7 @@ EOF
             echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" >> "$PHP_CONFIG_FILE" || \
                 abort "Unable to alter PHP settings"
             ;;
-        "sles12sp2"|"sles12sp3")
+        "sles12sp2"|"sles12sp3"|"sles12sp4")
             echo "mysqli.default_socket = /var/run/mysql/mysql.sock" >> "$PHP_CONFIG_FILE" || \
                 abort "Unable to alter PHP settings"
             ;;
@@ -913,7 +919,7 @@ EOF
             systemctl -q start php-fpm || abort \
                 "Unable to restart service"
             ;;
-        "sles12sp2"|"sles12sp3")
+        "sles12sp2"|"sles12sp3"|"sles12sp4")
             log "Enable PHP FPM configuration files"
             mv /etc/php7/fpm/php-fpm.conf{.default,} || \
                 abort "Unable to copy file"
@@ -997,7 +1003,7 @@ EOF
             systemctl -q restart httpd.service || \
                 abort "Unable to restart Apache Web server"
             ;;
-        "sles12sp2"|"sles12sp3")
+        "sles12sp2"|"sles12sp3"|"sles12sp4")
             a2_en_mod=$(command -v a2enmod)
 
             cat << EOF > ${APACHE_CONFIG_FILE} || \
@@ -1396,7 +1402,7 @@ function updateApacheConfig {
             systemctl -q restart httpd.service || \
                 abort "Unable to restart Apache Web server"
             ;;
-        "sles12sp2"|"sles12sp3")
+        "sles12sp2"|"sles12sp3"|"sles12sp4")
             log "Restart Apache Web server"
             systemctl -q restart apache2.service || \
                 abort "Unable to restart Apache Web server"

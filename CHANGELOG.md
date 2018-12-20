@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+-   `idoit-install`: Add support for distribution CentOS 7.6
+-   `idoit-install`: Add support for distribution RHEL 7.6
+-   `idoit-install`: Add support for distribution SLES 12 SP4
 -   `idoit-install`: Test more PHP extensions whether they are loaded
 -   `idoit-jobs`: Clear PHP OpCache via local HTTP request
 -   `idoit-jobs`: Re-cache by requesting i-doit Web GUI
@@ -25,8 +28,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 -   `idoit-install`: To install PHP extension imagick on SLES the 3rd-party repository `server:php:extensions:php7` from OpenSUSE is required
 -   `idoit-install`: Do not abort installation if user doesn't enable EPEL on RHEL/CentOS
 -   `idoit-install`: Ask user to continue if architecture is not x86 64 bit
--   `idoit-install`: Add support for distribution RHEL 7.6
--   `idoit-install`: Add support for distribution CentOS 7.6
 -   `idoit-install`: Remove support for EOL distribution Ubuntu Linux 16.10 "yakkety"
 -   `idoit-install`: Remove support for EOL distribution Ubuntu Linux 17.04 "zesty"
 
