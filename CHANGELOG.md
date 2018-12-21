@@ -8,20 +8,47 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ##  [Unreleased]
 
+_tbd_
+
+
+##  [0.12] – 2018-12-21
+
+Happy holidays 🎄
+
 
 ### Added
 
+-   `idoit-install`: Add support for Ubuntu Linux 18.04 LTS "bionic"
+-   `idoit-install`: Add support for CentOS 7.6
+-   `idoit-install`: Add support for RHEL 7.6
+-   `idoit-install`: Add support for SLES 15
+-   `idoit-install`: Add support for SLES 12 SP4
+-   `idoit-install`: Test more PHP extensions whether they are loaded
+-   `idoit-jobs`: Clear PHP OpCache via local HTTP request
+-   `idoit-jobs`: Re-cache by requesting i-doit Web GUI
 -   `idoit-support`: Collect information about hardware, installed software and systemd
 
 
 ### Changed
 
+-   `idoit-install`: Switch from Apache module php to fastcgi with php-fpm
+-   `idoit-install`: Merge i-doit's .htaccess files into Apache site configuration
+-   `idoit-install`: Switch from Apache module mpm_prefork to mpm_event (except on SLES)
+-   `idoit-install`: Set locale to US or GB English because interaction with some commands would fail (for example, `vmstat` on Ubuntu Linux)
+-   `idoit-install`: To install PHP extension imagick on SLES the 3rd-party repository `server:php:extensions:php7` from OpenSUSE is required
+-   `idoit-install`: Do not abort installation if user doesn't enable EPEL on RHEL/CentOS
+-   `idoit-install`: Ask user to continue if architecture is not x86 64 bit
+-   `idoit-install`: Remove support for Ubuntu Linux 16.10 "yakkety" (EOL)
+-   `idoit-install`: Remove support for Ubuntu Linux 17.04 "zesty" (EOL)
 -   `idoit-jobs`: Clear caches at the end of all jobs
 
 
 ### Fixed
 
--   `idoit-install`: Install missing PHP7 imagick module (SLES12)
+-   `idoit-install`: Install missing PHP7 extensions fileinfo and imagick (SLES12)
+-   `idoit-install`: Prevent MariaDB service failing on startup/shutdown (Ubuntu Linux)
+-   `idoit-install`: Enable and start memcached service (RHEL/CentOS/SLES12)
+-   `idoit-install`: Install missing PHP OpCache on Debian GNU/Linux and Ubuntu
 
 
 ##  [0.11] – 2018-07-13
@@ -186,7 +213,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 Initial release
 
 
-[Unreleased]: https://github.com/bheisig/i-doit-scripts/compare/0.11...HEAD
+[Unreleased]: https://github.com/bheisig/i-doit-scripts/compare/0.12...HEAD
+[0.12]: https://github.com/bheisig/i-doit-scripts/compare/0.11...0.12
 [0.11]: https://github.com/bheisig/i-doit-scripts/compare/0.10...0.11
 [0.10]: https://github.com/bheisig/i-doit-scripts/compare/0.9...0.10
 [0.9]: https://github.com/bheisig/i-doit-scripts/compare/0.8...0.9
