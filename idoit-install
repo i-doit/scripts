@@ -77,7 +77,7 @@ MARIADB_SOCKET=""
 PHP_FPM_SOCKET=""
 APACHE_HTACCESS_SUBSTITUTION="## Insert content from .htaccess file"
 BASENAME=$(basename "$0")
-VERSION="0.11"
+PROJECT_VERSION="0.11"
 
 MARIADB_BIN=""
 SUDO_BIN=""
@@ -234,33 +234,27 @@ function execute {
 }
 
 function identifyOS {
-    local os_id=""
-    local os_codename=""
-    local os_description=""
-    local os_release=""
-    local os_major_release=""
-    local os_patchlevel=""
+    if [[ ! -f "/etc/os-release" ]]; then
+        log "File /etc/os-release is missing"
+        abort "Unable to identify operating system"
+    fi
 
-    if [[ -f "/etc/centos-release" ]]; then
-        os_description=$(cat /etc/centos-release)
-        os_release=$(grep -o '[0-9]\.[0-9]' /etc/centos-release)
+    ## This file comes with these variables:
+    ## NAME, VERSION, VERSION_ID, PRETTY_NAME and some more…
+    NAME=""
+    VERSION=""
+    VERSION_ID=""
+    PRETTY_NAME=""
 
-        case "$os_release" in
-            "7.3") OS="cent73";;
-            "7.4") OS="cent74";;
-            "7.5") OS="cent75";;
-            "7.6") OS="cent76";;
-            *)
-                abort "Operating system CentOS $os_release is not supported"
-                ;;
-        esac
+    # shellcheck source=/dev/null
+    source "/etc/os-release"
 
-        log "Operating system identified as CentOS ${os_release}"
-
+    if [[ "$NAME" == "CentOS Linux" && "$VERSION_ID" == "7" ]]; then
+        OS="centos7"
         APACHE_USER="apache"
         APACHE_GROUP="apache"
         APACHE_CONFIG_FILE="/etc/httpd/conf.d/i-doit.conf"
-        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
+        MARIADB_CONFIG_FILE="/etc/my.cnf.d/99-i-doit.cnf"
         PHP_CONFIG_FILE="/etc/php.d/i-doit.ini"
         MARIADB_SOCKET="/var/lib/mysql/mysql.sock"
         PHP_FPM_SOCKET="/var/run/php-fpm/php-fpm.sock"
@@ -268,76 +262,47 @@ function identifyOS {
         MARIADB_UNIT="mariadb"
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
-    elif [[ -f "/etc/redhat-release" ]]; then
-        os_description=$(cat /etc/redhat-release)
-        os_release=$(grep -o '[0-9]\.[0-9]' /etc/redhat-release)
-
-        case "$os_release" in
-            "7.3") OS="rhel73";;
-            "7.4") OS="rhel74";;
-            "7.5") OS="rhel75";;
-            "7.6") OS="rhel76";;
-            *)
-                abort "Operating system Red Hat Enterprise Linux (RHEL) $os_release is not supported"
-                ;;
-        esac
-
-        log "Operating system identified as Red Hat Enterprise Linux (RHEL) ${os_release}"
-
-        APACHE_USER="apache"
-        APACHE_GROUP="apache"
-        APACHE_CONFIG_FILE="/etc/httpd/conf.d/i-doit.conf"
+    elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "9 (stretch)" ]]; then
+        OS="debian9"
+        APACHE_USER="www-data"
+        APACHE_GROUP="www-data"
+        APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
         MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
-        PHP_CONFIG_FILE="/etc/php.d/i-doit.ini"
-        MARIADB_SOCKET="/var/lib/mysql/mysql.sock"
-        PHP_FPM_SOCKET="/var/run/php-fpm/php-fpm.sock"
-        APACHE_UNIT="httpd"
-        MARIADB_UNIT="mariadb"
-        MEMCACHED_UNIT="memcached"
-        PHP_FPM_UNIT="php-fpm"
-    elif [[ -f "/etc/SuSE-release" ]]; then
-        os_description=$(head -n1 /etc/SuSE-release)
-        os_release=$(grep "VERSION" /etc/SuSE-release | grep -o '[0-9]*')
-        os_patchlevel=$(grep "PATCHLEVEL" /etc/SuSE-release | grep -o '[0-9]')
-
-        if [[ "$os_release" = "12" && "$os_patchlevel" = "2" ]]; then
-            log "Operating system identified as SUSE Linux Enterprise Server ${os_release} SP${os_patchlevel}"
-            OS="sles12sp2"
-        elif [[ "$os_release" = "12" && "$os_patchlevel" = "3" ]]; then
-            log "Operating system identified as SUSE Linux Enterprise Server ${os_release} SP${os_patchlevel}"
-            OS="sles12sp3"
-        elif [[ "$os_release" = "12" && "$os_patchlevel" = "4" ]]; then
-            log "Operating system identified as SUSE Linux Enterprise Server ${os_release} SP${os_patchlevel}"
-            OS="sles12sp4"
-        else
-            abort "Operating system ${os_description} is not supported"
-        fi
-
-        INSTALL_DIR="/srv/www/htdocs"
-        APACHE_USER="wwwrun"
-        APACHE_GROUP="www"
-        APACHE_CONFIG_FILE="/etc/apache2/vhosts.d/i-doit.conf"
-        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
-        PHP_CONFIG_FILE="/etc/php7/conf.d/i-doit.ini"
-        MARIADB_SOCKET="/var/run/mysql/mysql.sock"
-        PHP_FPM_SOCKET="/var/run/php-fpm.sock"
+        PHP_CONFIG_FILE="/etc/php/7.0/mods-available/i-doit.ini"
+        MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
+        PHP_FPM_SOCKET="/var/run/php/php7.0-fpm.sock"
         APACHE_UNIT="apache2"
         MARIADB_UNIT="mysql"
         MEMCACHED_UNIT="memcached"
+        PHP_FPM_UNIT="php7.0-fpm"
+    elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "8 (jessie)" ]]; then
+        OS="debian8"
+        APACHE_USER="www-data"
+        APACHE_GROUP="www-data"
+        APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
+        MARIADB_CONFIG_FILE="/etc/mysql/conf.d/99-i-doit.cnf"
+        PHP_CONFIG_FILE="/etc/php5/mods-available/i-doit.ini"
+        MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
+        PHP_FPM_SOCKET=""
+        APACHE_UNIT="apache2"
+        MARIADB_UNIT="mysql"
+        MEMCACHED_UNIT="memcached"
+        PHP_FPM_UNIT=""
+    elif [[ "$NAME" == "Red Hat Enterprise Linux Server" && "$VERSION_ID" == 7* ]]; then
+        OS="rhel7"
+        APACHE_USER="apache"
+        APACHE_GROUP="apache"
+        APACHE_CONFIG_FILE="/etc/httpd/conf.d/i-doit.conf"
+        MARIADB_CONFIG_FILE="/etc/my.cnf.d/99-i-doit.cnf"
+        PHP_CONFIG_FILE="/etc/php.d/i-doit.ini"
+        MARIADB_SOCKET="/var/lib/mysql/mysql.sock"
+        PHP_FPM_SOCKET="/var/run/php-fpm/php-fpm.sock"
+        APACHE_UNIT="httpd"
+        MARIADB_UNIT="mariadb"
+        MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
-    elif [[ -f "/etc/os-release" ]]; then
-        ## This file comes with these variables:
-        ## NAME, VERSION, PRETTY_NAME and some more…
-        # shellcheck source=/dev/null
-        source "/etc/os-release"
-
-        if [[ "$NAME" = "SLES" && "$VERSION" = "15" ]]; then
-            log "Operating system identified as ${PRETTY_NAME}"
-            OS="sles15"
-        else
-            abort "Operating system ${PRETTY_NAME} is not supported"
-        fi
-
+    elif [[ "$NAME" == "SLES" && "$VERSION" == "15" ]]; then
+        OS="sles15"
         INSTALL_DIR="/srv/www/htdocs"
         APACHE_USER="wwwrun"
         APACHE_GROUP="www"
@@ -350,72 +315,59 @@ function identifyOS {
         MARIADB_UNIT="mysql"
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
-    elif [[ -x "/usr/bin/lsb_release" ]]; then
-        os_id=$(lsb_release --short --id)
-        os_codename=$(lsb_release --short --codename)
-        os_description=$(lsb_release --short --description)
+    elif [[ "$NAME" = "SLES" && "$VERSION_ID" == 12* ]]; then
+        case "$VERSION_ID" in
+            "12.2") OS="sles12sp2";;
+            "12.3") OS="sles12sp3";;
+            "12.4") OS="sles12sp4";;
+            *)
+                abort "Operating system $PRETTY_NAME is not supported"
+                ;;
+        esac
 
+        INSTALL_DIR="/srv/www/htdocs"
+        APACHE_USER="wwwrun"
+        APACHE_GROUP="www"
+        APACHE_CONFIG_FILE="/etc/apache2/vhosts.d/i-doit.conf"
+        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
+        PHP_CONFIG_FILE="/etc/php7/conf.d/i-doit.ini"
+        MARIADB_SOCKET="/var/run/mysql/mysql.sock"
+        PHP_FPM_SOCKET="/var/run/php-fpm.sock"
+        APACHE_UNIT="apache2"
+        MARIADB_UNIT="mysql"
+        MEMCACHED_UNIT="memcached"
+        PHP_FPM_UNIT="php-fpm"
+    elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "18.04" ]]; then
+        OS="ubuntu1804"
+        APACHE_USER="www-data"
+        APACHE_GROUP="www-data"
         APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
         MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
+        PHP_CONFIG_FILE="/etc/php/7.2/mods-available/i-doit.ini"
+        MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
+        PHP_FPM_SOCKET="/var/run/php/php7.2-fpm.sock"
+        APACHE_UNIT="apache2"
+        MARIADB_UNIT="mysql"
+        MEMCACHED_UNIT="memcached"
+        PHP_FPM_UNIT="php7.2-fpm"
+    elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "16.04" ]]; then
+        OS="ubuntu1604"
+        APACHE_USER="www-data"
+        APACHE_GROUP="www-data"
+        APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
+        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
+        PHP_CONFIG_FILE="/etc/php/7.0/mods-available/i-doit.ini"
         MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
         PHP_FPM_SOCKET="/var/run/php/php7.0-fpm.sock"
         APACHE_UNIT="apache2"
         MARIADB_UNIT="mysql"
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php7.0-fpm"
-
-        if [[ "$os_id" = "Debian" && "$os_codename" = "jessie" ]]; then
-            log "Operating system identified as ${os_description}"
-            log "Version 9 is recommended. Please consider to upgrade."
-            OS="debian8"
-            MARIADB_CONFIG_FILE="/etc/mysql/conf.d/99-i-doit.cnf"
-            PHP_CONFIG_FILE="/etc/php5/mods-available/i-doit.ini"
-        elif [[ "$os_id" = "Debian" && "$os_codename" = "stretch" ]]; then
-            log "Operating system identified as ${os_description}"
-            OS="debian9"
-            PHP_CONFIG_FILE="/etc/php/7.0/mods-available/i-doit.ini"
-        elif [[ "$os_id" = "Ubuntu" && "$os_codename" = "xenial" ]]; then
-            log "Operating system identified as ${os_description}"
-            OS="ubuntu1604"
-            PHP_CONFIG_FILE="/etc/php/7.0/mods-available/i-doit.ini"
-        elif [[ "$os_id" = "Ubuntu" && "$os_codename" = "bionic" ]]; then
-            log "Operating system identified as ${os_description}"
-            OS="ubuntu1804"
-            PHP_CONFIG_FILE="/etc/php/7.2/mods-available/i-doit.ini"
-            PHP_FPM_SOCKET="/var/run/php/php7.2-fpm.sock"
-            PHP_FPM_UNIT="php7.2-fpm"
-        else
-            abort "Operating system ${os_description} is not supported"
-        fi
-    elif [[ -f "/etc/debian_version" ]]; then
-        os_release=$(cat /etc/debian_version)
-        os_major_release=$(awk -F "." '{print $1}' /etc/debian_version)
-
-        APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
-        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
-        MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
-        APACHE_UNIT="apache2"
-        MARIADB_UNIT="mysql"
-        MEMCACHED_UNIT="memcached"
-        PHP_FPM_UNIT="php7.0-fpm"
-
-        if [[ "$os_major_release" = "8" ]]; then
-            log "Operating system identified as Debian GNU/Linux ${os_release} (jessie)"
-            log "Version 9 is recommended. Please consider to upgrade."
-            OS="debian8"
-            MARIADB_CONFIG_FILE="/etc/mysql/conf.d/99-i-doit.cnf"
-            PHP_CONFIG_FILE="/etc/php5/mods-available/i-doit.ini"
-        elif [[ "$os_major_release" = "9" ]]; then
-            log "Operating system identified as Debian GNU/Linux ${os_release} (stretch)"
-            OS="debian9"
-            PHP_CONFIG_FILE="/etc/php/7.0/mods-available/i-doit.ini"
-            PHP_FPM_SOCKET="/var/run/php/php7.0-fpm.sock"
-        else
-            abort "Operating system is based on Debian GNU/Linux $os_release but is not supported"
-        fi
     else
-        abort "Unable to identify operating system"
+        abort "Operating system ${PRETTY_NAME} is not supported"
     fi
+
+    log "Operating system identified as ${PRETTY_NAME}"
 }
 
 function checkRequirements {
@@ -481,10 +433,7 @@ function checkRequirements {
     binaries["memcached"]=$(command -v memcached)
 
     case "$OS" in
-        "rhel73"|"rhel74"|"rhel75"|"rhel76")
-            binaries["httpd"]=$(command -v httpd)
-            ;;
-        "centos73"|"centos74"|"centos75"|"centos76")
+        "rhel7"|"centos7")
             binaries["httpd"]=$(command -v httpd)
             ;;
         *)
@@ -550,11 +499,11 @@ function configureOS {
         "ubuntu1804")
             configureUbuntu1804
             ;;
-        "rhel73"|"rhel74"|"rhel75"|"rhel76")
-            configureRHEL
+        "rhel7")
+            configureRHEL7
             ;;
-        "centos73"|"centos74"|"centos75"|"centos76")
-            configureRHEL
+        "centos7")
+            configureCentOS7
             ;;
         "sles12sp2"|"sles12sp3"|"sles12sp4")
             configureSLES12
@@ -589,7 +538,7 @@ function configureDebian8 {
         abort "Unable to set MariaDB super user password"
     apt-get -qq -y install \
         apache2 libapache2-mod-php5 \
-        php5 php5-cli php5-common php5-curl php5-gd php5-json php5-ldap php5-mbstring php5-mcrypt \
+        php5 php5-cli php5-common php5-curl php5-gd php5-imagick php5-json php5-ldap php5-mcrypt \
         php5-mysqlnd php5-pgsql php5-memcached \
         mariadb-server mariadb-client \
         memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
@@ -649,53 +598,8 @@ function configureUbuntu1804 {
         memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
 }
 
-function configureRHEL {
-    local os_description=""
-    local os_release=""
-    local mariadb_url=""
-
-    case "$OS" in
-        "rhel73")
-            os_description="Red Hat Enterprise Linux (RHEL)"
-            os_release="7.3"
-            mariadb_url="http://yum.mariadb.org/10.1/rhel7-amd64"
-            ;;
-        "rhel74")
-            os_description="Red Hat Enterprise Linux (RHEL)"
-            os_release="7.4"
-            mariadb_url="http://yum.mariadb.org/10.1/rhel7-amd64"
-            ;;
-        "rhel75")
-            os_description="Red Hat Enterprise Linux (RHEL)"
-            os_release="7.5"
-            mariadb_url="http://yum.mariadb.org/10.1/rhel7-amd64"
-            ;;
-        "rhel76")
-            os_description="Red Hat Enterprise Linux (RHEL)"
-            os_release="7.6"
-            mariadb_url="http://yum.mariadb.org/10.1/rhel7-amd64"
-            ;;
-        "centos73")
-            os_description="CentOS"
-            os_release="7.3"
-            mariadb_url="http://yum.mariadb.org/10.1/centos7-amd64"
-            ;;
-        "centos74")
-            os_description="CentOS"
-            os_release="7.4"
-            mariadb_url="http://yum.mariadb.org/10.1/centos7-amd64"
-            ;;
-        "centos75")
-            os_description="CentOS"
-            os_release="7.5"
-            mariadb_url="http://yum.mariadb.org/10.1/centos7-amd64"
-            ;;
-        "centos76")
-            os_description="CentOS"
-            os_release="7.6"
-            mariadb_url="http://yum.mariadb.org/10.1/centos7-amd64"
-            ;;
-    esac
+function configureCentOS7 {
+    local mariadb_url="http://yum.mariadb.org/10.1/centos7-amd64"
 
     log "Keep your yum packages up-to-date"
     yum --assumeyes --quiet update || abort "Unable to update yum packages"
@@ -707,7 +611,7 @@ function configureRHEL {
     yum --assumeyes --quiet install httpd memcached unzip wget zip || \
         abort "Unable to install packages"
 
-    log "$os_description $os_release has out-dated packages for PHP and MariaDB."
+    log "RHEL 7 has out-dated packages for PHP and MariaDB."
     log "This script will fix this issue by enabling these 3rd party repositories:"
     log ""
     log "    Webtatic.com for PHP 7.2"
@@ -755,14 +659,93 @@ EOF
     yum --assumeyes --quiet install MariaDB-server MariaDB-client &> /dev/null || \
         abort "Unable to install MariaDB"
 
-    case "$OS" in
-        "rhel73"|"rhel74"|"rhel75")
-            log "Enable required repository 'rhel-7-server-eus-optional-rpms'"
-            subscription-manager repos --enable=rhel-7-server-eus-optional-rpms || \
-                abort "Repository cannot be enabled"
-            ## Install moreutils *after* EPEL *and* rhel-7-server-eus-optional-rpms have been
-            ## enabled!
-    esac
+    log "Install 'moreutils'"
+    yum --assumeyes --quiet install moreutils || \
+        abort "Unable to install packages"
+
+    unitctl "enable" "$APACHE_UNIT"
+    unitctl "enable" "$MARIADB_UNIT"
+    unitctl "enable" "$MEMCACHED_UNIT"
+
+    unitctl "start" "$APACHE_UNIT"
+    unitctl "start" "$MARIADB_UNIT"
+    unitctl "start" "$MEMCACHED_UNIT"
+
+    log "Allow incoming HTTP traffic"
+    systemctl -q is-active firewalld.service || (
+        log "Firewall is inactive."
+        unitctl "start" "firewalld"
+    )
+    firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
+    unitctl "restart" "firewalld"
+}
+
+function configureRHEL7 {
+    local mariadb_url="http://yum.mariadb.org/10.1/rhel7-amd64"
+
+    log "Keep your yum packages up-to-date"
+    yum --assumeyes --quiet update || abort "Unable to update yum packages"
+    yum --assumeyes --quiet autoremove || abort "Unable to remove out-dated yum packages"
+    yum --assumeyes --quiet clean all || abort "Unable to clean yum caches"
+    rm -rf /var/cache/yum || abort "Unable to remove orphaned yum caches"
+
+    log "Install some important packages, for example Apache Web server"
+    yum --assumeyes --quiet install httpd memcached unzip wget zip || \
+        abort "Unable to install packages"
+
+    log "RHEL 7 has out-dated packages for PHP and MariaDB."
+    log "This script will fix this issue by enabling these 3rd party repositories:"
+    log ""
+    log "    Webtatic.com for PHP 7.2"
+    log "    Official MariaDB repository for MariaDB 10.1"
+    log ""
+
+    if askYesNo "Do you agree with it?"; then
+        log "Import EPEL public GPG key"
+        rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7 || \
+            abort "Unable to import public GPG key from EPEL"
+        log "Add EPEL releases"
+        rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm || \
+            abort "Unable to install epel-releases via yum"
+        log "Import Webtatic public GPG key"
+        rpm --import --quiet https://mirror.webtatic.com/yum/RPM-GPG-KEY-webtatic-el7 || \
+            abort "Unable to import GPG key from Webtatic"
+        log "Add Webtatic releases"
+        rpm -Uvh --quiet https://mirror.webtatic.com/yum/el7/webtatic-release.rpm || \
+            abort "Unable to add Webtatic"
+
+        log "Install PHP packages"
+        yum --assumeyes --quiet install \
+            php72w-bcmath php72w-cli php72w-common php72w-fpm php72w-gd php72w-ldap php72w-mbstring \
+            php72w-mcrypt php72w-mysqlnd php72w-opcache php72w-pdo php72w-pecl-imagick \
+            php72w-pecl-memcached php72w-pgsql php72w-soap php72w-xml || \
+            abort "Unable to install PHP packages"
+    fi
+
+    log "Enable MariaDB repository"
+    cat << EOF > /etc/yum.repos.d/MariaDB.repo || \
+        abort "Unable to create and edit file '/etc/yum.repos.d/MariaDB.repo'"
+# MariaDB 10.1 repository list
+# http://downloads.mariadb.org/mariadb/repositories/
+[mariadb]
+name = MariaDB
+baseurl = $mariadb_url
+gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
+gpgcheck=1
+EOF
+
+    log "Install MariaDB packages"
+    rpm --import --quiet https://yum.mariadb.org/RPM-GPG-KEY-MariaDB || \
+        abort "Unable to import GPG key from MariaDB"
+    ## Suppress unnecessary notices which could confuse the user:
+    yum --assumeyes --quiet install MariaDB-server MariaDB-client &> /dev/null || \
+        abort "Unable to install MariaDB"
+
+    log "Enable required repository 'rhel-7-server-eus-optional-rpms'"
+    subscription-manager repos --enable=rhel-7-server-eus-optional-rpms || \
+        abort "Repository cannot be enabled"
+    ## Install moreutils *after* EPEL *and* rhel-7-server-eus-optional-rpms have been
+    ## enabled!
 
     log "Install 'moreutils'"
     yum --assumeyes --quiet install moreutils || \
@@ -1061,7 +1044,7 @@ function configurePHPFPM {
         "debian9"|"ubuntu1604"|"ubuntu1804")
             unitctl "restart" "$PHP_FPM_UNIT"
             ;;
-        "rhel73"|"rhel74"|"rhel75"|"rhel76"|"centos73"|"centos74"|"centos75"|"centos76")
+        "rhel7"|"centos7")
             log "Disable default configuration file"
             mv /etc/php-fpm.d/www.conf{,.bak} || \
                 abort "Unable to disable default configuration file"
@@ -1086,7 +1069,8 @@ EOF
             log "Enable PHP FPM configuration files"
             mv /etc/php7/fpm/php-fpm.conf{.default,} || \
                 abort "Unable to move file"
-            cat << EOF > /etc/php7/fpm/php-fpm.d/i-doit.conf || abort "Unable to create and edit file '/etc/php7/fpm/php-fpm.d/i-doit.conf'"
+            cat << EOF > /etc/php7/fpm/php-fpm.d/i-doit.conf || \
+                abort "Unable to create and edit file '/etc/php7/fpm/php-fpm.d/i-doit.conf'"
 [i-doit]
 listen = ${PHP_FPM_SOCKET}
 user = ${APACHE_USER}
@@ -1121,7 +1105,7 @@ function configureApache {
     hostname="$(cat /etc/hostname)"
 
     case "$OS" in
-        "rhel73"|"rhel74"|"rhel75"|"rhel76"|"centos73"|"centos74"|"centos75"|"centos76")
+        "rhel7"|"centos7")
             cat << EOF > ${APACHE_CONFIG_FILE} || \
                 abort "Unable to create and edit file '${APACHE_CONFIG_FILE}'"
 DirectoryIndex index.php
@@ -1401,9 +1385,11 @@ innodb_stats_on_metadata = 0
 sql-mode = ""
 EOF
 
-    log "Let every user read the logs"
-    chmod 755 /var/log/mysql
-    chmod 664 /var/log/mysql/*
+    if [[ -d "/var/log/mysql" ]]; then
+        log "Let every user read the logs"
+        chmod 755 /var/log/mysql
+        chmod 664 /var/log/mysql/*
+    fi
 
     unitctl "start" "$MARIADB_UNIT"
 }
@@ -1676,7 +1662,7 @@ function deployJobScript {
 }
 
 function deployCronJobs {
-    local download_url="https://raw.githubusercontent.com/bheisig/i-doit-scripts/${VERSION}/cron"
+    local download_url="https://raw.githubusercontent.com/bheisig/i-doit-scripts/${PROJECT_VERSION}/cron"
     local file="$TMP_DIR/cron"
 
     test ! -f "$file" && (
@@ -1704,7 +1690,7 @@ function deployBackupAndRestore {
 function deployScript {
     local file="$1"
     local tmp_file="${TMP_DIR}/$file"
-    local url="https://raw.githubusercontent.com/bheisig/i-doit-scripts/${VERSION}/$file"
+    local url="https://raw.githubusercontent.com/bheisig/i-doit-scripts/${PROJECT_VERSION}/$file"
 
     log "Deploy script '$file'"
 
@@ -1733,6 +1719,8 @@ function setup {
         export LC_ALL="en_US.utf8"
     elif locale -a | grep "^en_GB.utf8" > /dev/null; then
         export LC_ALL="en_GB.utf8"
+    elif locale -a | grep "^C.UTF-8" > /dev/null; then
+        export LC_ALL="C.UTF-8"
     else
         log "This script may fail because it depends on US/GB English locale. We try it anyway…"
     fi
@@ -1756,7 +1744,7 @@ function showUsage {
 }
 
 function printVersion {
-    log "$VERSION"
+    log "$PROJECT_VERSION"
 }
 
 function log {
