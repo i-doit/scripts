@@ -249,6 +249,8 @@ function identifyOS {
     # shellcheck source=/dev/null
     source "/etc/os-release"
 
+    log "Operating system identified as ${PRETTY_NAME}"
+
     if [[ "$NAME" == "CentOS Linux" && "$VERSION_ID" == "7" ]]; then
         OS="centos7"
         APACHE_USER="apache"
@@ -262,6 +264,22 @@ function identifyOS {
         MARIADB_UNIT="mariadb"
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
+    elif [[ "$PRETTY_NAME" == "Debian GNU/Linux buster/sid" ]]; then
+        log "Warning: This is an unstable version of Debian GNU/Linux"
+        askYesNo "Do you really want to continue?" || cancel
+
+        OS="debian10"
+        APACHE_USER="www-data"
+        APACHE_GROUP="www-data"
+        APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
+        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
+        PHP_CONFIG_FILE="/etc/php/7.3/mods-available/i-doit.ini"
+        MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
+        PHP_FPM_SOCKET="/var/run/php/php7.3-fpm.sock"
+        APACHE_UNIT="apache2"
+        MARIADB_UNIT="mysql"
+        MEMCACHED_UNIT="memcached"
+        PHP_FPM_UNIT="php7.3-fpm"
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "9 (stretch)" ]]; then
         OS="debian9"
         APACHE_USER="www-data"
@@ -276,6 +294,9 @@ function identifyOS {
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php7.0-fpm"
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "8 (jessie)" ]]; then
+        log "Warning: This is an older version of Debian GNU/Linux"
+        askYesNo "Do you really want to continue?" || cancel
+
         OS="debian8"
         APACHE_USER="www-data"
         APACHE_GROUP="www-data"
@@ -366,8 +387,6 @@ function identifyOS {
     else
         abort "Operating system ${PRETTY_NAME} is not supported"
     fi
-
-    log "Operating system identified as ${PRETTY_NAME}"
 }
 
 function checkRequirements {
@@ -493,6 +512,9 @@ function configureOS {
         "debian9")
             configureDebian9
             ;;
+        "debian10")
+            configureDebian10
+            ;;
         "ubuntu1604")
             configureUbuntu1604
             ;;
@@ -558,6 +580,24 @@ function configureDebian9 {
         php7.0-bcmath php7.0-cli php7.0-common php7.0-curl php7.0-fpm php7.0-gd php7.0-json \
         php7.0-ldap php7.0-mbstring php7.0-mcrypt php7.0-mysql php7.0-opcache php7.0-pgsql \
         php7.0-soap php7.0-xml php7.0-zip \
+        php-imagick php-memcached \
+        memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
+}
+
+function configureDebian10 {
+    log "Keep your Debian packages up-to-date"
+    apt-get -qq --yes update || abort "Unable to update Debian package repositories"
+    apt-get -qq --yes full-upgrade || abort "Unable to perform update of Debian packages"
+    apt-get -qq --yes clean || abort "Unable to cleanup Debian packages"
+    apt-get -qq --yes autoremove || abort "Unable to remove unnecessary Debian packages"
+
+    log "Install required Debian packages"
+    apt-get -qq --yes install \
+        apache2 libapache2-mod-fcgid \
+        mariadb-client mariadb-server \
+        php7.3-bcmath php7.3-cli php7.3-common php7.3-curl php7.3-fpm php7.3-gd php7.3-json \
+        php7.3-ldap php7.3-mbstring php7.3-mysql php7.3-opcache php7.3-pgsql \
+        php7.3-soap php7.3-xml php7.3-zip \
         php-imagick php-memcached \
         memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
 }
@@ -989,16 +1029,32 @@ function configurePHP {
 
     php_version=$(php --version | head -n1 -c7 | tail -c3)
 
-    if [[ "$php_version" = "7.0" || "$php_version" = "7.1" || "$php_version" = "7.2" ]]; then
-        php_en_mod=$(command -v phpenmod)
-    elif [[ "$php_version" = "5.6" ]]; then
-        log "PHP 5.6 is installed, but this version is deprecated. Please consider to upgrade. We recommend version 7.2."
-        php_en_mod=$(command -v php5enmod)
-    elif [[ "$php_version" = "5.5" || "$php_version" = "5.4" ]]; then
-        abort "PHP ${php_version} is way too old. Please upgrade."
-    else
-        abort "PHP ${php_version} is not supported. Please follow the system requirements."
-    fi
+    case "$php_version" in
+        "5.4"|"5.5")
+            abort "PHP ${php_version} is way too old. Please upgrade. We recommend version 7.2."
+            ;;
+        "5.6")
+            log "PHP ${php_version} is installed, but this version is deprecated. Please consider to upgrade. We recommend version 7.2."
+            php_en_mod=$(command -v php5enmod)
+            ;;
+        "7.0")
+            php_en_mod=$(command -v phpenmod)
+            ;;
+        "7.1"|"7.2")
+            php_en_mod=$(command -v phpenmod)
+            ;;
+        "7.3")
+            log "PHP ${php_version} is installed, but this version is not officially supported by i-doit. Please consider to downgrade. We recommend version 7.2."
+            php_en_mod=$(command -v phpenmod)
+            ;;
+        "7.4")
+            log "PHP ${php_version} is installed, but this version is not suitable in a productive environment. Please consider to downgrade. We recommend version 7.2."
+            php_en_mod=$(command -v phpenmod)
+            ;;
+        *)
+            abort "PHP ${php_version} is not supported. Please follow the system requirements. We recommend version 7.2."
+            ;;
+    esac
 
     log "Write PHP settings to '${PHP_CONFIG_FILE}'"
     cat << EOF > "$PHP_CONFIG_FILE" || \
@@ -1041,7 +1097,7 @@ function configurePHPFPM {
     log "Configure PHP-FPM"
 
     case "$OS" in
-        "debian9"|"ubuntu1604"|"ubuntu1804")
+        "debian9"|"debian10"|"ubuntu1604"|"ubuntu1804")
             unitctl "restart" "$PHP_FPM_UNIT"
             ;;
         "rhel7"|"centos7")
@@ -1197,7 +1253,7 @@ EOF
 
             unitctl "restart" "$APACHE_UNIT"
             ;;
-        "debian9"|"ubuntu1604"|"ubuntu1804")
+        "debian9"|"debian10"|"ubuntu1604"|"ubuntu1804")
             a2_en_site=$(command -v a2ensite)
             a2_dis_site=$(command -v a2dissite)
             a2_en_mod=$(command -v a2enmod)

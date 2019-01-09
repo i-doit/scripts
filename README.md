@@ -19,19 +19,22 @@ The script `idoit-install` allows you to easily install the **latest version** o
 
 on a **fresh installation of a GNU/Linux operating system**. Supported OSs are:
 
--   Debian GNU/Linux 9 "stretch" (**recommended**)
 -   Debian GNU/Linux 8 "jessie"
--   Ubuntu Linux 18.04 LTS "bionic"
+-   Debian GNU/Linux 9 "stretch" (**recommended**)
+-   Debian GNU/Linux 10 "buster" (**for testing purposes only**)
 -   Ubuntu Linux 16.04 LTS "xenial"
+-   Ubuntu Linux 18.04 LTS "bionic"
 -   Red Hat Enterprise Linux (RHEL) 7
 -   CentOS 7
 -   SUSE Linux Enterprise Server 12 SP2/SP3/SP4 and 15
 
 Before you execute this script you …
 
--   Must install one of the supported operating systems in x86 64 bit based on the [requirements mentioned in the i-doit knowledge base](https://kb.i-doit.com/display/en/System+Requirements) (excluding the LAMP stack)
--   Should create a backup/snapshot of your system
+-   Must install one of the supported operating systems in **x86 64 bit** based on the [requirements mentioned in the i-doit knowledge base](https://kb.i-doit.com/display/en/System+Requirements) (excluding the LAMP stack)
+-   Should **create a backup/snapshot of your system**
 -   Must make sure that the system is allowed to access external Web services, for example package repositories and the i-doit website.
+
+It's written in Bash so it needs **Bash version 4** or higher
 
 The script includes several steps which are essential for i-doit:
 
