@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 -   `idoit-install`: Add experimental support for PHP 7.3 and 7.4
 
 
+### Changed
+
+-   `idoit-jobs`: Disable resetting PHP OpCache
+-   `idoit-jobs`: Disable rebuilding i-doit's own cache
+
+
 ### Fixed
 
 -   `cron`: Run backup with super-user rights (`root`)
