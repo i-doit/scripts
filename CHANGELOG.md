@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 -   `idoit-install`: Add experimental support for PHP 7.3 and 7.4
 
 
+### Fixed
+
+-   `cron`: Run backup with super-user rights (`root`)
+
+
 ##  [0.12] – 2018-12-21
 
 Happy holidays 🎄

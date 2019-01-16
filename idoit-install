@@ -177,7 +177,7 @@ function execute {
             deployJobScript
             deployCronJobs
 
-            log "Cron jobs are successfully activated. To change the execution date and time please edit this file:"
+            log "Cron jobs are successfully activated. To change e-mail address, execution date and time please edit this file:"
             log ""
             log "    $CRON_FILE"
             log ""

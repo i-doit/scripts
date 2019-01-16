@@ -19,5 +19,5 @@
 
 MAILTO=""
 
-5 4 * * *   www-data    test -x /usr/local/bin/idoit-backup && /usr/bin/chronic /usr/local/bin/idoit-backup
+5 4 * * *   root        test -x /usr/local/bin/idoit-backup && /usr/bin/chronic /usr/local/bin/idoit-backup
 5 5 * * *   www-data    test -x /usr/local/bin/idoit-jobs && /usr/bin/chronic /usr/local/bin/idoit-jobs
