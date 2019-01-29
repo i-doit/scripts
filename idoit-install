@@ -1718,7 +1718,7 @@ function deployJobScript {
 }
 
 function deployCronJobs {
-    local download_url="https://raw.githubusercontent.com/bheisig/i-doit-scripts/${PROJECT_VERSION}/cron"
+    local download_url="https://raw.githubusercontent.com/bheisig/i-doit-scripts/master/cron"
     local file="$TMP_DIR/cron"
 
     test ! -f "$file" && (
@@ -1746,7 +1746,7 @@ function deployBackupAndRestore {
 function deployScript {
     local file="$1"
     local tmp_file="${TMP_DIR}/$file"
-    local url="https://raw.githubusercontent.com/bheisig/i-doit-scripts/${PROJECT_VERSION}/$file"
+    local url="https://raw.githubusercontent.com/bheisig/i-doit-scripts/master/$file"
 
     log "Deploy script '$file'"
 
