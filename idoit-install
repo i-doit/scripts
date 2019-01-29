@@ -674,8 +674,8 @@ function configureCentOS7 {
 
         log "Install PHP packages"
         yum --assumeyes --quiet install \
-            php72w-bcmath php72w-cli php72w-common php72w-fpm php72w-gd php72w-ldap php72w-mbstring \
-            php72w-mcrypt php72w-mysqlnd php72w-opcache php72w-pdo php72w-pecl-imagick \
+            php72w-bcmath php72w-cli php72w-common php72w-fpm php72w-gd php72w-ldap \
+            php72w-mbstring php72w-mysqlnd php72w-opcache php72w-pdo php72w-pecl-imagick \
             php72w-pecl-memcached php72w-pgsql php72w-soap php72w-xml || \
             abort "Unable to install PHP packages"
     fi
@@ -756,8 +756,8 @@ function configureRHEL7 {
 
         log "Install PHP packages"
         yum --assumeyes --quiet install \
-            php72w-bcmath php72w-cli php72w-common php72w-fpm php72w-gd php72w-ldap php72w-mbstring \
-            php72w-mcrypt php72w-mysqlnd php72w-opcache php72w-pdo php72w-pecl-imagick \
+            php72w-bcmath php72w-cli php72w-common php72w-fpm php72w-gd php72w-ldap \
+            php72w-mbstring php72w-mysqlnd php72w-opcache php72w-pdo php72w-pecl-imagick \
             php72w-pecl-memcached php72w-pgsql php72w-soap php72w-xml || \
             abort "Unable to install PHP packages"
     fi
@@ -1312,8 +1312,8 @@ EOF
             log "Enable Apache module setenvif"
             "$a2_en_mod" setenvif || abort "Unable to enable Apache module setenvif"
             log "Let every user read the logs"
-            chmod 755 /var/log/apache2
-            chmod 664 /var/log/apache2/*
+            chmod 755 /var/log/apache2 || abort "Unable to change permissions"
+            chmod 664 /var/log/apache2/* || abort "Unable to change permissions"
             unitctl "restart" "$APACHE_UNIT"
             ;;
         *)
@@ -1351,8 +1351,8 @@ EOF
             log "Enable Apache module rewrite"
             "$a2_en_mod" rewrite || abort "Unable to enable Apache module rewrite"
             log "Let every user read the logs"
-            chmod 755 /var/log/apache2
-            chmod 664 /var/log/apache2/*
+            chmod 755 /var/log/apache2 || abort "Unable to change permissions"
+            chmod 664 /var/log/apache2/* || abort "Unable to change permissions"
             unitctl "restart" "$APACHE_UNIT"
             ;;
     esac

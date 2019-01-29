@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 -   `cron`: Run backup with super-user rights (`root`)
+-   `idoit-install`: Remove out-dated PHP module `mcrypt` when possible
 
 
 ##  [0.12] – 2018-12-21
