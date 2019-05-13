@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
+-   `idoit-install`: Print warnings for non-supported operating systems
 -   `idoit-jobs`: Disable resetting PHP OpCache
 -   `idoit-jobs`: Disable rebuilding i-doit's own cache
 

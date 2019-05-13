@@ -252,6 +252,9 @@ function identifyOS {
     log "Operating system identified as ${PRETTY_NAME}"
 
     if [[ "$NAME" == "CentOS Linux" && "$VERSION_ID" == "7" ]]; then
+        log "Warning: CentOS is not officially supported by i-doit"
+        askYesNo "Do you really want to continue?" || cancel
+
         OS="centos7"
         APACHE_USER="apache"
         APACHE_GROUP="apache"
@@ -323,6 +326,9 @@ function identifyOS {
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" == "SLES" && "$VERSION" == "15" ]]; then
+        log "Warning: SLES 15 is not officially supported by i-doit"
+        askYesNo "Do you really want to continue?" || cancel
+
         OS="sles15"
         INSTALL_DIR="/srv/www/htdocs"
         APACHE_USER="wwwrun"
@@ -338,9 +344,17 @@ function identifyOS {
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" = "SLES" && "$VERSION_ID" == 12* ]]; then
         case "$VERSION_ID" in
-            "12.2") OS="sles12sp2";;
+            "12.2")
+                OS="sles12sp2"
+                log "Warning: SLES 14 SP2 is not officially supported by i-doit"
+                askYesNo "Do you really want to continue?" || cancel
+                ;;
             "12.3") OS="sles12sp3";;
-            "12.4") OS="sles12sp4";;
+            "12.4")
+                OS="sles12sp4"
+                log "Warning: SLES 14 SP4 is not officially supported by i-doit"
+                askYesNo "Do you really want to continue?" || cancel
+                ;;
             *)
                 abort "Operating system $PRETTY_NAME is not supported"
                 ;;
