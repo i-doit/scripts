@@ -639,8 +639,6 @@ function configureUbuntu1804 {
 }
 
 function configureCentOS7 {
-    local mariadb_url="http://yum.mariadb.org/10.1/centos7-amd64"
-
     log "Keep your yum packages up-to-date"
     yum --assumeyes --quiet update || abort "Unable to update yum packages"
     yum --assumeyes --quiet autoremove || abort "Unable to remove out-dated yum packages"
@@ -655,7 +653,7 @@ function configureCentOS7 {
     log "This script will fix this issue by enabling these 3rd party repositories:"
     log ""
     log "    Webtatic.com for PHP 7.2"
-    log "    Official MariaDB repository for MariaDB 10.1"
+    log "    Official MariaDB repository for MariaDB 10.3"
     log ""
 
     if askYesNo "Do you agree with it?"; then
@@ -683,11 +681,11 @@ function configureCentOS7 {
     log "Enable MariaDB repository"
     cat << EOF > /etc/yum.repos.d/MariaDB.repo || \
         abort "Unable to create and edit file '/etc/yum.repos.d/MariaDB.repo'"
-# MariaDB 10.1 repository list
+# MariaDB 10.3 repository list
 # http://downloads.mariadb.org/mariadb/repositories/
 [mariadb]
 name = MariaDB
-baseurl = $mariadb_url
+baseurl = http://yum.mariadb.org/10.3/centos7-amd64
 gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
 gpgcheck=1
 EOF
