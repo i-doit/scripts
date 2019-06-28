@@ -271,6 +271,8 @@ function identifyOS {
         log "Warning: This is an unstable version of Debian GNU/Linux"
         askYesNo "Do you really want to continue?" || cancel
 
+        export DEBIAN_FRONTEND="noninteractive"
+
         OS="debian10"
         APACHE_USER="www-data"
         APACHE_GROUP="www-data"
@@ -284,6 +286,8 @@ function identifyOS {
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php7.3-fpm"
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "9 (stretch)" ]]; then
+        export DEBIAN_FRONTEND="noninteractive"
+
         OS="debian9"
         APACHE_USER="www-data"
         APACHE_GROUP="www-data"
@@ -299,6 +303,8 @@ function identifyOS {
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "8 (jessie)" ]]; then
         log "Warning: This is an older version of Debian GNU/Linux"
         askYesNo "Do you really want to continue?" || cancel
+
+        export DEBIAN_FRONTEND="noninteractive"
 
         OS="debian8"
         APACHE_USER="www-data"
@@ -373,6 +379,8 @@ function identifyOS {
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "18.04" ]]; then
+        export DEBIAN_FRONTEND="noninteractive"
+
         OS="ubuntu1804"
         APACHE_USER="www-data"
         APACHE_GROUP="www-data"
@@ -386,6 +394,8 @@ function identifyOS {
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php7.2-fpm"
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "16.04" ]]; then
+        export DEBIAN_FRONTEND="noninteractive"
+
         OS="ubuntu1604"
         APACHE_USER="www-data"
         APACHE_GROUP="www-data"
