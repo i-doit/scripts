@@ -721,8 +721,6 @@ EOF
 }
 
 function configureRHEL7 {
-    local mariadb_url="http://yum.mariadb.org/10.1/rhel7-amd64"
-
     log "Keep your yum packages up-to-date"
     yum --assumeyes --quiet update || abort "Unable to update yum packages"
     yum --assumeyes --quiet autoremove || abort "Unable to remove out-dated yum packages"
@@ -737,7 +735,7 @@ function configureRHEL7 {
     log "This script will fix this issue by enabling these 3rd party repositories:"
     log ""
     log "    Webtatic.com for PHP 7.2"
-    log "    Official MariaDB repository for MariaDB 10.1"
+    log "    Official MariaDB repository for MariaDB 10.3"
     log ""
 
     if askYesNo "Do you agree with it?"; then
@@ -765,11 +763,11 @@ function configureRHEL7 {
     log "Enable MariaDB repository"
     cat << EOF > /etc/yum.repos.d/MariaDB.repo || \
         abort "Unable to create and edit file '/etc/yum.repos.d/MariaDB.repo'"
-# MariaDB 10.1 repository list
+# MariaDB 10.3 RedHat repository list
 # http://downloads.mariadb.org/mariadb/repositories/
 [mariadb]
 name = MariaDB
-baseurl = $mariadb_url
+baseurl = http://yum.mariadb.org/10.3/rhel7-amd64
 gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
 gpgcheck=1
 EOF
@@ -845,7 +843,7 @@ function configureSLES12 {
     fi
 
     log "Install software packages"
-    zypper --quiet --non-interactive install \
+    zypper --quiet --non-interactive --no-recommends install \
         apache2 \
         mariadb mariadb-client \
         memcached \
@@ -874,7 +872,7 @@ function configureSLES12 {
             abort "Unable to add repository"
         zypper --quiet --non-interactive --gpg-auto-import-keys refresh || \
             abort "Unable to refresh software repositories"
-        zypper --quiet --non-interactive install php7-imagick || \
+        zypper --quiet --non-interactive --no-recommends install php7-imagick || \
             abort "Unable to install required software package"
     fi
 
@@ -936,7 +934,7 @@ function configureSLES15 {
     fi
 
     log "Install software packages"
-    zypper --quiet --non-interactive install \
+    zypper --quiet --non-interactive --no-recommends install \
         apache2 \
         mariadb mariadb-client \
         memcached \
@@ -968,7 +966,7 @@ function configureSLES15 {
 
         ## TODO Unable to install package "php7-imagick":
         ## "Problem: nothing provides libMagickCore-7.Q16HDRI.so.5()(64bit) needed by php7-imagick-3.4.3-21.1.x86_64"
-        zypper --quiet --non-interactive install php7-memcached || \
+        zypper --quiet --non-interactive install --no-recommends php7-memcached || \
             abort "Unable to install required software package"
     fi
 
