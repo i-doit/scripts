@@ -123,6 +123,10 @@ function execute {
 
     log "\\n--------------------------------------------------------------------------------\\n"
 
+    checkHardwareRequirements
+
+    log "\\n--------------------------------------------------------------------------------\\n"
+
     log "This script needs Web access (HTTP/HTTPS on ports 80/443)."
     askNoYes "Do you want to configure a proxy server?" || configureProxy
 
@@ -130,7 +134,9 @@ function execute {
 
     askYesNo "Do you want to configure the operating system?" && configureOS
 
-    checkRequirements
+    log "\\n--------------------------------------------------------------------------------\\n"
+
+    checkSoftwareRequirements
 
     log "\\n--------------------------------------------------------------------------------\\n"
 
@@ -413,7 +419,7 @@ function identifyOS {
     fi
 }
 
-function checkRequirements {
+function checkHardwareRequirements {
     local failed=0
     local cores=0
     local ram=0
@@ -456,6 +462,22 @@ function checkRequirements {
         log ""
         askNoYes "Do you really want to continue?" && cancel
     fi
+
+    case "$failed" in
+        0)
+            log "All hardware requirements met. Excellent."
+            ;;
+        1)
+            abort "Important hardware requirement is missing. Please install and configure it."
+            ;;
+        *)
+            abort "Important hardware requirements are missing. Please install and configure them."
+            ;;
+    esac
+}
+
+function checkSoftwareRequirements {
+    local failed=0
 
     log "Check for installed applications and services…"
 
@@ -517,13 +539,13 @@ function checkRequirements {
 
     case "$failed" in
         0)
-            log "All requirements met. Excellent."
+            log "All software requirements met. Excellent."
             ;;
         1)
-            abort "Important requirement is missing. Please install and configure it."
+            abort "Important software requirement is missing. Please install and configure it."
             ;;
         *)
-            abort "Important requirements are missing. Please install and configure them."
+            abort "Important software requirements are missing. Please install and configure them."
             ;;
     esac
 }
