@@ -19,7 +19,6 @@ The script `idoit-install` allows you to easily install the **latest version** o
 
 on a **fresh installation of a GNU/Linux operating system**. Supported OSs are:
 
--   Debian GNU/Linux 8 "jessie"
 -   Debian GNU/Linux 9 "stretch" (**recommended**)
 -   Debian GNU/Linux 10 "buster" (**for testing purposes only**)
 -   Ubuntu Linux 16.04 LTS "xenial"

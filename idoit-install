@@ -308,23 +308,7 @@ function identifyOS {
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php7.0-fpm"
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "8 (jessie)" ]]; then
-        log "Warning: This is an older version of Debian GNU/Linux"
-        askYesNo "Do you really want to continue?" || cancel
-
-        export DEBIAN_FRONTEND="noninteractive"
-
-        OS="debian8"
-        APACHE_USER="www-data"
-        APACHE_GROUP="www-data"
-        APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
-        MARIADB_CONFIG_FILE="/etc/mysql/conf.d/99-i-doit.cnf"
-        PHP_CONFIG_FILE="/etc/php5/mods-available/i-doit.ini"
-        MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
-        PHP_FPM_SOCKET=""
-        APACHE_UNIT="apache2"
-        MARIADB_UNIT="mysql"
-        MEMCACHED_UNIT="memcached"
-        PHP_FPM_UNIT=""
+        abort "Debian GNU/Linux 8 \"jessie\" is not supported anymore. Please upgrade your OS."
     elif [[ "$NAME" == "Red Hat Enterprise Linux Server" && "$VERSION_ID" == 7* ]]; then
         OS="rhel7"
         APACHE_USER="apache"
@@ -553,9 +537,6 @@ function checkSoftwareRequirements {
 
 function configureOS {
     case "$OS" in
-        "debian8")
-            configureDebian8
-            ;;
         "debian9")
             configureDebian9
             ;;
@@ -583,34 +564,6 @@ function configureOS {
         *)
             abort "Unkown operating system '${OS}'!?!"
     esac
-}
-
-function configureDebian8 {
-    echo -n -e "Please enter a new password for MariaDB's super user '${MARIADB_SUPERUSER_USERNAME}' [leave empty for '${MARIADB_SUPERUSER_PASSWORD}']: "
-
-    read -r answer
-
-    if [[ -n "$answer" ]]; then
-      MARIADB_SUPERUSER_PASSWORD="$answer"
-    fi
-
-    log "Keep your Debian packages up-to-date"
-    apt-get -qq -y update || abort "Unable to update Debian package repositories"
-    apt-get -qq -y upgrade || abort "Unable to perform update of Debian packages"
-    apt-get -qq -y clean || abort "Unable to cleanup Debian packages"
-    apt-get -qq -y autoremove || abort "Unable to remove unnecessary Debian packages"
-
-    log "Install required Debian packages"
-    debconf-set-selections <<< "mariadb-server-10.0 mysql-server/root_password password ${MARIADB_SUPERUSER_PASSWORD}" || \
-        abort "Unable to set MariaDB super user password"
-    debconf-set-selections <<< "mariadb-server-10.0 mysql-server/root_password_again password ${MARIADB_SUPERUSER_PASSWORD}" || \
-        abort "Unable to set MariaDB super user password"
-    apt-get -qq -y install \
-        apache2 libapache2-mod-php5 \
-        php5 php5-cli php5-common php5-curl php5-gd php5-imagick php5-json php5-ldap php5-mcrypt \
-        php5-mysqlnd php5-pgsql php5-memcached \
-        mariadb-server mariadb-client \
-        memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
 }
 
 function configureDebian9 {
@@ -1414,10 +1367,6 @@ function configureMariaDB {
         MARIADB_HOSTNAME="$answer"
     fi
 
-    if [[ "$OS" != "debian8" ]]; then
-        secureMariaDB
-    fi
-
     log "Prepare shutdown of MariaDB"
     "$MARIADB_BIN" \
         -h"$MARIADB_HOSTNAME" \
@@ -1626,10 +1575,6 @@ EOF
 
 function updateApacheConfig {
     local htaccessFile="${INSTALL_DIR}/.htaccess"
-
-    if [[ "$OS" = "debian8" ]]; then
-        return 0
-    fi
 
     log "Update Apache's VHost config from i-doit's htaccess file"
 

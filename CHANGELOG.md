@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 -   `idoit-install`: Print warnings for non-supported operating systems
 -   `idoit-install`: Split checks for hardware and software requirements into two parts
 -   `idoit-install`: Run on Debian-based OS in non-interactive mode to prevent warnings
+-   `idoit-install`: Remove support for Debian GNU/Linux 8 "jessie" because of outdated packages
 -   `idoit-jobs`: Disable resetting PHP OpCache
 -   `idoit-jobs`: Disable rebuilding i-doit's own cache
 
