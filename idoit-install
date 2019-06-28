@@ -86,6 +86,12 @@ UNZIP_BIN=""
 WGET_BIN=""
 PHP_BIN=""
 
+## /etc/os-release comes with these variables:
+## NAME, VERSION, VERSION_ID, PRETTY_NAME and some more…
+NAME=""
+VERSION=""
+VERSION_ID=""
+PRETTY_NAME=""
 
 ##--------------------------------------------------------------------------------------------------
 
@@ -246,13 +252,6 @@ function identifyOS {
         abort "Unable to identify operating system"
     fi
 
-    ## This file comes with these variables:
-    ## NAME, VERSION, VERSION_ID, PRETTY_NAME and some more…
-    NAME=""
-    VERSION=""
-    VERSION_ID=""
-    PRETTY_NAME=""
-
     # shellcheck source=/dev/null
     source "/etc/os-release"
 
@@ -322,7 +321,7 @@ function identifyOS {
         MARIADB_UNIT="mariadb"
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
-    elif [[ "$NAME" == "SLES" && "$VERSION" == "15" ]]; then
+    elif [[ "$NAME" == "SLES" && "$VERSION" == 15* ]]; then
         OS="sles15"
         INSTALL_DIR="/srv/www/htdocs"
         APACHE_USER="wwwrun"
@@ -910,12 +909,14 @@ function configureSLES15 {
     local web_repos=""
     local service_pack=""
     local openSuseRepo=""
+    local webScriptingModuleAlias="Web_and_Scripting_Module_${VERSION_ID}_x86_64"
+    local webScriptingModuleProduct="sle-module-web-scripting/${VERSION_ID}/x86_64"
 
     log "Keep your packages up-to-date"
     zypper --quiet --non-interactive refresh || abort "Unable to refresh software repositories"
     zypper --quiet --non-interactive update || abort "Unable to update software packages"
 
-    web_repos=$(zypper repos -E | grep -c "Web_and_Scripting_Module_15_x86_64")
+    web_repos=$(zypper repos -E | grep -c "$webScriptingModuleAlias")
 
     if [[ "$web_repos" -lt 2 ]]; then
         log "The following module is required:"
@@ -925,7 +926,7 @@ function configureSLES15 {
         log "This script will activate it."
 
         if askYesNo "Do you agree with it?"; then
-            SUSEConnect -p sle-module-web-scripting/15/x86_64
+            SUSEConnect -p "$webScriptingModuleProduct"
         else
             abort "Essential software repositories are missing"
         fi
@@ -961,12 +962,12 @@ function configureSLES15 {
             abort "Unable to add repository"
         zypper --quiet --non-interactive --gpg-auto-import-keys refresh || \
             abort "Unable to refresh software repositories"
-
-        ## TODO Unable to install package "php7-imagick":
-        ## "Problem: nothing provides libMagickCore-7.Q16HDRI.so.5()(64bit) needed by php7-imagick-3.4.3-21.1.x86_64"
-        zypper --quiet --non-interactive install --no-recommends php7-memcached || \
-            abort "Unable to install required software package"
     fi
+
+    ## TODO Unable to install package "php7-imagick":
+    ## "Problem: nothing provides libMagickCore-7.Q16HDRI.so.5()(64bit) needed by php7-imagick-3.4.3-21.1.x86_64"
+    zypper --quiet --non-interactive install --no-recommends php7-memcached || \
+        abort "Unable to install required software package"
 
     zypper --quiet --non-interactive clean || abort "Unable to clean up cached software packages"
 

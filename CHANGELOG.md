@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -   `idoit-install`: Add support for Debian GNU/Linux 10 "buster"
+-   `idoit-install`: Add support for SLES 15 SP1
 -   `idoit-install`: Add support for PHP 7.3
 -   `idoit-install`: Add experimental support for PHP 7.4
 -   `idoit-install`: Download scripts from master branch to stay up-to-date
