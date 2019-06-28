@@ -51,6 +51,7 @@ IFS=$'\n\t'
 : "${JOBS_BIN:="/usr/local/bin/idoit-jobs"}"
 : "${CRON_FILE:="/etc/cron.d/i-doit"}"
 : "${BACKUP_DIR:="/var/backups/i-doit"}"
+: "${RECOMMENDED_PHP_VERSION:="7.3"}"
 
 ##
 ## Runtime settings
@@ -1077,10 +1078,10 @@ function configurePHP {
 
     case "$php_version" in
         "5.4"|"5.5")
-            abort "PHP ${php_version} is way too old. Please upgrade. We recommend version 7.2."
+            abort "PHP ${php_version} is way too old. Please upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
             ;;
         "5.6")
-            log "PHP ${php_version} is installed, but this version is deprecated. Please consider to upgrade. We recommend version 7.2."
+            log "PHP ${php_version} is installed, but this version is deprecated. Please consider to upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
             php_en_mod=$(command -v php5enmod)
             ;;
         "7.0")
@@ -1090,15 +1091,15 @@ function configurePHP {
             php_en_mod=$(command -v phpenmod)
             ;;
         "7.3")
-            log "PHP ${php_version} is installed, but this version is not officially supported by i-doit. Please consider to downgrade. We recommend version 7.2."
+            log "PHP ${php_version} is installed, but this version is not officially supported by i-doit. Please consider to downgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
             php_en_mod=$(command -v phpenmod)
             ;;
         "7.4")
-            log "PHP ${php_version} is installed, but this version is not suitable in a productive environment. Please consider to downgrade. We recommend version 7.2."
+            log "PHP ${php_version} is installed, but this version is not suitable in a productive environment. Please consider to downgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
             php_en_mod=$(command -v phpenmod)
             ;;
         *)
-            abort "PHP ${php_version} is not supported. Please follow the system requirements. We recommend version 7.2."
+            abort "PHP ${php_version} is not supported. Please follow the system requirements. We recommend version ${RECOMMENDED_PHP_VERSION}."
             ;;
     esac
 

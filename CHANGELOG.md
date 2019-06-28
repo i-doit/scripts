@@ -11,14 +11,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
--   `idoit-install`: Add experimental support for Debian GNU/Linux 10 "buster"
--   `idoit-install`: Add experimental support for PHP 7.3 and 7.4
+-   `idoit-install`: Add support for Debian GNU/Linux 10 "buster"
+-   `idoit-install`: Add support for PHP 7.3
+-   `idoit-install`: Add experimental support for PHP 7.4
 -   `idoit-install`: Download scripts from master branch to stay up-to-date
 
 
 ### Changed
 
 -   `idoit-install`: Print warnings for non-supported operating systems
+-   `idoit-install`: Split checks for hardware and software requirements into two parts
+-   `idoit-install`: Run on Debian-based OS in non-interactive mode to prevent warnings
 -   `idoit-jobs`: Disable resetting PHP OpCache
 -   `idoit-jobs`: Disable rebuilding i-doit's own cache
 
