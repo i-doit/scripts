@@ -910,14 +910,14 @@ function configureSLES12 {
         log "Install 'chronic'"
         ## TODO: I know, this seems to be pretty ugly, but:
         ## Why the hack is moreutils not included in the standard repositories?!?
-        wget --quiet -O "${TMP_DIR}/chronic" \
+        "$WGET_BIN" --quiet -O "${TMP_DIR}/chronic" \
             https://git.joeyh.name/index.cgi/moreutils.git/plain/chronic || \
             abort "Unable to download 'chronic'"
         chmod +x "${TMP_DIR}/chronic" || \
             abort "Unable to set executable bit"
         mv "${TMP_DIR}/chronic" /usr/bin || \
             abort "Unable to move 'chronic' to '/usr/bin'"
-        wget --quiet -O - https://cpanmin.us | perl - App::cpanminus || \
+        "$WGET_BIN" --quiet -O - https://cpanmin.us | perl - App::cpanminus || \
             abort "Unable to install cpanminus"
         cpanm --quiet --notest --install IPC::Run || \
             abort "Unable to install Perl module IPC::Run"
@@ -1002,14 +1002,14 @@ function configureSLES15 {
         log "Install 'chronic'"
         ## TODO: I know, this seems to be pretty ugly, but:
         ## Why the hack is moreutils not included in the standard repositories?!?
-        wget --quiet -O "${TMP_DIR}/chronic" \
+        "$WGET_BIN" --quiet -O "${TMP_DIR}/chronic" \
             https://git.joeyh.name/index.cgi/moreutils.git/plain/chronic || \
             abort "Unable to download 'chronic'"
         chmod +x "${TMP_DIR}/chronic" || \
             abort "Unable to set executable bit"
         mv "${TMP_DIR}/chronic" /usr/bin || \
             abort "Unable to move 'chronic' to '/usr/bin'"
-        wget --quiet -O - https://cpanmin.us | perl - App::cpanminus || \
+        "$WGET_BIN" --quiet -O - https://cpanmin.us | perl - App::cpanminus || \
             abort "Unable to install cpanminus"
         cpanm --quiet --notest --install IPC::Run || \
             abort "Unable to install Perl module IPC::Run"
