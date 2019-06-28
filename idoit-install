@@ -267,7 +267,7 @@ function identifyOS {
         MARIADB_UNIT="mariadb"
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
-    elif [[ "$PRETTY_NAME" == "Debian GNU/Linux buster/sid" ]]; then
+    elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "10 (buster)" ]]; then
         log "Warning: This is an unstable version of Debian GNU/Linux"
         askYesNo "Do you really want to continue?" || cancel
 
