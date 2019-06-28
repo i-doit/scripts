@@ -323,9 +323,6 @@ function identifyOS {
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" == "SLES" && "$VERSION" == "15" ]]; then
-        log "Warning: SLES 15 is not officially supported by i-doit"
-        askYesNo "Do you really want to continue?" || cancel
-
         OS="sles15"
         INSTALL_DIR="/srv/www/htdocs"
         APACHE_USER="wwwrun"
@@ -340,6 +337,9 @@ function identifyOS {
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" = "SLES" && "$VERSION_ID" == 12* ]]; then
+        log "Warning: SLES 12 is out-dated. Please consider to upgrade your OS."
+        askYesNo "Do you really want to continue?" || cancel
+
         case "$VERSION_ID" in
             "12.2")
                 OS="sles12sp2"
@@ -896,14 +896,14 @@ function configureSLES12 {
         log "Install 'chronic'"
         ## TODO: I know, this seems to be pretty ugly, but:
         ## Why the hack is moreutils not included in the standard repositories?!?
-        "$WGET_BIN" --quiet -O "${TMP_DIR}/chronic" \
+        wget --quiet -O "${TMP_DIR}/chronic" \
             https://git.joeyh.name/index.cgi/moreutils.git/plain/chronic || \
             abort "Unable to download 'chronic'"
         chmod +x "${TMP_DIR}/chronic" || \
             abort "Unable to set executable bit"
         mv "${TMP_DIR}/chronic" /usr/bin || \
             abort "Unable to move 'chronic' to '/usr/bin'"
-        "$WGET_BIN" --quiet -O - https://cpanmin.us | perl - App::cpanminus || \
+        wget --quiet -O - https://cpanmin.us | perl - App::cpanminus || \
             abort "Unable to install cpanminus"
         cpanm --quiet --notest --install IPC::Run || \
             abort "Unable to install Perl module IPC::Run"
@@ -911,7 +911,6 @@ function configureSLES12 {
 }
 
 function configureSLES15 {
-    local dev_repos=""
     local web_repos=""
     local service_pack=""
     local openSuseRepo=""
@@ -920,18 +919,20 @@ function configureSLES15 {
     zypper --quiet --non-interactive refresh || abort "Unable to refresh software repositories"
     zypper --quiet --non-interactive update || abort "Unable to update software packages"
 
-    dev_repos=$(zypper repos -E | grep -c "Development_Tools_Module_15_x86_64")
     web_repos=$(zypper repos -E | grep -c "Web_and_Scripting_Module_15_x86_64")
 
-    if [[ "$dev_repos" -lt 2 || "$web_repos" -lt 2 ]]; then
-        log "Please make sure that the following modules are activated in Yast:"
+    if [[ "$web_repos" -lt 2 ]]; then
+        log "The following module is required:"
         log ""
-        log "    DevTools"
-        log "    Web Scripting"
+        log "    Web and Scripting"
         log ""
-        log "After activating these repositories run this script again."
+        log "This script will activate it."
 
-        abort "Essential software repositories are missing"
+        if askYesNo "Do you agree with it?"; then
+            SUSEConnect -p sle-module-web-scripting/15/x86_64
+        else
+            abort "Essential software repositories are missing"
+        fi
     fi
 
     log "Install software packages"
@@ -939,6 +940,7 @@ function configureSLES15 {
         apache2 \
         mariadb mariadb-client \
         memcached \
+        make sudo unzip \
         php7 php7-bcmath php7-bz2 php7-ctype php7-curl php7-fpm php7-gd php7-gettext php7-fileinfo \
         php7-json php7-ldap php7-mbstring php7-mysql php7-opcache php7-openssl php7-pdo php7-pgsql \
         php7-phar php7-posix php7-soap php7-sockets php7-sqlite php7-xsl php7-zip php7-zlib || \
@@ -981,21 +983,25 @@ function configureSLES15 {
     unitctl "start" "$MEMCACHED_UNIT"
 
     log "Allow incoming HTTP traffic"
-    SuSEfirewall2 open EXT TCP http || "Unable to open port 80"
-    SuSEfirewall2 start || abort "Unable to restart firewall"
+    systemctl -q is-active firewalld.service || (
+        log "Firewall is inactive."
+        unitctl "start" "firewalld"
+    )
+    firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
+    unitctl "restart" "firewalld"
 
     if [[ ! -x "$(command -v chronic)" ]]; then
         log "Install 'chronic'"
         ## TODO: I know, this seems to be pretty ugly, but:
         ## Why the hack is moreutils not included in the standard repositories?!?
-        "$WGET_BIN" --quiet -O "${TMP_DIR}/chronic" \
+        wget --quiet -O "${TMP_DIR}/chronic" \
             https://git.joeyh.name/index.cgi/moreutils.git/plain/chronic || \
             abort "Unable to download 'chronic'"
         chmod +x "${TMP_DIR}/chronic" || \
             abort "Unable to set executable bit"
         mv "${TMP_DIR}/chronic" /usr/bin || \
             abort "Unable to move 'chronic' to '/usr/bin'"
-        "$WGET_BIN" --quiet -O - https://cpanmin.us | perl - App::cpanminus || \
+        wget --quiet -O - https://cpanmin.us | perl - App::cpanminus || \
             abort "Unable to install cpanminus"
         cpanm --quiet --notest --install IPC::Run || \
             abort "Unable to install Perl module IPC::Run"
@@ -1366,6 +1372,8 @@ function configureMariaDB {
     if [[ -n "$answer" ]]; then
         MARIADB_HOSTNAME="$answer"
     fi
+
+    secureMariaDB
 
     log "Prepare shutdown of MariaDB"
     "$MARIADB_BIN" \
