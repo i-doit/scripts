@@ -841,7 +841,7 @@ function configureSLES12 {
     fi
 
     log "Install software packages"
-    zypper --quiet --non-interactive --no-recommends install \
+    zypper --quiet --non-interactive install --no-recommends \
         apache2 \
         mariadb mariadb-client \
         memcached \
@@ -870,7 +870,7 @@ function configureSLES12 {
             abort "Unable to add repository"
         zypper --quiet --non-interactive --gpg-auto-import-keys refresh || \
             abort "Unable to refresh software repositories"
-        zypper --quiet --non-interactive --no-recommends install php7-imagick || \
+        zypper --quiet --non-interactive install --no-recommends php7-imagick || \
             abort "Unable to install required software package"
     fi
 
@@ -932,7 +932,7 @@ function configureSLES15 {
     fi
 
     log "Install software packages"
-    zypper --quiet --non-interactive --no-recommends install \
+    zypper --quiet --non-interactive install --no-recommends \
         apache2 \
         mariadb mariadb-client \
         memcached \
