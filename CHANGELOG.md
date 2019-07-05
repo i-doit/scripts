@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   `cron`: Run backup with super-user rights (`root`)
 -   `idoit-install`: Remove out-dated PHP module `mcrypt` when possible
+-   `idoit-install`: Remove unnecessary PHP module `imagick`
 -   `idoit-install`: Use firewalld on SLES 15
 
 ## [0.12] – 2018-12-21

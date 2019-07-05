@@ -502,14 +502,8 @@ function checkSoftwareRequirements {
     if [[ -x "$PHP_BIN" ]]; then
         log "Check for installed PHP extensions…"
 
-        ## TODO Failed to install php7-imagick on SLES 15:
-        if [[ "$OS" = "sles15" ]]; then
-            local phpExtensions=(bcmath ctype curl fileinfo gd json ldap \
-                mbstring memcached mysqli mysqlnd pgsql session soap xml zip)
-        else
-            local phpExtensions=(bcmath ctype curl fileinfo gd imagick json ldap \
-                mbstring memcached mysqli mysqlnd pgsql session soap xml zip)
-        fi
+        local phpExtensions=(bcmath ctype curl fileinfo gd json ldap \
+            mbstring memcached mysqli mysqlnd pgsql session soap xml zip)
 
         for phpExtension in "${phpExtensions[@]}"; do
             if "$PHP_BIN" -m | grep "$phpExtension" > /dev/null; then
@@ -579,7 +573,7 @@ function configureDebian9 {
         php7.0-bcmath php7.0-cli php7.0-common php7.0-curl php7.0-fpm php7.0-gd php7.0-json \
         php7.0-ldap php7.0-mbstring php7.0-mcrypt php7.0-mysql php7.0-opcache php7.0-pgsql \
         php7.0-soap php7.0-xml php7.0-zip \
-        php-imagick php-memcached \
+        php-memcached \
         memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
 }
 
@@ -597,7 +591,7 @@ function configureDebian10 {
         php7.3-bcmath php7.3-cli php7.3-common php7.3-curl php7.3-fpm php7.3-gd php7.3-json \
         php7.3-ldap php7.3-mbstring php7.3-mysql php7.3-opcache php7.3-pgsql \
         php7.3-soap php7.3-xml php7.3-zip \
-        php-imagick php-memcached \
+        php-memcached \
         memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
 }
 
@@ -615,7 +609,7 @@ function configureUbuntu1604 {
         php7.0-bcmath php7.0-cli php7.0-common php7.0-curl php7.0-fpm php7.0-gd php7.0-json \
         php7.0-ldap php7.0-mbstring php7.0-mcrypt php7.0-mysql php7.0-opcache php7.0-pgsql \
         php7.0-soap php7.0-xml php7.0-zip \
-        php-imagick php-memcached \
+        php-memcached \
         memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
 }
 
@@ -633,7 +627,7 @@ function configureUbuntu1804 {
         php7.2-bcmath php7.2-cli php7.2-common php7.2-curl php7.2-fpm php7.2-gd php7.2-json \
         php7.2-ldap php7.2-mbstring php7.2-mysql php7.2-opcache php7.2-pgsql \
         php7.2-soap php7.2-xml php7.2-zip \
-        php-imagick php-memcached \
+        php-memcached \
         memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
 }
 
@@ -672,7 +666,7 @@ function configureCentOS7 {
         log "Install PHP packages"
         yum --assumeyes --quiet install \
             php72w-bcmath php72w-cli php72w-common php72w-fpm php72w-gd php72w-ldap \
-            php72w-mbstring php72w-mysqlnd php72w-opcache php72w-pdo php72w-pecl-imagick \
+            php72w-mbstring php72w-mysqlnd php72w-opcache php72w-pdo \
             php72w-pecl-memcached php72w-pgsql php72w-soap php72w-xml || \
             abort "Unable to install PHP packages"
     fi
@@ -752,7 +746,7 @@ function configureRHEL7 {
         log "Install PHP packages"
         yum --assumeyes --quiet install \
             php72w-bcmath php72w-cli php72w-common php72w-fpm php72w-gd php72w-ldap \
-            php72w-mbstring php72w-mysqlnd php72w-opcache php72w-pdo php72w-pecl-imagick \
+            php72w-mbstring php72w-mysqlnd php72w-opcache php72w-pdo \
             php72w-pecl-memcached php72w-pgsql php72w-soap php72w-xml || \
             abort "Unable to install PHP packages"
     fi
@@ -807,7 +801,6 @@ function configureSLES12 {
     local dev_repos=""
     local web_repos=""
     local service_pack=""
-    local openSuseRepo=""
 
     log "Keep your packages up-to-date"
     zypper --quiet --non-interactive refresh || abort "Unable to refresh software repositories"
@@ -849,29 +842,6 @@ function configureSLES12 {
         php7-openssl php7-pdo php7-pgsql php7-phar php7-posix php7-soap php7-sockets php7-sqlite \
         php7-xsl php7-zip php7-zlib || \
         abort "Unable to install required software packages"
-
-    openSuseRepo=$(zypper repos -E | grep -c "server_php_extensions_php7")
-
-    if [[ "$openSuseRepo" -lt 1 ]]; then
-        log "i-doit requires PHP module for imagick"
-        log "But this PHP module is not available in SLE standard repositories"
-        log "It will be installed from a 3rd-party repository from openSUSE:"
-        log ""
-        log "    server:php:extensions:php7"
-        log ""
-        log "Details:"
-        log ""
-        log "    https://software.opensuse.org/download.html?project=server%3Aphp%3Aextensions%3Aphp7&package=php7-imagick"
-
-        zypper --quiet --non-interactive addrepo \
-            --gpgcheck --refresh \
-            https://download.opensuse.org/repositories/server:php:extensions:php7/SLE_12_SP3_Backports/server:php:extensions:php7.repo || \
-            abort "Unable to add repository"
-        zypper --quiet --non-interactive --gpg-auto-import-keys refresh || \
-            abort "Unable to refresh software repositories"
-        zypper --quiet --non-interactive install --no-recommends php7-imagick || \
-            abort "Unable to install required software package"
-    fi
 
     zypper --quiet --non-interactive clean || abort "Unable to clean up cached software packages"
 
@@ -946,15 +916,15 @@ function configureSLES15 {
     openSuseRepo=$(zypper repos -E | grep -c "server_php_extensions_php7")
 
     if [[ "$openSuseRepo" -lt 1 ]]; then
-        log "i-doit requires PHP module for imagick and memcached"
-        log "But these PHP modules are not available in SLE standard repositories"
-        log "They will be installed from a 3rd-party repository from openSUSE:"
+        log "i-doit requires PHP module for memcached"
+        log "But this PHP module is not available in SLE standard repositories"
+        log "It will be installed from a 3rd-party repository from openSUSE:"
         log ""
         log "    server:php:extensions:php7"
         log ""
         log "Details:"
         log ""
-        log "    https://software.opensuse.org/download.html?project=server%3Aphp%3Aextensions%3Aphp7&package=php7-imagick"
+        log "    https://software.opensuse.org/download.html?project=server%3Aphp%3Aextensions%3Aphp7&package=php7-memcached"
 
         zypper --quiet --non-interactive addrepo \
             --gpgcheck --refresh \
@@ -964,8 +934,6 @@ function configureSLES15 {
             abort "Unable to refresh software repositories"
     fi
 
-    ## TODO Unable to install package "php7-imagick":
-    ## "Problem: nothing provides libMagickCore-7.Q16HDRI.so.5()(64bit) needed by php7-imagick-3.4.3-21.1.x86_64"
     zypper --quiet --non-interactive install --no-recommends php7-memcached || \
         abort "Unable to install required software package"
 
