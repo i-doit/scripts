@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   `idoit-install`: Print warning for out-dated SLES 12 versions
 -   `idoit-install`: Do not require Development Tools Modules on SLES 15
 -   `idoit-install`: Switch to MariaDB 7.3 on RHEL/CentOS 7
+-   `idoit-install`: Do not ask to restart system on Ubuntu 16.04
 -   `idoit-jobs`: Disable resetting PHP OpCache
 -   `idoit-jobs`: Disable rebuilding i-doit's own cache
 

@@ -240,8 +240,6 @@ function execute {
     case "$OS" in
         "ubuntu1604")
             log "To garantee that all your changes take effect you should restart your system."
-
-            askYesNo "Do you want to restart your system NOW?" && systemctl -q reboot
             ;;
     esac
 }
