@@ -346,11 +346,7 @@ function identifyOS {
                 askYesNo "Do you really want to continue?" || cancel
                 ;;
             "12.3") OS="sles12sp3";;
-            "12.4")
-                OS="sles12sp4"
-                log "Warning: SLES 14 SP4 is not officially supported by i-doit"
-                askYesNo "Do you really want to continue?" || cancel
-                ;;
+            "12.4") OS="sles12sp4";;
             *)
                 abort "Operating system $PRETTY_NAME is not supported"
                 ;;
@@ -360,7 +356,7 @@ function identifyOS {
         APACHE_USER="wwwrun"
         APACHE_GROUP="www"
         APACHE_CONFIG_FILE="/etc/apache2/vhosts.d/i-doit.conf"
-        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
+        MARIADB_CONFIG_FILE="/etc/my.cnf.d/99-i-doit.cnf"
         PHP_CONFIG_FILE="/etc/php7/conf.d/i-doit.ini"
         MARIADB_SOCKET="/var/run/mysql/mysql.sock"
         PHP_FPM_SOCKET="/var/run/php-fpm.sock"
@@ -821,15 +817,34 @@ function configureSLES12 {
     dev_repos=$(zypper repos -E | grep -c "SLE-SDK12-SP${service_pack}")
     web_repos=$(zypper repos -E | grep -c "SLE-Module-Web-Scripting12")
 
-    if [[ "$dev_repos" -lt 2 || "$web_repos" -lt 2 ]]; then
-        log "Please make sure that the following add-ons are activated in Yast:"
+    if [[ "$dev_repos" -lt 2 ]]; then
+        log "The following module is required:"
         log ""
-        log "    SUSE Linux Enterprise Software Development Kit 12 SP${service_pack}"
-        log "    Web and Scripting Module 12"
+        log "    SUSE Linux Enterprise Software Development Kit 12 SP${service_pack} x86_64"
         log ""
-        log "After activating these repositories run this script again."
+        log "This script will activate it."
 
-        abort "Essential software repositories are missing"
+        if askYesNo "Do you agree with it?"; then
+            SUSEConnect -p "sle-sdk/12.${service_pack}/x86_64" || \
+                abort "Unable to active module"
+        else
+            abort "Essential software repositories are missing"
+        fi
+    fi
+
+    if [[ "$web_repos" -lt 2 ]]; then
+        log "The following module is required:"
+        log ""
+        log "    Web and Scripting Module 12 x86_64"
+        log ""
+        log "This script will activate it."
+
+        if askYesNo "Do you agree with it?"; then
+            SUSEConnect -p "sle-module-web-scripting/12/x86_64" || \
+                abort "Unable to active module"
+        else
+            abort "Essential software repositories are missing"
+        fi
     fi
 
     log "Install software packages"
@@ -896,7 +911,8 @@ function configureSLES15 {
         log "This script will activate it."
 
         if askYesNo "Do you agree with it?"; then
-            SUSEConnect -p "$webScriptingModuleProduct"
+            SUSEConnect -p "$webScriptingModuleProduct" || \
+                abort "Unable to active module"
         else
             abort "Essential software repositories are missing"
         fi

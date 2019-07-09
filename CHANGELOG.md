@@ -10,11 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -   `idoit-install`: Add support for Debian GNU/Linux 10 "buster"
+-   `idoit-install`: Add support for SLES 12 SP4
 -   `idoit-install`: Add support for SLES 15 SP1
 -   `idoit-install`: Add support for PHP 7.3
 -   `idoit-install`: Add experimental support for PHP 7.4
 -   `idoit-install`: Download scripts from master branch to stay up-to-date
 -   `idoit-install`: Activate Web and Scripting Module on SLES 15 automatically
+-   `idoit-install`: Activate Web and Scripting Module and Development Kit on SLES 12 automatically
 
 ### Changed
 
@@ -22,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   `idoit-install`: Split checks for hardware and software requirements into two parts
 -   `idoit-install`: Run on Debian-based OS in non-interactive mode to prevent warnings
 -   `idoit-install`: Remove support for Debian GNU/Linux 8 "jessie" because of outdated packages
--   `idoit-install`: Print warning for out-dated SLES 12
+-   `idoit-install`: Print warning for out-dated SLES 12 versions
 -   `idoit-install`: Do not require Development Tools Modules on SLES 15
 -   `idoit-install`: Switch to MariaDB 7.3 on RHEL/CentOS 7
 -   `idoit-jobs`: Disable resetting PHP OpCache
@@ -34,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   `idoit-install`: Remove out-dated PHP module `mcrypt` when possible
 -   `idoit-install`: Remove unnecessary PHP module `imagick`
 -   `idoit-install`: Use firewalld on SLES 15
+-   `idoit-install`: Use proper location for MariaDB configuration file on SLES 12
 
 ## [0.12] – 2018-12-21
 
