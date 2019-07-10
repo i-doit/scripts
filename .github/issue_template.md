@@ -24,5 +24,20 @@ Please note:
 
 | Question                  | Answer                            |
 | ------------------------- | --------------------------------- |
+| i-doit version            | x.y.z                             |
+| i-doit edition            | pro and/or open                   |
 | Operating system (OS)     | Debian/Ubuntu/RHEL/SLES/CentOS/…  |
 | OS version                | 9 "stretch"                       |
+
+
+### Server logs
+
+<!--
+Please note:
+
+1.  Logs may help to understand what exactly went wrong.
+2.  Problems are often caused not on client but on server-side.
+3.  Anonymize your logs properly. Do not post any passwords/secrets/private data.
+4.  Make sure i-doit's own logging is enabled.
+5.  Paste only excerpts from the logs which seem to be useful for further investigation.
+-->
