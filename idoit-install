@@ -306,6 +306,19 @@ function identifyOS {
         PHP_FPM_UNIT="php7.0-fpm"
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "8 (jessie)" ]]; then
         abort "Debian GNU/Linux 8 \"jessie\" is not supported anymore. Please upgrade your OS."
+    elif [[ "$NAME" == "Red Hat Enterprise Linux" && "$VERSION_ID" == 8* ]]; then
+        OS="rhel8"
+        APACHE_USER="apache"
+        APACHE_GROUP="apache"
+        APACHE_CONFIG_FILE="/etc/httpd/conf.d/i-doit.conf"
+        MARIADB_CONFIG_FILE="/etc/my.cnf.d/99-i-doit.cnf"
+        PHP_CONFIG_FILE="/etc/php.d/i-doit.ini"
+        MARIADB_SOCKET="/var/lib/mysql/mysql.sock"
+        PHP_FPM_SOCKET="/var/run/php-fpm/php-fpm.sock"
+        APACHE_UNIT="httpd"
+        MARIADB_UNIT="mariadb"
+        MEMCACHED_UNIT="memcached"
+        PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" == "Red Hat Enterprise Linux Server" && "$VERSION_ID" == 7* ]]; then
         OS="rhel7"
         APACHE_USER="apache"
@@ -476,7 +489,7 @@ function checkSoftwareRequirements {
     binaries["memcached"]=$(command -v memcached)
 
     case "$OS" in
-        "rhel7"|"centos7")
+        "rhel7"|"rhel8"|"centos7")
             binaries["httpd"]=$(command -v httpd)
             ;;
         *)
@@ -496,8 +509,17 @@ function checkSoftwareRequirements {
     if [[ -x "$PHP_BIN" ]]; then
         log "Check for installed PHP extensions…"
 
-        local phpExtensions=(bcmath ctype curl fileinfo gd json ldap \
-            mbstring memcached mysqli mysqlnd pgsql session soap xml zip)
+        case "$OS" in
+            ## TODO There is no php-memcached on RHEL 8:
+            "rhel8")
+                local phpExtensions=(bcmath ctype curl fileinfo gd json ldap \
+                    mbstring mysqli mysqlnd pgsql session soap xml zip)
+                ;;
+            *)
+                local phpExtensions=(bcmath ctype curl fileinfo gd json ldap \
+                    mbstring memcached mysqli mysqlnd pgsql session soap xml zip)
+                ;;
+        esac
 
         for phpExtension in "${phpExtensions[@]}"; do
             if "$PHP_BIN" -m | grep "$phpExtension" > /dev/null; then
@@ -538,6 +560,9 @@ function configureOS {
             ;;
         "rhel7")
             configureRHEL7
+            ;;
+        "rhel8")
+            configureRHEL8
             ;;
         "centos7")
             configureCentOS7
@@ -693,13 +718,60 @@ EOF
     yum --assumeyes --quiet install moreutils || \
         abort "Unable to install packages"
 
-    unitctl "enable" "$APACHE_UNIT"
-    unitctl "enable" "$MARIADB_UNIT"
-    unitctl "enable" "$MEMCACHED_UNIT"
+    for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT; do
+        unitctl "enable" "$unit"
+        unitctl "start" "$unit"
+    done
 
-    unitctl "start" "$APACHE_UNIT"
-    unitctl "start" "$MARIADB_UNIT"
-    unitctl "start" "$MEMCACHED_UNIT"
+    log "Allow incoming HTTP traffic"
+    systemctl -q is-active firewalld.service || (
+        log "Firewall is inactive."
+        unitctl "start" "firewalld"
+    )
+    firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
+    unitctl "restart" "firewalld"
+}
+
+function configureRHEL8 {
+    log "Keep your yum packages up-to-date"
+    yum --assumeyes --quiet update || abort "Unable to update yum packages"
+    yum --assumeyes --quiet autoremove || abort "Unable to remove out-dated yum packages"
+    yum --assumeyes --quiet clean all || abort "Unable to clean yum caches"
+    rm -rf /var/cache/yum || abort "Unable to remove orphaned yum caches"
+
+    for appStream in httpd:2.4 mariadb:10.3 php:7.2; do
+        log "Install AppStream $appStream"
+        yum --assumeyes --quiet module install "$appStream"
+    done
+
+    log "Install some important packages"
+    yum --assumeyes --quiet install \
+        memcached unzip wget zip \
+        php-bcmath php-gd  php-ldap php-mysqli php-mysqlnd \
+        php-pgsql php-soap php-zip || \
+        abort "Unable to install packages"
+
+    if [[ ! -x "$(command -v chronic)" ]]; then
+        log "Install 'chronic'"
+        ## TODO: I know, this seems to be pretty ugly, but:
+        ## Why the hack is moreutils not included in the standard repositories?!?
+        wget --quiet -O "${TMP_DIR}/chronic" \
+            https://git.joeyh.name/index.cgi/moreutils.git/plain/chronic || \
+            abort "Unable to download 'chronic'"
+        chmod +x "${TMP_DIR}/chronic" || \
+            abort "Unable to set executable bit"
+        mv "${TMP_DIR}/chronic" /usr/local/bin || \
+            abort "Unable to move 'chronic' to '/usr/local/bin'"
+        yum --assumeyes --quiet module install perl-App-cpanminus || \
+            abort "Unable to install cpanm"
+        cpanm --quiet --notest --install IPC::Run || \
+            abort "Unable to install Perl module IPC::Run"
+    fi
+
+    for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT $PHP_FPM_UNIT; do
+        unitctl "enable" "$unit"
+        unitctl "start" "$unit"
+    done
 
     log "Allow incoming HTTP traffic"
     systemctl -q is-active firewalld.service || (
@@ -784,13 +856,10 @@ EOF
     yum --assumeyes --quiet install moreutils || \
         abort "Unable to install packages"
 
-    unitctl "enable" "$APACHE_UNIT"
-    unitctl "enable" "$MARIADB_UNIT"
-    unitctl "enable" "$MEMCACHED_UNIT"
-
-    unitctl "start" "$APACHE_UNIT"
-    unitctl "start" "$MARIADB_UNIT"
-    unitctl "start" "$MEMCACHED_UNIT"
+    for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT $PHP_FPM_UNIT; do
+        unitctl "enable" "$unit"
+        unitctl "start" "$unit"
+    done
 
     log "Allow incoming HTTP traffic"
     systemctl -q is-active firewalld.service || (
@@ -868,13 +937,10 @@ function configureSLES12 {
 
     zypper --quiet --non-interactive clean || abort "Unable to clean up cached software packages"
 
-    unitctl "enable" "$APACHE_UNIT"
-    unitctl "enable" "$MARIADB_UNIT"
-    unitctl "enable" "$MEMCACHED_UNIT"
-
-    unitctl "start" "$APACHE_UNIT"
-    unitctl "start" "$MARIADB_UNIT"
-    unitctl "start" "$MEMCACHED_UNIT"
+    for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT $PHP_FPM_UNIT; do
+        unitctl "enable" "$unit"
+        unitctl "start" "$unit"
+    done
 
     log "Allow incoming HTTP traffic"
     SuSEfirewall2 open EXT TCP http || "Unable to open port 80"
@@ -963,13 +1029,10 @@ function configureSLES15 {
 
     zypper --quiet --non-interactive clean || abort "Unable to clean up cached software packages"
 
-    unitctl "enable" "$APACHE_UNIT"
-    unitctl "enable" "$MARIADB_UNIT"
-    unitctl "enable" "$MEMCACHED_UNIT"
-
-    unitctl "start" "$APACHE_UNIT"
-    unitctl "start" "$MARIADB_UNIT"
-    unitctl "start" "$MEMCACHED_UNIT"
+    for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT $PHP_FPM_UNIT; do
+        unitctl "enable" "$unit"
+        unitctl "start" "$unit"
+    done
 
     log "Allow incoming HTTP traffic"
     systemctl -q is-active firewalld.service || (
@@ -1095,10 +1158,11 @@ function configurePHPFPM {
         "debian9"|"debian10"|"ubuntu1604"|"ubuntu1804")
             unitctl "restart" "$PHP_FPM_UNIT"
             ;;
-        "rhel7"|"centos7")
+        "rhel7"|"rhel8"|"centos7")
             log "Disable default configuration file"
             mv /etc/php-fpm.d/www.conf{,.bak} || \
                 abort "Unable to disable default configuration file"
+            log "Put new settings into file '/etc/php-fpm.d/i-doit.conf'"
             cat << EOF > /etc/php-fpm.d/i-doit.conf || \
                 abort "Unable to create and edit file '/etc/php-fpm.d/i-doit.conf'"
 [i-doit]
@@ -1114,12 +1178,13 @@ pm.min_spare_servers = 5
 pm.max_spare_servers = 35
 security.limit_extensions = .php
 EOF
-            unitctl "start" "$PHP_FPM_UNIT"
+            unitctl "restart" "$PHP_FPM_UNIT"
             ;;
         "sles12sp2"|"sles12sp3"|"sles12sp4"|"sles15")
             log "Enable PHP FPM configuration files"
             mv /etc/php7/fpm/php-fpm.conf{.default,} || \
                 abort "Unable to move file"
+            log "Put new settings into file '/etc/php7/fpm/php-fpm.d/i-doit.conf'"
             cat << EOF > /etc/php7/fpm/php-fpm.d/i-doit.conf || \
                 abort "Unable to create and edit file '/etc/php7/fpm/php-fpm.d/i-doit.conf'"
 [i-doit]
@@ -1136,8 +1201,7 @@ pm.max_spare_servers = 3
 security.limit_extensions = .php
 EOF
 
-            unitctl "enable" "$PHP_FPM_UNIT"
-            unitctl "start" "$PHP_FPM_UNIT"
+            unitctl "restart" "$PHP_FPM_UNIT"
             ;;
         *)
             log "Nope. This OS will stuck on mod_php."
@@ -1156,7 +1220,7 @@ function configureApache {
     hostname="$(cat /etc/hostname)"
 
     case "$OS" in
-        "rhel7"|"centos7")
+        "rhel7"|"rhel8"|"centos7")
             cat << EOF > ${APACHE_CONFIG_FILE} || \
                 abort "Unable to create and edit file '${APACHE_CONFIG_FILE}'"
 DirectoryIndex index.php
@@ -1186,17 +1250,23 @@ EOF
             log "Change directory ownership"
             chown "$APACHE_USER":"$APACHE_GROUP" -R "${INSTALL_DIR}/" || \
                 abort "Unable to change ownership"
+
             log "SELinux: Allow Apache Web server to read/write files under ${INSTALL_DIR}/"
             chcon -t httpd_sys_content_t "${INSTALL_DIR}/" -R || \
                 abort "Unable to give read permissions recursively"
             chcon -t httpd_sys_rw_content_t "${INSTALL_DIR}/" -R || \
                 abort "Unable to give write permissions recursively"
-            log "Disable MPM prefork"
-            sed -i "/.* mpm_prefork_module /s/^#*/#/" /etc/httpd/conf.modules.d/00-mpm.conf || \
-                abort "sed exited with error"
-            log "Enable MPM event"
-            sed -i "/^#.* mpm_event_module /s/^#//" /etc/httpd/conf.modules.d/00-mpm.conf || \
-                abort "sed exited with error"
+
+            ## mpm_event is already enabled on RHEL 8:
+            if [[ "$OS" != "rhel8" ]]; then
+                log "Disable MPM prefork"
+                sed -i "/.* mpm_prefork_module /s/^#*/#/" /etc/httpd/conf.modules.d/00-mpm.conf || \
+                    abort "sed exited with error"
+                log "Enable MPM event"
+                sed -i "/^#.* mpm_event_module /s/^#//" /etc/httpd/conf.modules.d/00-mpm.conf || \
+                    abort "sed exited with error"
+            fi
+
             unitctl "restart" "$APACHE_UNIT"
             ;;
         "sles12sp2"|"sles12sp3"|"sles12sp4"|"sles15")
