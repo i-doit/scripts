@@ -115,7 +115,7 @@ There are several steps you still need to do by yourself:
 1.  [Install your license (only pro version)](https://kb.i-doit.com/display/en/Install+License)
 2.  Document your IT (obviously ;-))
 
-##  Easy-use of the i-doit CLI
+## Easy-use of the i-doit CLI
 
 i-doit is shipped with a command-line tool called **console.php**. It is a little bit complicated to execute it because you have to change to i-doit's installation directory and you need the user rights of the Apache Web server. Additionally, you need to login before using one of the useful "commands".
 

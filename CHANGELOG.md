@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased][]
 
 ### Added
 
@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   `idoit-install`: Use firewalld on SLES 15
 -   `idoit-install`: Use proper location for MariaDB configuration file on SLES 12
 
-## [0.12] – 2018-12-21
+## [0.12][] – 2018-12-21
 
 Happy holidays 🎄
 
@@ -77,7 +77,7 @@ Happy holidays 🎄
 -   `idoit-install`: Enable and start memcached service (RHEL/CentOS/SLES12)
 -   `idoit-install`: Install missing PHP OpCache on Debian GNU/Linux and Ubuntu
 
-## [0.11] – 2018-07-13
+## [0.11][] – 2018-07-13
 
 ### Added
 
@@ -97,7 +97,7 @@ Happy holidays 🎄
 
 -   `idoit-install`: Install PHP extension `mbstring` on Debian GNU/Linux and Ubuntu Linux
 
-## [0.10] – 2018-07-02
+## [0.10][] – 2018-07-02
 
 ### Added
 
@@ -116,7 +116,7 @@ Happy holidays 🎄
 -   Cancel script if user likes to
 -   SLES: install PHP modules bz2, memcached and posix
 
-## [0.9] – 2017-12-19
+## [0.9][] – 2017-12-19
 
 ### Added
 
@@ -132,7 +132,7 @@ Happy holidays 🎄
 
 -   Installer is unable to identify Ubuntu and SLES properly, says these OSs are unsupported
 
-## [0.8] – 2017-09-18
+## [0.8][] – 2017-09-18
 
 ### Added
 
@@ -143,7 +143,7 @@ Happy holidays 🎄
 -   Jobs: Truncate search index
 -   Use apt-get on Debian GNU/Linux 8
 
-## [0.7] – 2017-09-02
+## [0.7][] – 2017-09-02
 
 ### Added
 
@@ -162,7 +162,7 @@ Happy holidays 🎄
 -   Parse updates.xml properly for latest i-doit version
 -   Fixed broken name of temporary directory
 
-## [0.6] – 2017-07-24
+## [0.6][] – 2017-07-24
 
 ### Added
 
@@ -172,7 +172,7 @@ Happy holidays 🎄
 -   Create the first backup automatically
 -   Install "chronic" under SLES
 
-##  [0.5] – 2017-07-13
+## [0.5][] – 2017-07-13
 
 ### Added
 
@@ -181,13 +181,13 @@ Happy holidays 🎄
 -   Dedicated MariaDB user for i-doit
 -   Require successful installation of i-doit before deploying scripts
 
-## [0.4] – 2017-07-12
+## [0.4][] – 2017-07-12
 
 ### Added
 
 -   Deploy cron jobs and an easy-to-use CLI tool for the i-doit controller
 
-##  [0.3] – 2017-07-10
+## [0.3][] – 2017-07-10
 
 ### Added
 
@@ -199,7 +199,7 @@ Happy holidays 🎄
 -   Warning not to edit the built-in configuration
 -   Recommend Debian GNU/Linux 9 "stretch"
 
-## [0.2] – 2017-07-07
+## [0.2][] – 2017-07-07
 
 ### Added
 
