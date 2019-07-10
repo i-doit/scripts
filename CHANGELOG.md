@@ -13,10 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   `idoit-install`: Add support for SLES 12 SP4
 -   `idoit-install`: Add support for SLES 15 SP1
 -   `idoit-install`: Add support for PHP 7.3
+-   `idoit-install`: Add support for MariaDB 10.2 and 10.3
 -   `idoit-install`: Add experimental support for PHP 7.4
 -   `idoit-install`: Download scripts from master branch to stay up-to-date
 -   `idoit-install`: Activate Web and Scripting Module on SLES 15 automatically
 -   `idoit-install`: Activate Web and Scripting Module and Development Kit on SLES 12 automatically
+-   `idoit-install`: Check for already enabled EPEL and Webtatic repositories on RHEL 7/CentOS 7
 
 ### Changed
 

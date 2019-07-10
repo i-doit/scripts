@@ -644,18 +644,23 @@ function configureCentOS7 {
     log ""
 
     if askYesNo "Do you agree with it?"; then
-        log "Import EPEL public GPG key"
-        rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7 || \
-            abort "Unable to import public GPG key from EPEL"
-        log "Add EPEL releases"
-        rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm || \
-            abort "Unable to install epel-releases via yum"
-        log "Import Webtatic public GPG key"
-        rpm --import --quiet https://mirror.webtatic.com/yum/RPM-GPG-KEY-webtatic-el7 || \
-            abort "Unable to import GPG key from Webtatic"
-        log "Add Webtatic releases"
-        rpm -Uvh --quiet https://mirror.webtatic.com/yum/el7/webtatic-release.rpm || \
-            abort "Unable to add Webtatic"
+        if ! rpm -qa | grep "epel-release" > /dev/null; then
+            log "Import EPEL public GPG key"
+            rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7 || \
+                abort "Unable to import public GPG key from EPEL"
+            log "Add EPEL releases"
+            rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm || \
+                abort "Unable to install epel-releases via yum"
+        fi
+
+        if ! rpm -qa | grep "webtatic-release" > /dev/null; then
+            log "Import Webtatic public GPG key"
+            rpm --import --quiet https://mirror.webtatic.com/yum/RPM-GPG-KEY-webtatic-el7 || \
+                abort "Unable to import GPG key from Webtatic"
+            log "Add Webtatic releases"
+            rpm -Uvh --quiet https://mirror.webtatic.com/yum/el7/webtatic-release.rpm || \
+                abort "Unable to add Webtatic"
+        fi
 
         log "Install PHP packages"
         yum --assumeyes --quiet install \
@@ -663,11 +668,10 @@ function configureCentOS7 {
             php72w-mbstring php72w-mysqlnd php72w-opcache php72w-pdo \
             php72w-pecl-memcached php72w-pgsql php72w-soap php72w-xml || \
             abort "Unable to install PHP packages"
-    fi
 
-    log "Enable MariaDB repository"
-    cat << EOF > /etc/yum.repos.d/MariaDB.repo || \
-        abort "Unable to create and edit file '/etc/yum.repos.d/MariaDB.repo'"
+        log "Enable MariaDB repository"
+        cat << EOF > /etc/yum.repos.d/MariaDB.repo || \
+            abort "Unable to create and edit file '/etc/yum.repos.d/MariaDB.repo'"
 # MariaDB 10.3 repository list
 # http://downloads.mariadb.org/mariadb/repositories/
 [mariadb]
@@ -677,12 +681,13 @@ gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
 gpgcheck=1
 EOF
 
-    log "Install MariaDB packages"
-    rpm --import --quiet https://yum.mariadb.org/RPM-GPG-KEY-MariaDB || \
-        abort "Unable to import GPG key from MariaDB"
-    ## Suppress unnecessary notices which could confuse the user:
-    yum --assumeyes --quiet install MariaDB-server MariaDB-client &> /dev/null || \
-        abort "Unable to install MariaDB"
+        log "Install MariaDB packages"
+        rpm --import --quiet https://yum.mariadb.org/RPM-GPG-KEY-MariaDB || \
+            abort "Unable to import GPG key from MariaDB"
+        ## Suppress unnecessary notices which could confuse the user:
+        yum --assumeyes --quiet install MariaDB-server MariaDB-client &> /dev/null || \
+            abort "Unable to install MariaDB"
+    fi
 
     log "Install 'moreutils'"
     yum --assumeyes --quiet install moreutils || \
@@ -724,18 +729,23 @@ function configureRHEL7 {
     log ""
 
     if askYesNo "Do you agree with it?"; then
-        log "Import EPEL public GPG key"
-        rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7 || \
-            abort "Unable to import public GPG key from EPEL"
-        log "Add EPEL releases"
-        rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm || \
-            abort "Unable to install epel-releases via yum"
-        log "Import Webtatic public GPG key"
-        rpm --import --quiet https://mirror.webtatic.com/yum/RPM-GPG-KEY-webtatic-el7 || \
-            abort "Unable to import GPG key from Webtatic"
-        log "Add Webtatic releases"
-        rpm -Uvh --quiet https://mirror.webtatic.com/yum/el7/webtatic-release.rpm || \
-            abort "Unable to add Webtatic"
+        if ! rpm -qa | grep "epel-release" > /dev/null; then
+            log "Import EPEL public GPG key"
+            rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7 || \
+                abort "Unable to import public GPG key from EPEL"
+            log "Add EPEL releases"
+            rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm || \
+                abort "Unable to install epel-releases via yum"
+        fi
+
+        if ! rpm -qa | grep "webtatic-release" > /dev/null; then
+            log "Import Webtatic public GPG key"
+            rpm --import --quiet https://mirror.webtatic.com/yum/RPM-GPG-KEY-webtatic-el7 || \
+                abort "Unable to import GPG key from Webtatic"
+            log "Add Webtatic releases"
+            rpm -Uvh --quiet https://mirror.webtatic.com/yum/el7/webtatic-release.rpm || \
+                abort "Unable to add Webtatic"
+        fi
 
         log "Install PHP packages"
         yum --assumeyes --quiet install \
@@ -743,11 +753,10 @@ function configureRHEL7 {
             php72w-mbstring php72w-mysqlnd php72w-opcache php72w-pdo \
             php72w-pecl-memcached php72w-pgsql php72w-soap php72w-xml || \
             abort "Unable to install PHP packages"
-    fi
 
-    log "Enable MariaDB repository"
-    cat << EOF > /etc/yum.repos.d/MariaDB.repo || \
-        abort "Unable to create and edit file '/etc/yum.repos.d/MariaDB.repo'"
+        log "Enable MariaDB repository"
+        cat << EOF > /etc/yum.repos.d/MariaDB.repo || \
+            abort "Unable to create and edit file '/etc/yum.repos.d/MariaDB.repo'"
 # MariaDB 10.3 RedHat repository list
 # http://downloads.mariadb.org/mariadb/repositories/
 [mariadb]
@@ -757,12 +766,13 @@ gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
 gpgcheck=1
 EOF
 
-    log "Install MariaDB packages"
-    rpm --import --quiet https://yum.mariadb.org/RPM-GPG-KEY-MariaDB || \
-        abort "Unable to import GPG key from MariaDB"
-    ## Suppress unnecessary notices which could confuse the user:
-    yum --assumeyes --quiet install MariaDB-server MariaDB-client &> /dev/null || \
-        abort "Unable to install MariaDB"
+        log "Install MariaDB packages"
+        rpm --import --quiet https://yum.mariadb.org/RPM-GPG-KEY-MariaDB || \
+            abort "Unable to import GPG key from MariaDB"
+        ## Suppress unnecessary notices which could confuse the user:
+        yum --assumeyes --quiet install MariaDB-server MariaDB-client &> /dev/null || \
+            abort "Unable to install MariaDB"
+    fi
 
     log "Enable required repository 'rhel-7-server-eus-optional-rpms'"
     subscription-manager repos --enable=rhel-7-server-eus-optional-rpms || \
