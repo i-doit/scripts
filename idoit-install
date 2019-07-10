@@ -937,7 +937,7 @@ function configureSLES12 {
 
     zypper --quiet --non-interactive clean || abort "Unable to clean up cached software packages"
 
-    for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT $PHP_FPM_UNIT; do
+    for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT; do
         unitctl "enable" "$unit"
         unitctl "start" "$unit"
     done
@@ -1029,7 +1029,7 @@ function configureSLES15 {
 
     zypper --quiet --non-interactive clean || abort "Unable to clean up cached software packages"
 
-    for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT $PHP_FPM_UNIT; do
+    for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT; do
         unitctl "enable" "$unit"
         unitctl "start" "$unit"
     done
@@ -1201,7 +1201,8 @@ pm.max_spare_servers = 3
 security.limit_extensions = .php
 EOF
 
-            unitctl "restart" "$PHP_FPM_UNIT"
+            unitctl "enable" "$PHP_FPM_UNIT"
+            unitctl "start" "$PHP_FPM_UNIT"
             ;;
         *)
             log "Nope. This OS will stuck on mod_php."
