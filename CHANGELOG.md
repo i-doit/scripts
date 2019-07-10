@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased][]
 
+_tbd_
+
+## [0.13][] – 2019-07-10
+
 ### Added
 
 -   `idoit-install`: Add support for Debian GNU/Linux 10 "buster"
@@ -210,7 +214,8 @@ Happy holidays 🎄
 
 Initial release
 
-[Unreleased]: https://github.com/bheisig/i-doit-scripts/compare/0.12...HEAD
+[Unreleased]: https://github.com/bheisig/i-doit-scripts/compare/0.13...HEAD
+[0.13]: https://github.com/bheisig/i-doit-scripts/compare/0.12...0.13
 [0.12]: https://github.com/bheisig/i-doit-scripts/compare/0.11...0.12
 [0.11]: https://github.com/bheisig/i-doit-scripts/compare/0.10...0.11
 [0.10]: https://github.com/bheisig/i-doit-scripts/compare/0.9...0.10
