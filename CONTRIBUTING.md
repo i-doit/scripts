@@ -1,41 +1,36 @@
-#   Contributors welcome!
+# Contributors welcome!
 
 Thank you very much for your interest in this project! There are plenty of ways you can support us. :-)
 
-
-##  Code of Conduct
+## Code of conduct
 
 We like you to read and follow our [code of conduct](CODE_OF_CONDUCT.md) before contributing. Thank you.
 
-
-##  Use it
+## Use it
 
 The best and (probably) easiest way is to use one or more of the scripts. It would be very nice to share your thoughts with us. We love to hear from you.
 
 If you have questions how to use it properly read the [documentation](README.md) carefully.
 
-
-##  Report bugs
+## Report bugs
 
 If you find something strange please report it to [our issue tracker](https://github.com/bheisig/i-doit-scripts/issues).
 
-
-##  Make a wish
+## Make a wish
 
 Of course, there are some features in the pipeline. However, if you have good ideas how to improve this application please let us know! Write a feature request [in our issue tracker](https://github.com/bheisig/i-doit-scripts/issues).
 
-
-##  Requirements
+## Requirements
 
 Developer and build environments must meet at least these requirements:
 
-*   [Git](https://git-scm.com/)
-*   [ShellCheck](https://www.shellcheck.net/)
-*   make
+-   [Git](https://git-scm.com/)
+-   [ShellCheck](https://www.shellcheck.net/)
+-   make
 
 These dependencies are suggested:
 
-*   lintian
+-   lintian
 
 For example, if you're running a Debian GNU/Linux run this command line as `root` user:
 
@@ -43,8 +38,7 @@ For example, if you're running a Debian GNU/Linux run this command line as `root
 apt install build-essentials git make shellcheck lintian
 ~~~
 
-
-##  Setup a development environment
+## Setup a development environment
 
 If you like to contribute source code, documentation snippets, self-explaining examples or other useful bits, fork this repository, setup the environment and make a pull request.
 
@@ -54,8 +48,7 @@ git clone https://github.com/bheisig/i-doit-scripts.git
 
 If you have a GitHub account create a fork first and then clone the repository.
 
-
-##  Repository
+## Repository
 
 After cloning the repository change to its project directory:
 
@@ -96,8 +89,7 @@ Now your system is ready for your contributions. Do not forget to commit your ch
 
 Notice, that any of your contributions merged into this repository will be [licensed under the AGPLv3](LICENSE).
 
-
-##  Coding guidelines
+## Coding guidelines
 
 There are no specific coding guidelines for shell scripts. But we encourage you to follow common guidelines specified by the shellcheck community. See their [wiki pages for details](https://github.com/koalaman/shellcheck/wiki/Checks).
 
@@ -107,8 +99,7 @@ Don't forget to add new shell scripts to the [`Makefile`](Makefile). This is nec
 
 If there are any questions just [raise an issue](https://github.com/bheisig/i-doit-scripts/issues).
 
-
-##  Make rules
+## Make rules
 
 This project comes with some useful make rules:
 

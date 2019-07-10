@@ -1,18 +1,16 @@
-#   i-doit scripts
+# i-doit scripts
 
 Useful scripts to maintain i-doit
 
 [![Build Status](https://travis-ci.org/bheisig/i-doit-scripts.svg?branch=master)](https://travis-ci.org/bheisig/i-doit-scripts)
 
-
-##  About
+## About
 
 [i-doit](https://i-doit.com) is a software application for IT documentation and a CMDB (Configuration Management Database). This application is very useful to collect all your knowledge about the IT infrastructure you are dealing with. i-doit is a Web application and [has an exhausting API](https://kb.i-doit.com/pages/viewpage.action?pageId=37355644) which is very useful to automate your infrastructure.
 
+## Install i-doit on a GNU/Linux operating system
 
-##  Install i-doit on a GNU/Linux operating system
-
-The script `idoit-install` allows you to easily install the **latest version** of
+The script [`idoit-install`](idoit-install) allows you to easily install the **latest version** of
 
 -   i-doit pro or
 -   i-doit open
@@ -46,7 +44,6 @@ The script includes several steps which are essential for i-doit:
 -   Deploy scripts to backup and restore your i-doit instance
 
 All steps are based on information provided by the [i-doit knowledge base](https://kb.i-doit.com/display/en/).
-
 
 ### Usage
 
@@ -95,7 +92,6 @@ Here is an example recording how to install i-doit on a fresh + clean Debian GNU
 
 [![asciicast](https://asciinema.org/a/130677.png)](https://asciinema.org/a/130677)
 
-
 ### Who should use this script?
 
 You **should** install i-doit with this script if you agree with one or more of the following statements:
@@ -103,7 +99,6 @@ You **should** install i-doit with this script if you agree with one or more of 
 1.  _"I need a stable instance of i-doit with a good performance installed on a recommended operating system."_
 2.  _"I am unsure how to maintain a GNU/Linux operating system."_
 3.  _"I do not have the time to setup i-doit."_
-
 
 ### Who should not use this script?
 
@@ -113,7 +108,6 @@ You **should not** install i-doit with this script if you agree with one or more
 2.  _"i-doit will not be the only application on this system."_
 3.  _"I have special requirements to run i-doit."_
 
-
 ### What to do next?
 
 There are several steps you still need to do by yourself:
@@ -121,12 +115,11 @@ There are several steps you still need to do by yourself:
 1.  [Install your license (only pro version)](https://kb.i-doit.com/display/en/Install+License)
 2.  Document your IT (obviously ;-))
 
-
 ##  Easy-use of the i-doit CLI
 
-i-doit is shipped with a commandline tool called **console.php**. It is a little bit complicated to execute it because you have to change to i-doit's installation directory and you need the user rights of the Apache Web server. Additionally, you need to login before using one of the useful "commands".
+i-doit is shipped with a command-line tool called **console.php**. It is a little bit complicated to execute it because you have to change to i-doit's installation directory and you need the user rights of the Apache Web server. Additionally, you need to login before using one of the useful "commands".
 
-To make sysadmin's life easier you may wrap the **console.php** in a separate script called `idoit`. It changes to the right directory, gains proper rights and stores your credentials.
+To make sysadmin's life easier you may wrap the **console.php** in a separate script called [`idoit`](idoit). It changes to the right directory, gains proper rights and stores your credentials.
 
 This script can be installed with `idoit-install` and will be copied to `/usr/local/bin/`. Its configuration settings may be altered in a file located under `/etc/i-doit/i-doit.sh`.
 
@@ -148,10 +141,9 @@ For example, use the `notifications-send` handler to send emails:
 idoit notifications-send
 ~~~
 
+## Run important jobs automatically
 
-##  Run important jobs automatically
-
-There are some jobs which are essential for keeping your CMDB in a good shape. There is a script called `idoit-jobs` to handle some important jobs properly:
+There are some jobs which are essential for keeping your CMDB in a good shape. There is a script called [`idoit-jobs`](idoit-jobs) to handle some important jobs properly:
 
 -   Clean up cache files
 -   Clean up update packages
@@ -171,10 +163,9 @@ sudo idoit-jobs
 
 You may want to execute this script automatically by creating a new cron job. There is already a file for that called `cron` which can be copied to `/etc/cron.d/i-doit`. Deploy this script and pre-configured cron jobs with `idoit-install` to run the jobs every night.
 
+## Backup and restore i-doit
 
-##  Backup and restore i-doit
-
-There are two useful scripts to backup and restore your i-doit instance. The backups contain the following data:
+There are two useful scripts to backup ([`idoit-backup`](idoit-backup)) and restore ([`idoit-restore`](idoit-restore)) your i-doit instance. The backups contain the following data:
 
 -   i-doit installation files including uploaded files and installed add-ons
 -   Dumps of the system database and the first tenant's database
@@ -199,8 +190,7 @@ You may automate your backups with a cron job. `idoit-install` can handle it (se
 
 Keep in mind that these scripts are just a little step for a good backup strategy. Consider to copy those backup files to another location. Additionally, if you installed i-doit within a virtual machine you should create snapshots.
 
-
-##  Collect data about i-doit, installed add-ons and your system
+## Collect data about i-doit, installed add-ons and your system
 
 Works smoothly with the i-doit Virtual Appliance:
 
@@ -208,28 +198,25 @@ Works smoothly with the i-doit Virtual Appliance:
 idoit-support
 ~~~
 
+## Alter passwords for various users and remove default users
 
-##  Alter passwords for various users and remove default users
-
-Works smoothly with the i-doit Virtual Appliance:
+[`idoit-pwd`](idoit-pwd) works smoothly with the [i-doit Virtual Appliance](https://github.com/bheisig/i-doit-appliance):
 
 ~~~
 idoit-pwd
 ~~~
 
-
-##  Deploy hot fixes
+## Deploy hot fixes
 
 Sometimes there is a chance to find an unwanted behavior (a.k.a. bug) within i-doit or its add-ons. You want it to be fixed as soon as possible. You cannot wait for the next release.
 
-For these conditions synetics provides [hot fixes](https://kb.i-doit.com/display/en/Hotfixes). Hot fixes are ZIP files which needs to be extracted in the root location of your i-doit instance. For an easy deployment you may use `idoit-hotfix`. Just copy the ZIP file via SSH to your GNU/Linux system, connect to this host via SSH and run the script:
+For these conditions synetics provides [hot fixes](https://kb.i-doit.com/display/en/Hotfixes). Hot fixes are ZIP files which needs to be extracted in the root location of your i-doit instance. For an easy deployment you may use [`idoit-hotfix`](idoit-hotfix). Just copy the ZIP file via SSH to your GNU/Linux system, connect to this host via SSH and run the script:
 
 ~~~
 idoit-hotfix /path/to/hotfix.zip
 ~~~
 
-
-##  Configuration Settings
+## Configuration settings
 
 As already mentioned before some scripts provide configuration settings. These settings may be altered in a file located under `/etc/i-doit/i-doit.sh`.
 
@@ -253,13 +240,11 @@ There is a default configuration file you may use: [`i-doit.sh`](i-doit.sh)
 
 The installation script `idoit-install` will ask the user to change most of the default values. **Pro tip:** You should set your own passwords. ;-) You may alter them with `idoit-pwd`.
 
+## Contribute & support
 
-##  Contribute & Support
+Please, report any issues to [our issue tracker](https://github.com/bheisig/i-doit-scripts/issues). Pull requests are very welcomed. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for more details.
 
-Please, report any issues to [our issue tracker](https://github.com/bheisig/i-doit-scripts/issues). Pull requests are very welcomed.
-
-
-##  Copyright & License
+## Copyright & license
 
 Copyright (C) 2017-18 [synetics GmbH](https://i-doit.com/)
 
