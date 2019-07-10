@@ -246,6 +246,6 @@ Please, report any issues to [our issue tracker](https://github.com/bheisig/i-do
 
 ## Copyright & license
 
-Copyright (C) 2017-18 [synetics GmbH](https://i-doit.com/)
+Copyright (C) 2017-19 [synetics GmbH](https://i-doit.com/)
 
 Licensed under the [GNU Affero GPL version 3 or later (AGPLv3+)](https://gnu.org/licenses/agpl.html). This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
