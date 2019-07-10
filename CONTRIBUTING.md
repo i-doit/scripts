@@ -27,15 +27,17 @@ Developer and build environments must meet at least these requirements:
 -   [Git](https://git-scm.com/)
 -   [ShellCheck](https://www.shellcheck.net/)
 -   make
+-   [npm](http://npmjs.com/)
 
 These dependencies are suggested:
 
+-   [fpm](https://github.com/jordansissel/fpm)
 -   lintian
 
 For example, if you're running a Debian GNU/Linux run this command line as `root` user:
 
 ~~~ {.bash}
-apt install build-essentials git make shellcheck lintian
+apt install build-essentials git make shellcheck lintian nodejs
 ~~~
 
 ## Setup a development environment
@@ -44,19 +46,15 @@ If you like to contribute source code, documentation snippets, self-explaining e
 
 ~~~ {.bash}
 git clone https://github.com/bheisig/i-doit-scripts.git
+cd i-doit-scripts
+npm install
 ~~~
 
 If you have a GitHub account create a fork first and then clone the repository.
 
 ## Repository
 
-After cloning the repository change to its project directory:
-
-~~~ {.bash}
-cd i-doit-scripts
-~~~
-
-There you find the following file structure:
+Inside the repository you find the following file structure:
 
 ~~~ {.bash}
 .
@@ -64,11 +62,11 @@ There you find the following file structure:
 ├── CODE_OF_CONDUCT.md  # Code of conduct
 ├── CONTRIBUTING.md     # This file
 ├── cron                # Pre-defined cron jobs
-├── docs                # Templates for GitHub
-│   ├── issue_template.md
-│   └── pull_request_template.md
 ├── .editorconfig       # Editor configuration settings
 ├── .gitattributes      # Git configuration settings
+├── .github/            # GitHub-related templates
+│   ├── issue_template.md
+│   └── pull_request_template.md
 ├── .gitignore          # Files/directories to be ignored by git
 ├── idoit               # Easy-use of the i-doit CLI
 ├── idoit-backup        # Backup i-doit files and databases
@@ -81,6 +79,8 @@ There you find the following file structure:
 ├── idoit-support       # Collect data about i-doit, installed add-ons and your system
 ├── LICENSE             # License information
 ├── Makefile            # Make rules (see above)
+├── node_modules/       # Installed npm packages
+├── package.json        # Configuration settings for npm
 ├── README.md           # Documentation
 └── .travis.yml         # Configuration settings for Travis-CI continuous integration server
 ~~~
@@ -91,11 +91,11 @@ Notice, that any of your contributions merged into this repository will be [lice
 
 ## Coding guidelines
 
-There are no specific coding guidelines for shell scripts. But we encourage you to follow common guidelines specified by the shellcheck community. See their [wiki pages for details](https://github.com/koalaman/shellcheck/wiki/Checks).
+There are no specific coding guidelines for shell scripts. But we encourage you to follow common guidelines specified by the ShellCheck community. See their [wiki pages for details](https://github.com/koalaman/shellcheck/wiki/Checks).
 
-Run `make shellcheck` to check your code. This makes sure your code follows the coding guidelines mentioned above. If any error/warning occurs please fix it before sending a pull request.
+Run `make lint-shell` to check your code. This makes sure your code follows the coding guidelines mentioned above. If any error/warning occurs please fix it before sending a pull request.
 
-Don't forget to add new shell scripts to the [`Makefile`](Makefile). This is necessary for some make rules like `make shellsheck`.
+Don't forget to add new shell scripts to the [`Makefile`](Makefile). This is necessary for some make rules like `make lint-shell`.
 
 If there are any questions just [raise an issue](https://github.com/bheisig/i-doit-scripts/issues).
 
@@ -109,5 +109,7 @@ This project comes with some useful make rules:
 | `make clean`          | Clean up project directory                                |
 | `make install`        | Install shell scripts locally                             |
 | `make lintian`        | Validate distribution package                             |
-| `make shellcheck`     | Validate shell scripts                                    |
+| `make lint-markdown`  | Validate markdown files                                   |
+| `make lint-shell`     | Validate shell scripts                                    |
+| `make lint-yaml`      | Validate YAML files                                       |
 | `make uninstall`      | Uninstall shell scripts from local system                 |

@@ -1,0 +1,34 @@
+{
+    "name": "i-doit-scripts",
+    "description": "Useful scripts to maintain i-doit",
+    "keywords": [
+        "i-doit",
+        "cmdb",
+        "documentation",
+        "assets",
+        "it asset management",
+        "configuration items"
+    ],
+    "version": "0.0.0-dev",
+    "homepage": "https://i-doit.com/",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/bheisig/i-doit-scripts"
+    },
+    "bugs": {
+        "url": "https://github.com/bheisig/i-doit-scripts/issues"
+    },
+    "license": "AGPL-3.0-or-later",
+    "author": "Benjamin Heisig <bheisig@i-doit.com> (https://i-doit.com/)",
+    "dependencies": {
+        "remark-cli": "^6.0.1",
+        "remark-lint": "^6.0.5",
+        "remark-preset-lint-recommended": "^3.0.3",
+        "yaml-lint": "^1.2.4"
+    },
+    "remarkConfig": {
+        "plugins": [
+            "remark-preset-lint-recommended"
+        ]
+    }
+}
