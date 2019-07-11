@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased][]
 
-_tbd_
+### Fixed
+
+-   `idoit-install`: Fix broken patch of i-doit's configuration file `src/config.inc.php`
 
 ## [0.13][] – 2019-07-10
 

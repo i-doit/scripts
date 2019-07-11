@@ -1705,12 +1705,12 @@ function installIDoit {
     log "Fix configuration file '${config_file}'"
 
     sed -i -- \
-        "s/\"user\" => \"${MARIADB_SUPERUSER_USERNAME}\"/\"user\" => \"${MARIADB_IDOIT_USERNAME}\"/g" \
+        "s/'user' => '${MARIADB_SUPERUSER_USERNAME}'/'user' => '${MARIADB_IDOIT_USERNAME}'/g" \
         "$config_file" || \
         abort "Unable to replace MariaDB username"
 
     sed -i -- \
-        "s/\"pass\" => \"${MARIADB_SUPERUSER_PASSWORD}\"/\"pass\" => \"${MARIADB_IDOIT_PASSWORD}\"/g" \
+        "s/'pass' => '${MARIADB_SUPERUSER_PASSWORD}'/'pass' => '${MARIADB_IDOIT_PASSWORD}'/g" \
         "$config_file" || \
         abort "Unable to replace MariaDB password"
 
