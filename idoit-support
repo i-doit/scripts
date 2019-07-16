@@ -200,7 +200,7 @@ function dumpDatabase {
 function collectApplianceData {
     log "Collect information about the i-doit virtual appliance"
 
-    copyFile "/etc/appliance_version"
+    copyFile /etc/appliance_version appliance_version
 }
 
 function copyFile {
