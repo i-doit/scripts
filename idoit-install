@@ -411,7 +411,6 @@ function identifyOS {
 }
 
 function checkHardwareRequirements {
-    local failed=0
     local cores=0
     local ram=0
     local arch=""
@@ -437,7 +436,7 @@ function checkHardwareRequirements {
         log ""
         log "    <https://kb.i-doit.com/display/en/System+Requirements>"
         log ""
-        askNoYes "Do you really want to continue?" && cancel
+        askYesNo "Do you really want to continue?" && cancel
     fi
 
     ram=$(vmstat --stats --unit b | grep -i "total memory" | awk '{print $1}')
@@ -451,20 +450,8 @@ function checkHardwareRequirements {
         log ""
         log "    <https://kb.i-doit.com/display/en/System+Requirements>"
         log ""
-        askNoYes "Do you really want to continue?" && cancel
+        askYesNo "Do you really want to continue?" && cancel
     fi
-
-    case "$failed" in
-        0)
-            log "All hardware requirements met. Excellent."
-            ;;
-        1)
-            abort "Important hardware requirement is missing. Please install and configure it."
-            ;;
-        *)
-            abort "Important hardware requirements are missing. Please install and configure them."
-            ;;
-    esac
 }
 
 function checkSoftwareRequirements {
