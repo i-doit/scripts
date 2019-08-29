@@ -256,7 +256,7 @@ function identifyOS {
     log "Operating system identified as ${PRETTY_NAME}"
 
     if [[ "$NAME" == "CentOS Linux" && "$VERSION_ID" == "7" ]]; then
-        log "Warning: CentOS is not officially supported by i-doit"
+        log "Warning: This OS is not officially supported by i-doit"
         askYesNo "Do you really want to continue?" || cancel
 
         OS="centos7"
@@ -272,9 +272,6 @@ function identifyOS {
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "10 (buster)" ]]; then
-        log "Warning: This is an unstable version of Debian GNU/Linux"
-        askYesNo "Do you really want to continue?" || cancel
-
         export DEBIAN_FRONTEND="noninteractive"
 
         OS="debian10"
@@ -290,6 +287,9 @@ function identifyOS {
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php7.3-fpm"
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "9 (stretch)" ]]; then
+        log "Warning: This is the oldstable version of Debian GNU/Linux. Please consider to upgrade your OS."
+        askYesNo "Do you really want to continue?" || cancel
+
         export DEBIAN_FRONTEND="noninteractive"
 
         OS="debian9"
@@ -305,7 +305,7 @@ function identifyOS {
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php7.0-fpm"
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "8 (jessie)" ]]; then
-        abort "Debian GNU/Linux 8 \"jessie\" is not supported anymore. Please upgrade your OS."
+        abort "This is the oldoldstable version of Debian GNU/Linux. It's not supported anymore. Please upgrade."
     elif [[ "$NAME" == "Red Hat Enterprise Linux" && "$VERSION_ID" == 8* ]]; then
         OS="rhel8"
         APACHE_USER="apache"
