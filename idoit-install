@@ -573,7 +573,7 @@ function configureDebian9 {
     apt-get -qq --yes autoremove || abort "Unable to remove unnecessary Debian packages"
 
     log "Install required Debian packages"
-    apt-get -qq --yes install \
+    apt-get -qq --yes install --no-install-recommends \
         apache2 libapache2-mod-fcgid \
         mariadb-client mariadb-server \
         php7.0-bcmath php7.0-cli php7.0-common php7.0-curl php7.0-fpm php7.0-gd php7.0-json \
@@ -591,7 +591,7 @@ function configureDebian10 {
     apt-get -qq --yes autoremove || abort "Unable to remove unnecessary Debian packages"
 
     log "Install required Debian packages"
-    apt-get -qq --yes install \
+    apt-get -qq --yes install --no-install-recommends \
         apache2 libapache2-mod-fcgid \
         mariadb-client mariadb-server \
         php7.3-bcmath php7.3-cli php7.3-common php7.3-curl php7.3-fpm php7.3-gd php7.3-json \
@@ -609,7 +609,7 @@ function configureUbuntu1604 {
     apt-get -qq --yes autoremove || abort "Unable to remove unnecessary Ubuntu packages"
 
     log "Install required Ubuntu packages"
-    apt-get -qq --yes install \
+    apt-get -qq --yes install --no-install-recommends \
         apache2 libapache2-mod-fcgid \
         mariadb-client mariadb-server \
         php7.0-bcmath php7.0-cli php7.0-common php7.0-curl php7.0-fpm php7.0-gd php7.0-json \
@@ -627,7 +627,7 @@ function configureUbuntu1804 {
     apt-get -qq --yes autoremove || abort "Unable to remove unnecessary Ubuntu packages"
 
     log "Install required Ubuntu packages"
-    apt-get -qq --yes install \
+    apt-get -qq --yes install --no-install-recommends \
         apache2 libapache2-mod-fcgid \
         mariadb-client mariadb-server \
         php7.2-bcmath php7.2-cli php7.2-common php7.2-curl php7.2-fpm php7.2-gd php7.2-json \
@@ -734,7 +734,7 @@ function configureRHEL8 {
     log "Install some important packages"
     yum --assumeyes --quiet install \
         memcached unzip wget zip \
-        php-bcmath php-gd  php-ldap php-mysqli php-mysqlnd \
+        php-bcmath php-gd php-ldap php-mysqli php-mysqlnd \
         php-pgsql php-soap php-zip || \
         abort "Unable to install packages"
 

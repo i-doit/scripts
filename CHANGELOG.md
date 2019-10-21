@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 -   `idoit-install`: Change default answer to yes when asking to continue without fulfilling all hardware requirements
+-   `idoit-install`: Do not install recommended software packages automatically (Debian/Ubuntu)
 
 ### Fixed
 
