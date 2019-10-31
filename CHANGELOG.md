@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   `idoit-install`: Change default answer to yes when asking to continue without fulfilling all hardware requirements
 -   `idoit-install`: Do not install recommended software packages automatically (Debian/Ubuntu)
+-   `idoit-install`: Mark PHP 5.6 as unsupported and 7.0 as deprecated
 
 ### Fixed
 

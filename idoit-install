@@ -1075,21 +1075,14 @@ function configurePHP {
     php_version=$(php --version | head -n1 -c7 | tail -c3)
 
     case "$php_version" in
-        "5.4"|"5.5")
+        "5.4"|"5.5"|"5.6")
             abort "PHP ${php_version} is way too old. Please upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
             ;;
-        "5.6")
-            log "PHP ${php_version} is installed, but this version is deprecated. Please consider to upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
-            php_en_mod=$(command -v php5enmod)
-            ;;
         "7.0")
+            log "PHP ${php_version} is installed, but this version is deprecated. Please consider to upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
             php_en_mod=$(command -v phpenmod)
             ;;
-        "7.1"|"7.2")
-            php_en_mod=$(command -v phpenmod)
-            ;;
-        "7.3")
-            log "PHP ${php_version} is installed, but this version is not officially supported by i-doit. Please consider to downgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
+        "7.1"|"7.2"|"7.3")
             php_en_mod=$(command -v phpenmod)
             ;;
         "7.4")
@@ -1824,6 +1817,8 @@ function setup {
         export LC_ALL="en_GB.utf8"
     elif locale -a | grep "^C.UTF-8" > /dev/null; then
         export LC_ALL="C.UTF-8"
+    elif locale -a | grep "^C.utf8" > /dev/null; then
+        export LC_ALL="C.utf8"
     else
         log "This script may fail because it depends on US/GB English locale. We try it anyway…"
     fi
