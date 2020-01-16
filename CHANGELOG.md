@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 -   `idoit-install`: Fix broken patch of i-doit's configuration file `src/config.inc.php`
+-   `idoit-install`: Enable systemd unit for PHP-FPM on CentOS
 -   `idoit-support`: Add missing destination for file `appliance_version`
 
 ## [0.13][] – 2019-07-10

@@ -705,7 +705,7 @@ EOF
     yum --assumeyes --quiet install moreutils || \
         abort "Unable to install packages"
 
-    for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT; do
+    for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT $PHP_FPM_UNIT; do
         unitctl "enable" "$unit"
         unitctl "start" "$unit"
     done
