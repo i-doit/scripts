@@ -78,7 +78,7 @@ MARIADB_SOCKET=""
 PHP_FPM_SOCKET=""
 APACHE_HTACCESS_SUBSTITUTION="## Insert content from .htaccess file"
 BASENAME=$(basename "$0")
-PROJECT_VERSION="0.13"
+PROJECT_VERSION="0.14-dev"
 
 MARIADB_BIN=""
 SUDO_BIN=""
@@ -257,6 +257,7 @@ function identifyOS {
 
     if [[ "$NAME" == "CentOS Linux" && "$VERSION_ID" == "7" ]]; then
         log "Warning: This OS is not officially supported by i-doit"
+        log "Warning: CentOS 7 is out-dated. Please consider to upgrade your OS."
         askYesNo "Do you really want to continue?" || cancel
 
         OS="centos7"
@@ -287,25 +288,9 @@ function identifyOS {
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php7.3-fpm"
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "9 (stretch)" ]]; then
-        log "Warning: This is the oldstable version of Debian GNU/Linux. Please consider to upgrade your OS."
-        askYesNo "Do you really want to continue?" || cancel
-
-        export DEBIAN_FRONTEND="noninteractive"
-
-        OS="debian9"
-        APACHE_USER="www-data"
-        APACHE_GROUP="www-data"
-        APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
-        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
-        PHP_CONFIG_FILE="/etc/php/7.0/mods-available/i-doit.ini"
-        MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
-        PHP_FPM_SOCKET="/var/run/php/php7.0-fpm.sock"
-        APACHE_UNIT="apache2"
-        MARIADB_UNIT="mysql"
-        MEMCACHED_UNIT="memcached"
-        PHP_FPM_UNIT="php7.0-fpm"
+        abort "Error: This is the oldstable version of Debian GNU/Linux. It's not supported anymore. Please upgrade."
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "8 (jessie)" ]]; then
-        abort "This is the oldoldstable version of Debian GNU/Linux. It's not supported anymore. Please upgrade."
+        abort "Error: This is the oldoldstable version of Debian GNU/Linux. It's not supported anymore. Please upgrade."
     elif [[ "$NAME" == "Red Hat Enterprise Linux" && "$VERSION_ID" == 8* ]]; then
         OS="rhel8"
         APACHE_USER="apache"
@@ -320,6 +305,9 @@ function identifyOS {
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" == "Red Hat Enterprise Linux Server" && "$VERSION_ID" == 7* ]]; then
+        log "Warning: RHEL 7 is out-dated. Please consider to upgrade your OS."
+        askYesNo "Do you really want to continue?" || cancel
+
         OS="rhel7"
         APACHE_USER="apache"
         APACHE_GROUP="apache"
@@ -347,34 +335,7 @@ function identifyOS {
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" = "SLES" && "$VERSION_ID" == 12* ]]; then
-        log "Warning: SLES 12 is out-dated. Please consider to upgrade your OS."
-        askYesNo "Do you really want to continue?" || cancel
-
-        case "$VERSION_ID" in
-            "12.2")
-                OS="sles12sp2"
-                log "Warning: SLES 14 SP2 is not officially supported by i-doit"
-                askYesNo "Do you really want to continue?" || cancel
-                ;;
-            "12.3") OS="sles12sp3";;
-            "12.4") OS="sles12sp4";;
-            *)
-                abort "Operating system $PRETTY_NAME is not supported"
-                ;;
-        esac
-
-        INSTALL_DIR="/srv/www/htdocs"
-        APACHE_USER="wwwrun"
-        APACHE_GROUP="www"
-        APACHE_CONFIG_FILE="/etc/apache2/vhosts.d/i-doit.conf"
-        MARIADB_CONFIG_FILE="/etc/my.cnf.d/99-i-doit.cnf"
-        PHP_CONFIG_FILE="/etc/php7/conf.d/i-doit.ini"
-        MARIADB_SOCKET="/var/run/mysql/mysql.sock"
-        PHP_FPM_SOCKET="/var/run/php-fpm.sock"
-        APACHE_UNIT="apache2"
-        MARIADB_UNIT="mysql"
-        MEMCACHED_UNIT="memcached"
-        PHP_FPM_UNIT="php-fpm"
+        abort "Error: SLES 12 is out-dated. It's not supported anymore. Please upgrade."
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "18.04" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
 
@@ -391,20 +352,7 @@ function identifyOS {
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php7.2-fpm"
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "16.04" ]]; then
-        export DEBIAN_FRONTEND="noninteractive"
-
-        OS="ubuntu1604"
-        APACHE_USER="www-data"
-        APACHE_GROUP="www-data"
-        APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
-        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
-        PHP_CONFIG_FILE="/etc/php/7.0/mods-available/i-doit.ini"
-        MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
-        PHP_FPM_SOCKET="/var/run/php/php7.0-fpm.sock"
-        APACHE_UNIT="apache2"
-        MARIADB_UNIT="mysql"
-        MEMCACHED_UNIT="memcached"
-        PHP_FPM_UNIT="php7.0-fpm"
+        abort "Error: Ubuntu 16.04 is out-dated. It's not supported anymore. Please upgrade."
     else
         abort "Operating system ${PRETTY_NAME} is not supported"
     fi
@@ -533,14 +481,8 @@ function checkSoftwareRequirements {
 
 function configureOS {
     case "$OS" in
-        "debian9")
-            configureDebian9
-            ;;
         "debian10")
             configureDebian10
-            ;;
-        "ubuntu1604")
-            configureUbuntu1604
             ;;
         "ubuntu1804")
             configureUbuntu1804
@@ -554,33 +496,12 @@ function configureOS {
         "centos7")
             configureCentOS7
             ;;
-        "sles12sp2"|"sles12sp3"|"sles12sp4")
-            configureSLES12
-            ;;
         "sles15")
             configureSLES15
             ;;
         *)
             abort "Unkown operating system '${OS}'!?!"
     esac
-}
-
-function configureDebian9 {
-    log "Keep your Debian packages up-to-date"
-    apt-get -qq --yes update || abort "Unable to update Debian package repositories"
-    apt-get -qq --yes full-upgrade || abort "Unable to perform update of Debian packages"
-    apt-get -qq --yes clean || abort "Unable to cleanup Debian packages"
-    apt-get -qq --yes autoremove || abort "Unable to remove unnecessary Debian packages"
-
-    log "Install required Debian packages"
-    apt-get -qq --yes install --no-install-recommends \
-        apache2 libapache2-mod-fcgid \
-        mariadb-client mariadb-server \
-        php7.0-bcmath php7.0-cli php7.0-common php7.0-curl php7.0-fpm php7.0-gd php7.0-json \
-        php7.0-ldap php7.0-mbstring php7.0-mcrypt php7.0-mysql php7.0-opcache php7.0-pgsql \
-        php7.0-soap php7.0-xml php7.0-zip \
-        php-memcached \
-        memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
 }
 
 function configureDebian10 {
@@ -599,24 +520,6 @@ function configureDebian10 {
         php7.3-soap php7.3-xml php7.3-zip \
         php-memcached \
         memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
-}
-
-function configureUbuntu1604 {
-    log "Keep your Ubuntu packages up-to-date"
-    apt-get -qq --yes update || abort "Unable to update Ubuntu package repositories"
-    apt-get -qq --yes full-upgrade || abort "Unable to perform update of Ubuntu packages"
-    apt-get -qq --yes clean || abort "Unable to cleanup Ubuntu packages"
-    apt-get -qq --yes autoremove || abort "Unable to remove unnecessary Ubuntu packages"
-
-    log "Install required Ubuntu packages"
-    apt-get -qq --yes install --no-install-recommends \
-        apache2 libapache2-mod-fcgid \
-        mariadb-client mariadb-server \
-        php7.0-bcmath php7.0-cli php7.0-common php7.0-curl php7.0-fpm php7.0-gd php7.0-json \
-        php7.0-ldap php7.0-mbstring php7.0-mcrypt php7.0-mysql php7.0-opcache php7.0-pgsql \
-        php7.0-soap php7.0-xml php7.0-zip \
-        php-memcached \
-        memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
 }
 
 function configureUbuntu1804 {
@@ -857,103 +760,8 @@ EOF
     unitctl "restart" "firewalld"
 }
 
-function configureSLES12 {
-    local dev_repos=""
-    local web_repos=""
-    local service_pack=""
-
-    log "Keep your packages up-to-date"
-    zypper --quiet --non-interactive refresh || abort "Unable to refresh software repositories"
-    zypper --quiet --non-interactive update || abort "Unable to update software packages"
-
-    case "$OS" in
-        "sles12sp2")
-            service_pack="2"
-            ;;
-        "sles12sp3")
-            service_pack="3"
-            ;;
-        "sles12sp4")
-            service_pack="4"
-            ;;
-    esac
-
-    dev_repos=$(zypper repos -E | grep -c "SLE-SDK12-SP${service_pack}")
-    web_repos=$(zypper repos -E | grep -c "SLE-Module-Web-Scripting12")
-
-    if [[ "$dev_repos" -lt 2 ]]; then
-        log "The following module is required:"
-        log ""
-        log "    SUSE Linux Enterprise Software Development Kit 12 SP${service_pack} x86_64"
-        log ""
-        log "This script will activate it."
-
-        if askYesNo "Do you agree with it?"; then
-            SUSEConnect -p "sle-sdk/12.${service_pack}/x86_64" || \
-                abort "Unable to active module"
-        else
-            abort "Essential software repositories are missing"
-        fi
-    fi
-
-    if [[ "$web_repos" -lt 2 ]]; then
-        log "The following module is required:"
-        log ""
-        log "    Web and Scripting Module 12 x86_64"
-        log ""
-        log "This script will activate it."
-
-        if askYesNo "Do you agree with it?"; then
-            SUSEConnect -p "sle-module-web-scripting/12/x86_64" || \
-                abort "Unable to active module"
-        else
-            abort "Essential software repositories are missing"
-        fi
-    fi
-
-    log "Install software packages"
-    zypper --quiet --non-interactive install --no-recommends \
-        apache2 \
-        mariadb mariadb-client \
-        memcached \
-        php7 php7-bcmath php7-bz2 php7-ctype php7-curl php7-fpm php7-gd php7-gettext php7-fileinfo \
-        php7-json php7-ldap php7-mbstring php7-mcrypt php7-memcached php7-mysql php7-opcache \
-        php7-openssl php7-pdo php7-pgsql php7-phar php7-posix php7-soap php7-sockets php7-sqlite \
-        php7-xsl php7-zip php7-zlib || \
-        abort "Unable to install required software packages"
-
-    zypper --quiet --non-interactive clean || abort "Unable to clean up cached software packages"
-
-    for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT; do
-        unitctl "enable" "$unit"
-        unitctl "start" "$unit"
-    done
-
-    log "Allow incoming HTTP traffic"
-    SuSEfirewall2 open EXT TCP http || "Unable to open port 80"
-    SuSEfirewall2 start || abort "Unable to restart firewall"
-
-    if [[ ! -x "$(command -v chronic)" ]]; then
-        log "Install 'chronic'"
-        ## TODO: I know, this seems to be pretty ugly, but:
-        ## Why the hack is moreutils not included in the standard repositories?!?
-        wget --quiet -O "${TMP_DIR}/chronic" \
-            https://git.joeyh.name/index.cgi/moreutils.git/plain/chronic || \
-            abort "Unable to download 'chronic'"
-        chmod +x "${TMP_DIR}/chronic" || \
-            abort "Unable to set executable bit"
-        mv "${TMP_DIR}/chronic" /usr/bin || \
-            abort "Unable to move 'chronic' to '/usr/bin'"
-        wget --quiet -O - https://cpanmin.us | perl - App::cpanminus || \
-            abort "Unable to install cpanminus"
-        cpanm --quiet --notest --install IPC::Run || \
-            abort "Unable to install Perl module IPC::Run"
-    fi
-}
-
 function configureSLES15 {
     local web_repos=""
-    local service_pack=""
     local openSuseRepo=""
     local webScriptingModuleAlias="Web_and_Scripting_Module_${VERSION_ID}_x86_64"
     local webScriptingModuleProduct="sle-module-web-scripting/${VERSION_ID}/x86_64"
@@ -1075,19 +883,18 @@ function configurePHP {
     php_version=$(php --version | head -n1 -c7 | tail -c3)
 
     case "$php_version" in
-        "5.4"|"5.5"|"5.6")
+        "5.4"|"5.5"|"5.6"|"7.0")
             abort "PHP ${php_version} is way too old. Please upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
             ;;
-        "7.0")
+        "7.1")
             log "PHP ${php_version} is installed, but this version is deprecated. Please consider to upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
             php_en_mod=$(command -v phpenmod)
             ;;
-        "7.1"|"7.2"|"7.3")
+        "7.2"|"7.3"|"7.4")
             php_en_mod=$(command -v phpenmod)
             ;;
-        "7.4")
-            log "PHP ${php_version} is installed, but this version is not suitable in a productive environment. Please consider to downgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
-            php_en_mod=$(command -v phpenmod)
+        "8.0")
+            abort "PHP ${php_version} is installed, but this version is not suitable in a productive environment. Please consider to downgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
             ;;
         *)
             abort "PHP ${php_version} is not supported. Please follow the system requirements. We recommend version ${RECOMMENDED_PHP_VERSION}."
@@ -1135,7 +942,7 @@ function configurePHPFPM {
     log "Configure PHP-FPM"
 
     case "$OS" in
-        "debian9"|"debian10"|"ubuntu1604"|"ubuntu1804")
+        "debian10"|"ubuntu1804")
             unitctl "restart" "$PHP_FPM_UNIT"
             ;;
         "rhel7"|"rhel8"|"centos7")
@@ -1160,7 +967,7 @@ security.limit_extensions = .php
 EOF
             unitctl "restart" "$PHP_FPM_UNIT"
             ;;
-        "sles12sp2"|"sles12sp3"|"sles12sp4"|"sles15")
+        "sles15")
             log "Enable PHP FPM configuration files"
             mv /etc/php7/fpm/php-fpm.conf{.default,} || \
                 abort "Unable to move file"
@@ -1250,7 +1057,7 @@ EOF
 
             unitctl "restart" "$APACHE_UNIT"
             ;;
-        "sles12sp2"|"sles12sp3"|"sles12sp4"|"sles15")
+        "sles15")
             a2_en_mod=$(command -v a2enmod)
 
             cat << EOF > ${APACHE_CONFIG_FILE} || \
@@ -1299,7 +1106,7 @@ EOF
 
             unitctl "restart" "$APACHE_UNIT"
             ;;
-        "debian9"|"debian10"|"ubuntu1604"|"ubuntu1804")
+        "debian10"|"ubuntu1604"|"ubuntu1804")
             a2_en_site=$(command -v a2ensite)
             a2_dis_site=$(command -v a2dissite)
             a2_en_mod=$(command -v a2enmod)
@@ -1927,7 +1734,7 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
                 break;;
             *)
                 log "Unkown option '${1}'."
-                printUsage
+                showUsage
                 exit 1;;
         esac
     done

@@ -11,7 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   `idoit-install`: Change default answer to yes when asking to continue without fulfilling all hardware requirements
 -   `idoit-install`: Do not install recommended software packages automatically (Debian/Ubuntu)
--   `idoit-install`: Mark PHP 5.6 as unsupported and 7.0 as deprecated
+-   `idoit-install`: Mark PHP 5.6 and PHP 7.0 as unsupported
+-   `idoit-install`: Mark PHP 7.1 as deprecated
+-   `idoit-install`: Mark PHP 7.4 as stable
+-   `idoit-install`: Mark PHP 8.0 as unsupported
+-   `idoit-install`: Deprecate support for RHEL 7
+-   `idoit-install`: Deprecate support for CentOS 7
+-   `idoit-install`: Remove support for Debian GNU/Linux 9 "stretch"
+-   `idoit-install`: Remove support for Ubuntu Linux 16.04 LTS "xenial"
+-   `idoit-install`: Remove support for SLES 12
 
 ### Fixed
 

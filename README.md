@@ -17,13 +17,11 @@ The script [`idoit-install`](idoit-install) allows you to easily install the **l
 
 on a **fresh installation of a GNU/Linux operating system**. Supported OSs are:
 
--   Debian GNU/Linux 9 "stretch" (**recommended**)
--   Debian GNU/Linux 10 "buster" (**for testing purposes only**)
--   Ubuntu Linux 16.04 LTS "xenial"
+-   Debian GNU/Linux 10 "buster" (**recommended**)
 -   Ubuntu Linux 18.04 LTS "bionic"
--   Red Hat Enterprise Linux (RHEL) 7 and 8
--   CentOS 7
--   SUSE Linux Enterprise Server 12 SP2/SP3/SP4, 15 and 15 SP1
+-   Red Hat Enterprise Linux (RHEL) 7 (deprecated) and 8
+-   CentOS 7 (deprecated)
+-   SUSE Linux Enterprise Server 15 and 15 SP1
 
 Before you execute this script you …
 
