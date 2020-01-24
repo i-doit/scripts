@@ -1618,14 +1618,23 @@ function unitctl {
 }
 
 function setup {
+    # We need English to check some command outputs:
     if locale -a | grep "^en_US.utf8" > /dev/null; then
         export LC_ALL="en_US.utf8"
+        export LANG="en_US.utf8"
+        export LANGUAGE="en_US.utf8"
     elif locale -a | grep "^en_GB.utf8" > /dev/null; then
         export LC_ALL="en_GB.utf8"
+        export LANG="en_GB.utf8"
+        export LANGUAGE="en_GB.utf8"
     elif locale -a | grep "^C.UTF-8" > /dev/null; then
         export LC_ALL="C.UTF-8"
+        export LANG="C.UTF-8"
+        export LANGUAGE="C.UTF-8"
     elif locale -a | grep "^C.utf8" > /dev/null; then
         export LC_ALL="C.utf8"
+        export LANG="C.utf8"
+        export LANGUAGE="C.utf8"
     else
         log "This script may fail because it depends on US/GB English locale. We try it anyway…"
     fi
