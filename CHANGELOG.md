@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased][]
 
+### Added
+
+-   `idoit-install`: Add support for CentOS 8.1
+
 ### Changed
 
 -   `idoit-install`: Change default answer to yes when asking to continue without fulfilling all hardware requirements
