@@ -272,6 +272,22 @@ function identifyOS {
         MARIADB_UNIT="mariadb"
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
+    elif [[ "$NAME" == "CentOS Linux" && "$VERSION_ID" == "8" ]]; then
+        log "Warning: This OS is not officially supported by i-doit"
+        askYesNo "Do you really want to continue?" || cancel
+
+        OS="centos8"
+        APACHE_USER="apache"
+        APACHE_GROUP="apache"
+        APACHE_CONFIG_FILE="/etc/httpd/conf.d/i-doit.conf"
+        MARIADB_CONFIG_FILE="/etc/my.cnf.d/99-i-doit.cnf"
+        PHP_CONFIG_FILE="/etc/php.d/i-doit.ini"
+        MARIADB_SOCKET="/var/lib/mysql/mysql.sock"
+        PHP_FPM_SOCKET="/var/run/php-fpm/php-fpm.sock"
+        APACHE_UNIT="httpd"
+        MARIADB_UNIT="mariadb"
+        MEMCACHED_UNIT="memcached"
+        PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "10 (buster)" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
 
@@ -424,7 +440,7 @@ function checkSoftwareRequirements {
     binaries["memcached"]=$(command -v memcached)
 
     case "$OS" in
-        "rhel7"|"rhel8"|"centos7")
+        "rhel7"|"rhel8"|"centos7"|"centos8")
             binaries["httpd"]=$(command -v httpd)
             ;;
         *)
@@ -446,7 +462,7 @@ function checkSoftwareRequirements {
 
         case "$OS" in
             ## TODO There is no php-memcached on RHEL 8:
-            "rhel8")
+            "rhel8"|"centos8")
                 local phpExtensions=(bcmath ctype curl fileinfo gd json ldap \
                     mbstring mysqli mysqlnd pgsql session soap xml zip)
                 ;;
@@ -495,6 +511,9 @@ function configureOS {
             ;;
         "centos7")
             configureCentOS7
+            ;;
+        "centos8")
+            configureCentOS8
             ;;
         "sles15")
             configureSLES15
@@ -607,6 +626,56 @@ EOF
     log "Install 'moreutils'"
     yum --assumeyes --quiet install moreutils || \
         abort "Unable to install packages"
+
+    for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT $PHP_FPM_UNIT; do
+        unitctl "enable" "$unit"
+        unitctl "start" "$unit"
+    done
+
+    log "Allow incoming HTTP traffic"
+    systemctl -q is-active firewalld.service || (
+        log "Firewall is inactive."
+        unitctl "start" "firewalld"
+    )
+    firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
+    unitctl "restart" "firewalld"
+}
+
+function configureCentOS8 {
+    log "Keep your yum packages up-to-date"
+    yum --assumeyes --quiet update || abort "Unable to update yum packages"
+    yum --assumeyes --quiet autoremove || abort "Unable to remove out-dated yum packages"
+    yum --assumeyes --quiet clean all || abort "Unable to clean yum caches"
+    rm -rf /var/cache/yum || abort "Unable to remove orphaned yum caches"
+
+    for appStream in httpd:2.4 mariadb:10.3 php:7.2; do
+        log "Install AppStream $appStream"
+        yum --assumeyes --quiet module install "$appStream"
+    done
+
+    log "Install some important packages"
+    yum --assumeyes --quiet install \
+        memcached unzip wget zip \
+        php-bcmath php-gd php-ldap php-mysqli php-mysqlnd \
+        php-pgsql php-soap php-zip || \
+        abort "Unable to install packages"
+
+    if [[ ! -x "$(command -v chronic)" ]]; then
+        log "Install 'chronic'"
+        ## TODO: I know, this seems to be pretty ugly, but:
+        ## Why the hack is moreutils not included in the standard repositories?!?
+        wget --quiet -O "${TMP_DIR}/chronic" \
+            https://git.joeyh.name/index.cgi/moreutils.git/plain/chronic || \
+            abort "Unable to download 'chronic'"
+        chmod +x "${TMP_DIR}/chronic" || \
+            abort "Unable to set executable bit"
+        mv "${TMP_DIR}/chronic" /usr/local/bin || \
+            abort "Unable to move 'chronic' to '/usr/local/bin'"
+        yum --assumeyes --quiet module install perl-App-cpanminus || \
+            abort "Unable to install cpanm"
+        cpanm --quiet --notest --install IPC::Run || \
+            abort "Unable to install Perl module IPC::Run"
+    fi
 
     for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT $PHP_FPM_UNIT; do
         unitctl "enable" "$unit"
@@ -945,7 +1014,7 @@ function configurePHPFPM {
         "debian10"|"ubuntu1804")
             unitctl "restart" "$PHP_FPM_UNIT"
             ;;
-        "rhel7"|"rhel8"|"centos7")
+        "rhel7"|"rhel8"|"centos7"|"centos8")
             log "Disable default configuration file"
             mv /etc/php-fpm.d/www.conf{,.bak} || \
                 abort "Unable to disable default configuration file"
@@ -1008,7 +1077,7 @@ function configureApache {
     hostname="$(cat /etc/hostname)"
 
     case "$OS" in
-        "rhel7"|"rhel8"|"centos7")
+        "rhel7"|"rhel8"|"centos7"|"centos8")
             cat << EOF > ${APACHE_CONFIG_FILE} || \
                 abort "Unable to create and edit file '${APACHE_CONFIG_FILE}'"
 DirectoryIndex index.php
@@ -1047,6 +1116,15 @@ EOF
 
             ## mpm_event is already enabled on RHEL 8:
             if [[ "$OS" != "rhel8" ]]; then
+                log "Disable MPM prefork"
+                sed -i "/.* mpm_prefork_module /s/^#*/#/" /etc/httpd/conf.modules.d/00-mpm.conf || \
+                    abort "sed exited with error"
+                log "Enable MPM event"
+                sed -i "/^#.* mpm_event_module /s/^#//" /etc/httpd/conf.modules.d/00-mpm.conf || \
+                    abort "sed exited with error"
+            fi
+
+            if [[ "$OS" != "centos8" ]]; then
                 log "Disable MPM prefork"
                 sed -i "/.* mpm_prefork_module /s/^#*/#/" /etc/httpd/conf.modules.d/00-mpm.conf || \
                     abort "sed exited with error"
