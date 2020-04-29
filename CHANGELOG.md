@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--   `idoit-install`: Add support for CentOS 8.1
+-   `idoit-install`: Add support for CentOS 8
 
 ### Changed
 
