@@ -5,11 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased][]
+## [0.14][] - 2020-09-15
 
 ### Added
 
 -   `idoit-install`: Add support for CentOS 8
+-   `idoit-install`: Add support for Ubuntu Linux 20.04 LTS "focal fossa"
 
 ### Changed
 
@@ -24,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   `idoit-install`: Remove support for Debian GNU/Linux 9 "stretch"
 -   `idoit-install`: Remove support for Ubuntu Linux 16.04 LTS "xenial"
 -   `idoit-install`: Remove support for SLES 12
+-   `idoit-install`: Add support for Ubuntu Linux 18.04 LTS "bionic"
 
 ### Fixed
 
