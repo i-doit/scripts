@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+-   `idoit-install`: Maintained support for Ubuntu Linux 18.04 LTS "bionic"
 -   `idoit-install`: Change default answer to yes when asking to continue without fulfilling all hardware requirements
 -   `idoit-install`: Do not install recommended software packages automatically (Debian/Ubuntu)
 -   `idoit-install`: Mark PHP 5.6 and PHP 7.0 as unsupported
@@ -25,7 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   `idoit-install`: Remove support for Debian GNU/Linux 9 "stretch"
 -   `idoit-install`: Remove support for Ubuntu Linux 16.04 LTS "xenial"
 -   `idoit-install`: Remove support for SLES 12
--   `idoit-install`: Add support for Ubuntu Linux 18.04 LTS "bionic"
 
 ### Fixed
 
