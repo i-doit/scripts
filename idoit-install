@@ -355,7 +355,6 @@ function identifyOS {
 
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "20.04" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
-
         OS="ubuntu2004"
         APACHE_USER="www-data"
         APACHE_GROUP="www-data"
@@ -368,10 +367,22 @@ function identifyOS {
         MARIADB_UNIT="mysql"
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php7.4-fpm"
+    elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "18.04" ]]; then
+        export DEBIAN_FRONTEND="noninteractive"
+        OS="ubuntu1804"
+        APACHE_USER="www-data"
+        APACHE_GROUP="www-data"
+        APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
+        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
+        PHP_CONFIG_FILE="/etc/php/7.2/mods-available/i-doit.ini"
+        MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
+        PHP_FPM_SOCKET="/var/run/php/php7.2-fpm.sock"
+        APACHE_UNIT="apache2"
+        MARIADB_UNIT="mysql"
+        MEMCACHED_UNIT="memcached"
+        PHP_FPM_UNIT="php7.2-fpm"
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "16.04" ]]; then
         abort "Error: Ubuntu 16.04 is out-dated. It's not supported anymore. Please upgrade."
-    elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "18.04" ]]; then
-        abort "Error: Ubuntu 18.04 is out-dated. It's not supported anymore. Please upgrade."
     else
         abort "Operating system ${PRETTY_NAME} is not supported"
     fi
@@ -506,6 +517,9 @@ function configureOS {
         "ubuntu2004")
             configureUbuntu2004
             ;;
+        "ubuntu1804")
+            configureUbuntu1804
+            ;;
         "rhel7")
             configureRHEL7
             ;;
@@ -542,6 +556,24 @@ function configureDebian10 {
         php7.3-soap php7.3-xml php7.3-zip \
         php-memcached \
         memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
+}
+
+function configureUbuntu1804 {
+    log "Keep your Ubuntu packages up-to-date"
+    apt-get -qq --yes update || abort "Unable to update Ubuntu package repositories"
+    apt-get -qq --yes full-upgrade || abort "Unable to perform update of Ubuntu packages"
+    apt-get -qq --yes clean || abort "Unable to cleanup Ubuntu packages"
+    apt-get -qq --yes autoremove || abort "Unable to remove unnecessary Ubuntu packages"
+
+    log "Install required Ubuntu packages"
+    apt-get -qq --yes install --no-install-recommends \
+        apache2 libapache2-mod-fcgid \
+        mariadb-client mariadb-server \
+        php7.2-bcmath php7.2-cli php7.2-common php7.2-curl php7.2-fpm php7.2-gd php7.2-json \
+        php7.2-ldap php7.2-mbstring php7.2-mysql php7.2-opcache php7.2-pgsql \
+        php7.2-soap php7.2-xml php7.2-zip \
+        php-memcached \
+        memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
 }
 
 function configureUbuntu2004 {
@@ -1014,7 +1046,7 @@ function configurePHPFPM {
     log "Configure PHP-FPM"
 
     case "$OS" in
-        "debian10"|"ubuntu2004")
+        "debian10"|"ubuntu1804"|"ubuntu2004")
             unitctl "restart" "$PHP_FPM_UNIT"
             ;;
         "rhel7"|"rhel8"|"centos7"|"centos8")
