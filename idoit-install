@@ -352,7 +352,6 @@ function identifyOS {
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" = "SLES" && "$VERSION_ID" == 12* ]]; then
         abort "Error: SLES 12 is out-dated. It's not supported anymore. Please upgrade."
-
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "20.04" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
         OS="ubuntu2004"
@@ -1424,18 +1423,11 @@ function secureMariaDB {
         MARIADB_SUPERUSER_PASSWORD="$answer"
     fi
 
-    log "Set $MARIADB_SUPERUSER_USERNAME password"
+    log "Set $MARIADB_SUPERUSER_USERNAME password and plugin 'mysql_native_password'"
     "$MARIADB_BIN" \
         -h"$MARIADB_HOSTNAME" \
         -u"$MARIADB_SUPERUSER_USERNAME" \
-        -e"UPDATE mysql.user SET Password=PASSWORD('${MARIADB_SUPERUSER_PASSWORD}') WHERE User='${MARIADB_SUPERUSER_USERNAME}';" || \
-        abort "SQL statement failed"
-
-    log "Set plugin mysql_native_password for $MARIADB_SUPERUSER_USERNAME"
-    "$MARIADB_BIN" \
-        -h"$MARIADB_HOSTNAME" \
-        -u"$MARIADB_SUPERUSER_USERNAME" \
-        -e"UPDATE mysql.user SET plugin='mysql_native_password' WHERE User='${MARIADB_SUPERUSER_USERNAME}';" || \
+        -e"UPDATE mysql.user SET Password=PASSWORD('${MARIADB_SUPERUSER_PASSWORD}'), plugin='mysql_native_password' WHERE User='${MARIADB_SUPERUSER_USERNAME}';" || \
         abort "SQL statement failed"
 
     log "Allow $MARIADB_SUPERUSER_USERNAME login only from localhost"
