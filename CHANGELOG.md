@@ -10,9 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -   `idoit-install`: Add support for CentOS 8
+-   `idoit-install`: Add support for Ubuntu Linux 20.04 LTS "focal fossa"
 
 ### Changed
 
+-   `idoit-install`: Maintained support for Ubuntu Linux 18.04 LTS "bionic"
 -   `idoit-install`: Change default answer to yes when asking to continue without fulfilling all hardware requirements
 -   `idoit-install`: Do not install recommended software packages automatically (Debian/Ubuntu)
 -   `idoit-install`: Mark PHP 5.6 and PHP 7.0 as unsupported
