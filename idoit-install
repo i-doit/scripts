@@ -704,7 +704,13 @@ function configureCentOS8 {
     yum --assumeyes --quiet clean all || abort "Unable to clean yum caches"
     rm -rf /var/cache/yum || abort "Unable to remove orphaned yum caches"
 
+<<<<<<< HEAD
     for appStream in httpd:2.4 mariadb:10.3 php:7.4; do
+||||||| parent of b1d8764 (- Installed PHP Version of CentOS 8 and RHEL 8 changed from 7.2 to 7.3)
+    for appStream in httpd:2.4 mariadb:10.3 php:7.2; do
+=======
+    for appStream in httpd:2.4 mariadb:10.3 php:7.3; do
+>>>>>>> b1d8764 (- Installed PHP Version of CentOS 8 and RHEL 8 changed from 7.2 to 7.3)
         log "Install AppStream $appStream"
         yum --assumeyes --quiet module install "$appStream"
     done
@@ -754,7 +760,13 @@ function configureRHEL8 {
     yum --assumeyes --quiet clean all || abort "Unable to clean yum caches"
     rm -rf /var/cache/yum || abort "Unable to remove orphaned yum caches"
 
+<<<<<<< HEAD
     for appStream in httpd:2.4 mariadb:10.3 php:7.4; do
+||||||| parent of b1d8764 (- Installed PHP Version of CentOS 8 and RHEL 8 changed from 7.2 to 7.3)
+    for appStream in httpd:2.4 mariadb:10.3 php:7.2; do
+=======
+    for appStream in httpd:2.4 mariadb:10.3 php:7.3; do
+>>>>>>> b1d8764 (- Installed PHP Version of CentOS 8 and RHEL 8 changed from 7.2 to 7.3)
         log "Install AppStream $appStream"
         yum --assumeyes --quiet module install "$appStream"
     done
