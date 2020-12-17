@@ -682,7 +682,7 @@ function configureCentOS8 {
     yum --assumeyes --quiet clean all || abort "Unable to clean yum caches"
     rm -rf /var/cache/yum || abort "Unable to remove orphaned yum caches"
 
-    for appStream in httpd:2.4 mariadb:10.3 php:7.3; do
+    for appStream in httpd:2.4 mariadb:10.3 php:7.4; do
         log "Install AppStream $appStream"
         yum --assumeyes --quiet module install "$appStream"
     done
@@ -732,7 +732,7 @@ function configureRHEL8 {
     yum --assumeyes --quiet clean all || abort "Unable to clean yum caches"
     rm -rf /var/cache/yum || abort "Unable to remove orphaned yum caches"
 
-    for appStream in httpd:2.4 mariadb:10.3 php:7.3; do
+    for appStream in httpd:2.4 mariadb:10.3 php:7.4; do
         log "Install AppStream $appStream"
         yum --assumeyes --quiet module install "$appStream"
     done
