@@ -1108,7 +1108,7 @@ function configureApache {
 
     log "Configure Apache Web server"
 
-    hostname="$(cat /etc/hostname)"
+    hostname="$HOSTNAME"
 
     case "$OS" in
         "rhel7"|"rhel8"|"centos7"|"centos8")
