@@ -694,7 +694,6 @@ function configureCentOS8 {
         php-pgsql php-soap php-zip || \
         abort "Unable to install packages"
 
-
     if ! rpm -qa | grep "epel-release" > /dev/null; then
         log "Import EPEL public GPG key"
         rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8 || \
@@ -704,7 +703,7 @@ function configureCentOS8 {
             abort "Unable to install epel releases repository"
     fi
 
-    log "Enable PowerTools for CentOS"
+    log "Enable PowerTools for CentOS 8"
     dnf --assumeyes --quiet config-manager --set-enabled powertools || \
         abort "Unable to enable PowerTools"
 
@@ -745,22 +744,22 @@ function configureRHEL8 {
         php-pgsql php-soap php-zip || \
         abort "Unable to install packages"
 
-    if [[ ! -x "$(command -v chronic)" ]]; then
-        log "Install 'chronic'"
-        ## TODO: I know, this seems to be pretty ugly, but:
-        ## Why the hack is moreutils not included in the standard repositories?!?
-        wget --quiet -O "${TMP_DIR}/chronic" \
-            https://git.joeyh.name/index.cgi/moreutils.git/plain/chronic || \
-            abort "Unable to download 'chronic'"
-        chmod +x "${TMP_DIR}/chronic" || \
-            abort "Unable to set executable bit"
-        mv "${TMP_DIR}/chronic" /usr/local/bin || \
-            abort "Unable to move 'chronic' to '/usr/local/bin'"
-        yum --assumeyes --quiet module install perl-App-cpanminus || \
-            abort "Unable to install cpanm"
-        cpanm --quiet --notest --install IPC::Run || \
-            abort "Unable to install Perl module IPC::Run"
+    if ! rpm -qa | grep "epel-release" > /dev/null; then
+        log "Import EPEL public GPG key"
+        rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8 || \
+            abort "Unable to import public GPG key from EPEL"
+        log "Add epel releases repository"
+        rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm || \
+            abort "Unable to install epel releases repository"
     fi
+
+    log "Enable codeready-builder for RHEL 8"
+    subscription-manager repos --enable "codeready-builder-for-rhel-8-x86_64-rpms" || \
+        abort "Unable to enable Codeready-Builder"
+
+    log "Install moreutils with all dependencies"
+    dnf --assumeyes --quiet install moreutils || \
+        abort "Unable to install moreutils"
 
     for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT $PHP_FPM_UNIT; do
         unitctl "enable" "$unit"
