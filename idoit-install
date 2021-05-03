@@ -347,11 +347,29 @@ function identifyOS {
         MARIADB_SOCKET="/var/run/mysql/mysql.sock"
         PHP_FPM_SOCKET="/var/run/php-fpm.sock"
         APACHE_UNIT="apache2"
-        MARIADB_UNIT="mysql"
+        MARIADB_UNIT="mariadb"
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" = "SLES" && "$VERSION_ID" == 12* ]]; then
         abort "Error: SLES 12 is out-dated. It's not supported anymore. Please upgrade."
+
+    elif [[ "$NAME" == "openSUSE Leap" && "$VERSION" == 15* ]]; then
+        OS="opensuse15"
+        INSTALL_DIR="/srv/www/htdocs"
+        APACHE_USER="wwwrun"
+        APACHE_GROUP="www"
+        APACHE_CONFIG_FILE="/etc/apache2/vhosts.d/i-doit.conf"
+        MARIADB_CONFIG_FILE="/etc/my.cnf.d/99-i-doit.cnf"
+        PHP_CONFIG_FILE="/etc/php7/conf.d/i-doit.ini"
+        MARIADB_SOCKET="/var/run/mysql/mysql.sock"
+        PHP_FPM_SOCKET="/var/run/php-fpm.sock"
+        APACHE_UNIT="apache2"
+        MARIADB_UNIT="mariadb"
+        MEMCACHED_UNIT="memcached"
+        PHP_FPM_UNIT="php-fpm"
+    elif [[ "$NAME" = "openSUSE" && "$VERSION_ID" == 12* ]]; then
+        abort "Error: openSUSE 12 is out-dated. It's not supported anymore. Please upgrade."
+
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "20.04" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
         OS="ubuntu2004"
@@ -533,6 +551,9 @@ function configureOS {
             ;;
         "sles15")
             configureSLES15
+            ;;
+        "opensuse15")
+            configureOpenSuse15
             ;;
         *)
             abort "Unkown operating system '${OS}'!?!"
@@ -914,16 +935,86 @@ function configureSLES15 {
         log ""
         log "    https://software.opensuse.org/download.html?project=server%3Aphp%3Aextensions%3Aphp7&package=php7-memcached"
 
-        zypper --quiet --non-interactive addrepo \
-            --gpgcheck --refresh \
-            https://download.opensuse.org/repositories/server:php:extensions:php7/SLE_15/server:php:extensions:php7.repo || \
-            abort "Unable to add repository"
-        zypper --quiet --non-interactive --gpg-auto-import-keys refresh || \
-            abort "Unable to refresh software repositories"
+        if [[ "$VERSION_ID" == 15 ]]; then
+            zypper --quiet --non-interactive addrepo \
+                --gpgcheck --refresh \
+                https://download.opensuse.org/repositories/server:php:extensions:php7/SLE_15/server:php:extensions:php7.repo || \
+                abort "Unable to add repository"
+            zypper --quiet --non-interactive --gpg-auto-import-keys refresh || \
+                abort "Unable to refresh software repositories"
+
+        elif [[ "$VERSION_ID" == 15.1 ]]; then
+            zypper --quiet --non-interactive addrepo \
+                --gpgcheck --refresh \
+                https://download.opensuse.org/repositories/server:/php:/extensions/SLE_15_SP1/server:php:extensions.repo || \
+                abort "Unable to add repository"
+            zypper --quiet --non-interactive --gpg-auto-import-keys refresh || \
+                abort "Unable to refresh software repositories"
+
+        elif [[ "$VERSION_ID" == 15.2 ]]; then
+            zypper --quiet --non-interactive addrepo \
+                --gpgcheck --refresh \
+                https://download.opensuse.org/repositories/server:/php:/extensions/SLE_15_SP2/server:php:extensions.repo || \
+                abort "Unable to add repository"
+            zypper --quiet --non-interactive --gpg-auto-import-keys refresh || \
+                abort "Unable to refresh software repositories"
+        fi
     fi
 
     zypper --quiet --non-interactive install --no-recommends php7-memcached || \
         abort "Unable to install required software package"
+
+    zypper --quiet --non-interactive clean || abort "Unable to clean up cached software packages"
+
+    for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT; do
+        unitctl "enable" "$unit"
+        unitctl "start" "$unit"
+    done
+
+    log "Allow incoming HTTP traffic"
+    systemctl -q is-active firewalld.service || (
+        log "Firewall is inactive."
+        unitctl "start" "firewalld"
+    )
+    firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
+    unitctl "restart" "firewalld"
+
+    if [[ ! -x "$(command -v chronic)" ]]; then
+        log "Install 'chronic'"
+        ## TODO: I know, this seems to be pretty ugly, but:
+        ## Why the hack is moreutils not included in the standard repositories?!?
+        wget --quiet -O "${TMP_DIR}/chronic" \
+            https://git.joeyh.name/index.cgi/moreutils.git/plain/chronic || \
+            abort "Unable to download 'chronic'"
+        chmod +x "${TMP_DIR}/chronic" || \
+            abort "Unable to set executable bit"
+        mv "${TMP_DIR}/chronic" /usr/bin || \
+            abort "Unable to move 'chronic' to '/usr/bin'"
+        wget --quiet -O - https://cpanmin.us | perl - App::cpanminus || \
+            abort "Unable to install cpanminus"
+        cpanm --quiet --notest --install IPC::Run || \
+            abort "Unable to install Perl module IPC::Run"
+    fi
+}
+
+function configureOpenSuse15 {
+    local web_repos=""
+    local openSuseRepo=""
+
+    log "Keep your packages up-to-date"
+    zypper --quiet --non-interactive refresh || abort "Unable to refresh software repositories"
+    zypper --quiet --non-interactive update || abort "Unable to update software packages"
+
+    log "Install software packages"
+    zypper --quiet --non-interactive install --no-recommends \
+        apache2 \
+        mariadb mariadb-client \
+        memcached \
+        make sudo unzip \
+        php7 php7-bcmath php7-bz2 php7-ctype php7-curl php7-fpm php7-gd php7-gettext php7-fileinfo \
+        php7-json php7-ldap php7-mbstring php7-mysql php7-memcached php7-opcache php7-openssl php7-pdo \
+        php7-pgsql php7-phar php7-posix php7-soap php7-sockets php7-sqlite php7-xsl php7-zip php7-zlib || \
+        abort "Unable to install required software packages"
 
     zypper --quiet --non-interactive clean || abort "Unable to clean up cached software packages"
 
@@ -1070,7 +1161,7 @@ security.limit_extensions = .php
 EOF
             unitctl "restart" "$PHP_FPM_UNIT"
             ;;
-        "sles15")
+        "sles15" | "opensuse15" )
             log "Enable PHP FPM configuration files"
             mv /etc/php7/fpm/php-fpm.conf{.default,} || \
                 abort "Unable to move file"
@@ -1169,7 +1260,7 @@ EOF
 
             unitctl "restart" "$APACHE_UNIT"
             ;;
-        "sles15")
+        "sles15" | "opensuse15")
             a2_en_mod=$(command -v a2enmod)
 
             cat << EOF > ${APACHE_CONFIG_FILE} || \
@@ -1427,13 +1518,16 @@ function secureMariaDB {
     "$MARIADB_BIN" \
         -h"$MARIADB_HOSTNAME" \
         -u"$MARIADB_SUPERUSER_USERNAME" \
-        -e"UPDATE mysql.user SET Password=PASSWORD('${MARIADB_SUPERUSER_PASSWORD}'), plugin='mysql_native_password' WHERE User='${MARIADB_SUPERUSER_USERNAME}';" || \
+        -p"$MARIADB_SUPERUSER_PASSWORD" \
+        -e"ALTER USER '${MARIADB_SUPERUSER_USERNAME}'@'localhost' IDENTIFIED VIA mysql_native_password USING PASSWORD('${MARIADB_SUPERUSER_PASSWORD}');" || \
+##        -e"UPDATE mysql.user SET Password=PASSWORD('${MARIADB_SUPERUSER_PASSWORD}'), plugin='mysql_native_password' WHERE User='${MARIADB_SUPERUSER_USERNAME}';" || \
         abort "SQL statement failed"
 
     log "Allow $MARIADB_SUPERUSER_USERNAME login only from localhost"
     "$MARIADB_BIN" \
         -h"$MARIADB_HOSTNAME" \
         -u"$MARIADB_SUPERUSER_USERNAME" \
+        -p"$MARIADB_SUPERUSER_PASSWORD" \
         -e"DELETE FROM mysql.user WHERE User='${MARIADB_SUPERUSER_USERNAME}' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" || \
         abort "SQL statement failed"
 
@@ -1441,6 +1535,7 @@ function secureMariaDB {
     "$MARIADB_BIN" \
         -h"$MARIADB_HOSTNAME" \
         -u"$MARIADB_SUPERUSER_USERNAME" \
+        -p"$MARIADB_SUPERUSER_PASSWORD" \
         -e"DELETE FROM mysql.user WHERE User='';" || \
         abort "SQL statement failed"
 
@@ -1448,6 +1543,7 @@ function secureMariaDB {
     "$MARIADB_BIN" \
         -h"$MARIADB_HOSTNAME" \
         -u"$MARIADB_SUPERUSER_USERNAME" \
+        -p"$MARIADB_SUPERUSER_PASSWORD" \
         -e"DELETE FROM mysql.db WHERE Db='test' OR Db='test_%';" || \
         abort "SQL statement failed"
 
@@ -1455,6 +1551,7 @@ function secureMariaDB {
     "$MARIADB_BIN" \
         -h"$MARIADB_HOSTNAME" \
         -u"$MARIADB_SUPERUSER_USERNAME" \
+        -p"$MARIADB_SUPERUSER_PASSWORD" \
         -e"FLUSH PRIVILEGES;" || \
         abort "SQL statement failed"
 }
