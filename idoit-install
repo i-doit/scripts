@@ -37,11 +37,11 @@ IFS=$'\n\t'
 
 : "${MARIADB_HOSTNAME:="localhost"}"
 : "${MARIADB_SUPERUSER_USERNAME:="root"}"
-: "${MARIADB_SUPERUSER_PASSWORD:="idoit"}"
-: "${MARIADB_INNODB_BUFFER_POOL_SIZE:="1G"}"
-: "${IDOIT_ADMIN_CENTER_PASSWORD:="admin"}"
+: "${MARIADB_SUPERUSER_PASSWORD:=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 20)}"
+: "${MARIADB_INNODB_BUFFER_POOL_SIZE:=$(vmstat --stats --unit b | grep -i "total memory" | awk '{print int($1/1000/1000/1000*0.6)}')"G"}"
+: "${IDOIT_ADMIN_CENTER_PASSWORD:=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 20)}"
 : "${MARIADB_IDOIT_USERNAME:="idoit"}"
-: "${MARIADB_IDOIT_PASSWORD:="idoit"}"
+: "${MARIADB_IDOIT_PASSWORD:=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 20)}"
 : "${IDOIT_DEFAULT_TENANT:="CMDB"}"
 : "${INSTALL_DIR:="/var/www/html"}"
 : "${UPDATE_FILE_PRO:="https://i-doit.com/updates.xml"}"
@@ -59,6 +59,7 @@ IFS=$'\n\t'
 ## DO NOT EDIT THESE SETTINGS.
 ##
 
+
 OS=""
 DATE="$(date +%Y-%m-%d)"
 TMP_DIR="/tmp/i-doit_${DATE}"
@@ -72,6 +73,8 @@ MARIADB_UNIT=""
 MEMCACHED_UNIT=""
 PHP_FPM_UNIT=""
 APACHE_CONFIG_FILE=""
+APACHE_CERT=""
+APACHE_CERT_KEY=""
 MARIADB_CONFIG_FILE=""
 PHP_CONFIG_FILE=""
 MARIADB_SOCKET=""
@@ -294,6 +297,7 @@ function identifyOS {
         OS="debian10"
         APACHE_USER="www-data"
         APACHE_GROUP="www-data"
+        APACHE_CERT_KEY="/etc/ssl/private/ssl-cert-snakeoil.key"
         APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
         MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
         PHP_CONFIG_FILE="/etc/php/7.3/mods-available/i-doit.ini"
@@ -357,6 +361,8 @@ function identifyOS {
         OS="ubuntu2004"
         APACHE_USER="www-data"
         APACHE_GROUP="www-data"
+        APACHE_CERT="/etc/ssl/certs/ssl-cert-snakeoil.pem"
+        APACHE_CERT_KEY="/etc/ssl/private/ssl-cert-snakeoil.key"
         APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
         MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
         PHP_CONFIG_FILE="/etc/php/7.4/mods-available/i-doit.ini"
@@ -371,6 +377,8 @@ function identifyOS {
         OS="ubuntu1804"
         APACHE_USER="www-data"
         APACHE_GROUP="www-data"
+        APACHE_CERT="/etc/ssl/certs/ssl-cert-snakeoil.pem"
+        APACHE_CERT_KEY="/etc/ssl/private/ssl-cert-snakeoil.key"
         APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
         MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
         PHP_CONFIG_FILE="/etc/php/7.2/mods-available/i-doit.ini"
@@ -554,7 +562,7 @@ function configureDebian10 {
         php7.3-ldap php7.3-mbstring php7.3-mysql php7.3-opcache php7.3-pgsql \
         php7.3-soap php7.3-xml php7.3-zip \
         php-memcached \
-        memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
+        memcached unzip sudo moreutils ssl-cert || abort "Unable to install required Debian packages"
 }
 
 function configureUbuntu1804 {
@@ -572,7 +580,7 @@ function configureUbuntu1804 {
         php7.2-ldap php7.2-mbstring php7.2-mysql php7.2-opcache php7.2-pgsql \
         php7.2-soap php7.2-xml php7.2-zip \
         php-memcached \
-        memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
+        memcached unzip moreutils ssl-cert || abort "Unable to install required Ubuntu packages"
 }
 
 function configureUbuntu2004 {
@@ -590,7 +598,7 @@ function configureUbuntu2004 {
         php7.4-ldap php7.4-mbstring php7.4-mysql php7.4-opcache php7.4-pgsql \
         php7.4-soap php7.4-xml php7.4-zip \
         php-memcached \
-        memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
+        memcached unzip moreutils ssl-cert || abort "Unable to install required Ubuntu packages"
 }
 
 function configureCentOS7 {
@@ -601,7 +609,7 @@ function configureCentOS7 {
     rm -rf /var/cache/yum || abort "Unable to remove orphaned yum caches"
 
     log "Install some important packages, for example Apache Web server"
-    yum --assumeyes --quiet install httpd memcached unzip wget zip || \
+    yum --assumeyes --quiet install httpd memcached unzip wget zip mod_ssl || \
         abort "Unable to install packages"
 
     log "RHEL 7 has out-dated packages for PHP and MariaDB."
@@ -672,6 +680,7 @@ EOF
         unitctl "start" "firewalld"
     )
     firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
+    firewall-cmd --permanent --add-service=https || abort "Unable to configure firewall"
     unitctl "restart" "firewalld"
 }
 
@@ -689,7 +698,7 @@ function configureCentOS8 {
 
     log "Install some important packages"
     yum --assumeyes --quiet install \
-        memcached unzip wget zip \
+        memcached unzip wget zip mod_ssl \
         php-bcmath php-gd php-ldap php-mysqli php-mysqlnd \
         php-pgsql php-soap php-zip || \
         abort "Unable to install packages"
@@ -722,6 +731,7 @@ function configureCentOS8 {
         unitctl "start" "firewalld"
     )
     firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
+    firewall-cmd --permanent --add-service=https || abort "Unable to configure firewall"
     unitctl "restart" "firewalld"
 }
 
@@ -739,7 +749,7 @@ function configureRHEL8 {
 
     log "Install some important packages"
     yum --assumeyes --quiet install \
-        memcached unzip wget zip \
+        memcached unzip wget zip mod_ssl \
         php-bcmath php-gd php-ldap php-mysqli php-mysqlnd \
         php-pgsql php-soap php-zip || \
         abort "Unable to install packages"
@@ -772,6 +782,7 @@ function configureRHEL8 {
         unitctl "start" "firewalld"
     )
     firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
+    firewall-cmd --permanent --add-service=https || abort "Unable to configure firewall"
     unitctl "restart" "firewalld"
 }
 
@@ -783,7 +794,7 @@ function configureRHEL7 {
     rm -rf /var/cache/yum || abort "Unable to remove orphaned yum caches"
 
     log "Install some important packages, for example Apache Web server"
-    yum --assumeyes --quiet install httpd memcached unzip wget zip || \
+    yum --assumeyes --quiet install httpd memcached unzip wget zip mod_ssl || \
         abort "Unable to install packages"
 
     log "RHEL 7 has out-dated packages for PHP and MariaDB."
@@ -860,6 +871,7 @@ EOF
         unitctl "start" "firewalld"
     )
     firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
+    firewall-cmd --permanent --add-service=https || abort "Unable to configure firewall"
     unitctl "restart" "firewalld"
 }
 
@@ -938,6 +950,7 @@ function configureSLES15 {
         unitctl "start" "firewalld"
     )
     firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
+    firewall-cmd --permanent --add-service=https || abort "Unable to configure firewall"
     unitctl "restart" "firewalld"
 
     if [[ ! -x "$(command -v chronic)" ]]; then
@@ -1114,6 +1127,9 @@ function configureApache {
         "rhel7"|"rhel8"|"centos7"|"centos8")
             cat << EOF > ${APACHE_CONFIG_FILE} || \
                 abort "Unable to create and edit file '${APACHE_CONFIG_FILE}'"
+RewriteEngine on
+RewriteRule ^(.*)$ https://%{HTTP_HOST}\$1 [R=301,L]
+
 DirectoryIndex index.php
 DocumentRoot ${INSTALL_DIR}/
 
@@ -1229,7 +1245,15 @@ EOF
 ServerName ${hostname}
 
 <VirtualHost *:80>
+    RewriteEngine on
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}\$1 [R=301,L]
+</VirtualHost>
+
+<VirtualHost *:443>
     ServerAdmin i-doit@example.net
+    SSLEngine On
+    SSLCertificateFile  ${APACHE_CERT}
+    SSLCertificateKeyFile ${APACHE_CERT_KEY}
 
     DirectoryIndex index.php
     DocumentRoot ${INSTALL_DIR}/
@@ -1276,6 +1300,8 @@ EOF
             "$a2_en_mod" proxy_fcgi || abort "Unable to enable Apache module proxy_fcgi"
             log "Enable Apache module setenvif"
             "$a2_en_mod" setenvif || abort "Unable to enable Apache module setenvif"
+            log "Enable Apache module ssl"
+            "$a2_en_mod" ssl || abort "Unable to enable Apache module ssl"
             log "Let every user read the logs"
             chmod 755 /var/log/apache2 || abort "Unable to change permissions"
             chmod 664 /var/log/apache2/* || abort "Unable to change permissions"
@@ -1457,6 +1483,15 @@ function secureMariaDB {
         -u"$MARIADB_SUPERUSER_USERNAME" \
         -e"FLUSH PRIVILEGES;" || \
         abort "SQL statement failed"
+    
+    log "Set User / Password in /root.my.cnf"
+    cat << EOF > "/root/.my.cnf" || \
+    abort "Unable to create and edit file '/root/.my.cnf'"
+[client]
+user=root
+password=${MARIADB_SUPERUSER_PASSWORD}
+EOF
+
 }
 
 function prepareIDoit {
@@ -1663,6 +1698,8 @@ export IDOIT_PASSWORD="admin"
 export BACKUP_DIR="$BACKUP_DIR"
 # Max. age of backup files (in days):
 export BACKUP_AGE=30
+# mysql root PW:    ${MARIADB_SUPERUSER_PASSWORD}
+# Admincenter PW:   ${IDOIT_ADMIN_CENTER_PASSWORD} 
 EOF
 }
 
@@ -1862,3 +1899,4 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
 
     setup && execute && finish
 fi
+
