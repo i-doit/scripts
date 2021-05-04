@@ -1391,7 +1391,7 @@ function configureMariaDB {
 innodb_buffer_pool_size = ${MARIADB_INNODB_BUFFER_POOL_SIZE}
 
 # Use multiple instances if you have innodb_buffer_pool_size > 10G, 1 every 4GB
-innodb_buffer_pool_instances = 1
+innodb_buffer_pool_instances = 8
 
 # Redo log file size, the higher the better.
 # MySQL/MariaDB writes two of these log files in a default installation.
@@ -1402,7 +1402,7 @@ sort_buffer_size = 262144 # default
 join_buffer_size = 262144 # default
 
 max_allowed_packet = 128M
-max_heap_table_size = 32M
+max_heap_table_size = 64M
 query_cache_min_res_unit = 4096
 query_cache_type = 1
 query_cache_limit = 5M
@@ -1416,7 +1416,7 @@ innodb_file_per_table = 1
 innodb_thread_concurrency = 0
 
 # Disable this (= 0) if you have slow harddisks
-innodb_flush_log_at_trx_commit = 1
+innodb_flush_log_at_trx_commit = 2
 innodb_flush_method = O_DIRECT
 
 innodb_lru_scan_depth = 2048
@@ -1426,6 +1426,8 @@ table_open_cache = 2048
 #table_open_cache_instances = 4
 
 innodb_stats_on_metadata = 0
+
+skip-log-bin
 
 sql-mode = ""
 EOF
