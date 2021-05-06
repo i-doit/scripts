@@ -295,6 +295,7 @@ function identifyOS {
         OS="debian10"
         APACHE_USER="www-data"
         APACHE_GROUP="www-data"
+        APACHE_CERT="/etc/ssl/certs/ssl-cert-snakeoil.pem"
         APACHE_CERT_KEY="/etc/ssl/private/ssl-cert-snakeoil.key"
         APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
         MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
