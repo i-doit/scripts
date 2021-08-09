@@ -1595,6 +1595,7 @@ function secureMariaDB {
 
     log "Set $MARIADB_SUPERUSER_USERNAME password and plugin 'mysql_native_password'"
 <<<<<<< HEAD
+<<<<<<< HEAD
     case "$mariadb_version" in
         "10.4"|"10.5")
             "$MARIADB_BIN" \
@@ -1646,7 +1647,43 @@ function secureMariaDB {
         -e"DELETE FROM mysql.user WHERE User='${MARIADB_SUPERUSER_USERNAME}' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" || \
         abort "SQL statement failed"
 >>>>>>> 2ad7e6e (- Re-work the MariaDB configuration to use the 'mysql_native_password' Plugin)
+||||||| parent of 76f94d4 (MariaDB configuration updated)
+    "$MARIADB_BIN" \
+        -h"$MARIADB_HOSTNAME" \
+        -u"$MARIADB_SUPERUSER_USERNAME" \
+        -p"$MARIADB_SUPERUSER_PASSWORD" \
+        -e"ALTER USER '${MARIADB_SUPERUSER_USERNAME}'@'localhost' IDENTIFIED VIA mysql_native_password USING PASSWORD('${MARIADB_SUPERUSER_PASSWORD}');" || \
+##        -e"UPDATE mysql.user SET Password=PASSWORD('${MARIADB_SUPERUSER_PASSWORD}'), plugin='mysql_native_password' WHERE User='${MARIADB_SUPERUSER_USERNAME}';" || \
+        abort "SQL statement failed"
 
+    log "Allow $MARIADB_SUPERUSER_USERNAME login only from localhost"
+    "$MARIADB_BIN" \
+        -h"$MARIADB_HOSTNAME" \
+        -u"$MARIADB_SUPERUSER_USERNAME" \
+        -p"$MARIADB_SUPERUSER_PASSWORD" \
+        -e"DELETE FROM mysql.user WHERE User='${MARIADB_SUPERUSER_USERNAME}' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" || \
+        abort "SQL statement failed"
+=======
+    case "$mariadb_version" in
+        "10.4"|"10.5")
+            "$MARIADB_BIN" \
+            -h"$MARIADB_HOSTNAME" \
+            -u"$MARIADB_SUPERUSER_USERNAME" \
+            -e"SET PASSWORD FOR '${MARIADB_SUPERUSER_USERNAME}'@'localhost' = PASSWORD('${MARIADB_SUPERUSER_PASSWORD}');" \
+            -e"ALTER USER '${MARIADB_SUPERUSER_USERNAME}'@'localhost' IDENTIFIED VIA mysql_native_password USING PASSWORD('${MARIADB_SUPERUSER_PASSWORD}');" || \
+            abort "SQL statement failed"
+            ;;
+
+        "10.1"|"10.2"|"10.3")
+            "$MARIADB_BIN" \
+            -h"$MARIADB_HOSTNAME" \
+            -u"$MARIADB_SUPERUSER_USERNAME" \
+            -e"UPDATE mysql.user SET Password=PASSWORD('${MARIADB_SUPERUSER_PASSWORD}'), plugin='mysql_native_password' WHERE User='${MARIADB_SUPERUSER_USERNAME}';" || \
+            abort "SQL statement failed"
+            ;;
+>>>>>>> 76f94d4 (MariaDB configuration updated)
+
+<<<<<<< HEAD
 <<<<<<< HEAD
         *)
             abort "MariaDB ${mariadb_version} is not supported. Please follow the system requirements. We recommend version ${RECOMMENDED_MARIADB_VERSION}."
@@ -1668,7 +1705,22 @@ function secureMariaDB {
         -e"DELETE FROM mysql.user WHERE User='';" || \
         abort "SQL statement failed"
 >>>>>>> 2ad7e6e (- Re-work the MariaDB configuration to use the 'mysql_native_password' Plugin)
+||||||| parent of 76f94d4 (MariaDB configuration updated)
+    log "Remove anonymous user"
+    "$MARIADB_BIN" \
+        -h"$MARIADB_HOSTNAME" \
+        -u"$MARIADB_SUPERUSER_USERNAME" \
+        -p"$MARIADB_SUPERUSER_PASSWORD" \
+        -e"DELETE FROM mysql.user WHERE User='';" || \
+        abort "SQL statement failed"
+=======
+        *)
+            abort "MariaDB ${mariadb_version} is not supported. Please follow the system requirements. We recommend version ${RECOMMENDED_MARIADB_VERSION}."
+            ;;
+    esac
+>>>>>>> 76f94d4 (MariaDB configuration updated)
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     case "$OS" in
         "rhel7"|"rhel8"|"centos7"|"centos8")
@@ -1772,6 +1824,89 @@ function secureMariaDB {
         -e"FLUSH PRIVILEGES;" || \
         abort "SQL statement failed"
 >>>>>>> 2ad7e6e (- Re-work the MariaDB configuration to use the 'mysql_native_password' Plugin)
+||||||| parent of 76f94d4 (MariaDB configuration updated)
+    log "Remove test database"
+    "$MARIADB_BIN" \
+        -h"$MARIADB_HOSTNAME" \
+        -u"$MARIADB_SUPERUSER_USERNAME" \
+        -p"$MARIADB_SUPERUSER_PASSWORD" \
+        -e"DELETE FROM mysql.db WHERE Db='test' OR Db='test_%';" || \
+        abort "SQL statement failed"
+
+    log "Flush MariaDB user privileges"
+    "$MARIADB_BIN" \
+        -h"$MARIADB_HOSTNAME" \
+        -u"$MARIADB_SUPERUSER_USERNAME" \
+        -p"$MARIADB_SUPERUSER_PASSWORD" \
+        -e"FLUSH PRIVILEGES;" || \
+        abort "SQL statement failed"
+=======
+    case "$OS" in
+        "rhel7"|"rhel8"|"centos7"|"centos8")
+            log "Allow $MARIADB_SUPERUSER_USERNAME login only from localhost"
+            "$MARIADB_BIN" \
+                -h"$MARIADB_HOSTNAME" \
+                -u"$MARIADB_SUPERUSER_USERNAME" \
+                -e"DELETE FROM mysql.user WHERE User='${MARIADB_SUPERUSER_USERNAME}' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" || \
+                abort "SQL statement failed"
+
+            log "Remove anonymous user"
+            "$MARIADB_BIN" \
+                -h"$MARIADB_HOSTNAME" \
+                -u"$MARIADB_SUPERUSER_USERNAME" \
+                -e"DELETE FROM mysql.user WHERE User='';" || \
+                abort "SQL statement failed"
+
+            log "Remove test database"
+            "$MARIADB_BIN" \
+                -h"$MARIADB_HOSTNAME" \
+                -u"$MARIADB_SUPERUSER_USERNAME" \
+                -e"DELETE FROM mysql.db WHERE Db='test' OR Db='test_%';" || \
+                abort "SQL statement failed"
+
+            log "Flush MariaDB user privileges"
+            "$MARIADB_BIN" \
+                -h"$MARIADB_HOSTNAME" \
+                -u"$MARIADB_SUPERUSER_USERNAME" \
+                -e"FLUSH PRIVILEGES;" || \
+                abort "SQL statement failed"
+            ;;
+
+        "sles15"|"opensuse15"|"debian10"|"ubuntu1804"|"ubuntu2004")
+            log "Allow $MARIADB_SUPERUSER_USERNAME login only from localhost"
+            "$MARIADB_BIN" \
+                -h"$MARIADB_HOSTNAME" \
+                -u"$MARIADB_SUPERUSER_USERNAME" \
+                -p"$MARIADB_SUPERUSER_PASSWORD" \
+                -e"DELETE FROM mysql.user WHERE User='${MARIADB_SUPERUSER_USERNAME}' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" || \
+                abort "SQL statement failed"
+
+            log "Remove anonymous user"
+            "$MARIADB_BIN" \
+                -h"$MARIADB_HOSTNAME" \
+                -u"$MARIADB_SUPERUSER_USERNAME" \
+                -p"$MARIADB_SUPERUSER_PASSWORD" \
+                -e"DELETE FROM mysql.user WHERE User='';" || \
+                abort "SQL statement failed"
+
+            log "Remove test database"
+            "$MARIADB_BIN" \
+                -h"$MARIADB_HOSTNAME" \
+                -u"$MARIADB_SUPERUSER_USERNAME" \
+                -p"$MARIADB_SUPERUSER_PASSWORD" \
+                -e"DELETE FROM mysql.db WHERE Db='test' OR Db='test_%';" || \
+                abort "SQL statement failed"
+
+            log "Flush MariaDB user privileges"
+            "$MARIADB_BIN" \
+                -h"$MARIADB_HOSTNAME" \
+                -u"$MARIADB_SUPERUSER_USERNAME" \
+                -p"$MARIADB_SUPERUSER_PASSWORD" \
+                -e"FLUSH PRIVILEGES;" || \
+                abort "SQL statement failed"
+            ;;
+        esac
+>>>>>>> 76f94d4 (MariaDB configuration updated)
 }
 
 function prepareIDoit {
