@@ -52,7 +52,7 @@ IFS=$'\n\t'
 : "${CRON_FILE:="/etc/cron.d/i-doit"}"
 : "${BACKUP_DIR:="/var/backups/i-doit"}"
 : "${RECOMMENDED_PHP_VERSION:="7.4"}"
-: "${RECOMMENDED_MARIADB_VERSION:="10.4"}"
+: "${RECOMMENDED_MARIADB_VERSION:="10.5"}"
 
 ##
 ## Runtime settings
@@ -1525,6 +1525,7 @@ function secureMariaDB {
             "$MARIADB_BIN" \
             -h"$MARIADB_HOSTNAME" \
             -u"$MARIADB_SUPERUSER_USERNAME" \
+            -p"$MARIADB_SUPERUSER_PASSWORD" \
             -e"SET PASSWORD FOR '${MARIADB_SUPERUSER_USERNAME}'@'localhost' = PASSWORD('${MARIADB_SUPERUSER_PASSWORD}');" \
             -e"ALTER USER '${MARIADB_SUPERUSER_USERNAME}'@'localhost' IDENTIFIED VIA mysql_native_password USING PASSWORD('${MARIADB_SUPERUSER_PASSWORD}');" || \
             abort "SQL statement failed"
@@ -1534,6 +1535,7 @@ function secureMariaDB {
             "$MARIADB_BIN" \
             -h"$MARIADB_HOSTNAME" \
             -u"$MARIADB_SUPERUSER_USERNAME" \
+            -p"$MARIADB_SUPERUSER_PASSWORD" \
             -e"UPDATE mysql.user SET Password=PASSWORD('${MARIADB_SUPERUSER_PASSWORD}'), plugin='mysql_native_password' WHERE User='${MARIADB_SUPERUSER_USERNAME}';" || \
             abort "SQL statement failed"
             ;;
@@ -1549,6 +1551,7 @@ function secureMariaDB {
             "$MARIADB_BIN" \
                 -h"$MARIADB_HOSTNAME" \
                 -u"$MARIADB_SUPERUSER_USERNAME" \
+                -p"$MARIADB_SUPERUSER_PASSWORD" \
                 -e"DELETE FROM mysql.user WHERE User='${MARIADB_SUPERUSER_USERNAME}' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" || \
                 abort "SQL statement failed"
 
@@ -1556,6 +1559,7 @@ function secureMariaDB {
             "$MARIADB_BIN" \
                 -h"$MARIADB_HOSTNAME" \
                 -u"$MARIADB_SUPERUSER_USERNAME" \
+                -p"$MARIADB_SUPERUSER_PASSWORD" \
                 -e"DELETE FROM mysql.user WHERE User='';" || \
                 abort "SQL statement failed"
 
@@ -1563,6 +1567,7 @@ function secureMariaDB {
             "$MARIADB_BIN" \
                 -h"$MARIADB_HOSTNAME" \
                 -u"$MARIADB_SUPERUSER_USERNAME" \
+                -p"$MARIADB_SUPERUSER_PASSWORD" \
                 -e"DELETE FROM mysql.db WHERE Db='test' OR Db='test_%';" || \
                 abort "SQL statement failed"
 
@@ -1570,6 +1575,7 @@ function secureMariaDB {
             "$MARIADB_BIN" \
                 -h"$MARIADB_HOSTNAME" \
                 -u"$MARIADB_SUPERUSER_USERNAME" \
+                -p"$MARIADB_SUPERUSER_PASSWORD" \
                 -e"FLUSH PRIVILEGES;" || \
                 abort "SQL statement failed"
             ;;
