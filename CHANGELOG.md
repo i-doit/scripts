@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   `idoit-install`: Add support for Ubuntu Linux 20.04 LTS "focal fossa"
 -   `idoit-install`: Add support for openSUSE "leap" 15, 15.1 and 15.2
 -   `idoit-install`: Add new logic to configure MariaDB based on the operating system and MariaDB version used
--   `idoit-install`: Add support for MariaDB 10.4
+-   `idoit-install`: Add support for MariaDB 10.4 and MariaDB 10.5
 
 ### Changed
 
@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   `idoit-install`: Mark PHP 7.1 as deprecated
 -   `idoit-install`: Mark PHP 7.4 as stable
 -   `idoit-install`: Mark PHP 8.0 as unsupported
+-   `idoit-install`: Mark MariaDB 10.5 as recommended
+-   `idoit-install`: Mark PHP 7.4 as recommended
 -   `idoit-install`: Deprecate support for RHEL 7
 -   `idoit-install`: Deprecate support for CentOS 7
 -   `idoit-install`: Remove support for Debian GNU/Linux 9 "stretch"
