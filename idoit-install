@@ -706,13 +706,7 @@ function configureCentOS8 {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
-<<<<<<< HEAD
-||||||| parent of e7732b3 (- Installed PHP Version of CentOS 8 and RHEL 8 changed from 7.2 to 7.3)
-=======
-<<<<<<< HEAD
->>>>>>> e7732b3 (- Installed PHP Version of CentOS 8 and RHEL 8 changed from 7.2 to 7.3)
     for appStream in httpd:2.4 mariadb:10.3 php:7.4; do
-<<<<<<< HEAD
 ||||||| parent of b1d8764 (- Installed PHP Version of CentOS 8 and RHEL 8 changed from 7.2 to 7.3)
     for appStream in httpd:2.4 mariadb:10.3 php:7.2; do
 =======
@@ -723,14 +717,6 @@ function configureCentOS8 {
 =======
     for appStream in httpd:2.4 mariadb:10.3 php:7.4; do
 >>>>>>> 0b275fc (- Installed PHP Version of CentOS 8 and RHEL 8 changed from 7.2 to 7.4)
-||||||| parent of e7732b3 (- Installed PHP Version of CentOS 8 and RHEL 8 changed from 7.2 to 7.3)
-=======
-||||||| parent of b1d8764 (- Installed PHP Version of CentOS 8 and RHEL 8 changed from 7.2 to 7.3)
-    for appStream in httpd:2.4 mariadb:10.3 php:7.2; do
-=======
-    for appStream in httpd:2.4 mariadb:10.3 php:7.3; do
->>>>>>> b1d8764 (- Installed PHP Version of CentOS 8 and RHEL 8 changed from 7.2 to 7.3)
->>>>>>> e7732b3 (- Installed PHP Version of CentOS 8 and RHEL 8 changed from 7.2 to 7.3)
         log "Install AppStream $appStream"
         yum --assumeyes --quiet module install "$appStream"
     done
@@ -832,7 +818,6 @@ function configureRHEL8 {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
-<<<<<<< HEAD
     for appStream in httpd:2.4 mariadb:10.3 php:7.4; do
 ||||||| parent of b1d8764 (- Installed PHP Version of CentOS 8 and RHEL 8 changed from 7.2 to 7.3)
     for appStream in httpd:2.4 mariadb:10.3 php:7.2; do
@@ -842,21 +827,8 @@ function configureRHEL8 {
 ||||||| parent of 0b275fc (- Installed PHP Version of CentOS 8 and RHEL 8 changed from 7.2 to 7.4)
     for appStream in httpd:2.4 mariadb:10.3 php:7.3; do
 =======
-||||||| parent of e7732b3 (- Installed PHP Version of CentOS 8 and RHEL 8 changed from 7.2 to 7.3)
-=======
-<<<<<<< HEAD
->>>>>>> e7732b3 (- Installed PHP Version of CentOS 8 and RHEL 8 changed from 7.2 to 7.3)
     for appStream in httpd:2.4 mariadb:10.3 php:7.4; do
-<<<<<<< HEAD
 >>>>>>> 0b275fc (- Installed PHP Version of CentOS 8 and RHEL 8 changed from 7.2 to 7.4)
-||||||| parent of e7732b3 (- Installed PHP Version of CentOS 8 and RHEL 8 changed from 7.2 to 7.3)
-=======
-||||||| parent of b1d8764 (- Installed PHP Version of CentOS 8 and RHEL 8 changed from 7.2 to 7.3)
-    for appStream in httpd:2.4 mariadb:10.3 php:7.2; do
-=======
-    for appStream in httpd:2.4 mariadb:10.3 php:7.3; do
->>>>>>> b1d8764 (- Installed PHP Version of CentOS 8 and RHEL 8 changed from 7.2 to 7.3)
->>>>>>> e7732b3 (- Installed PHP Version of CentOS 8 and RHEL 8 changed from 7.2 to 7.3)
         log "Install AppStream $appStream"
         yum --assumeyes --quiet module install "$appStream"
     done
