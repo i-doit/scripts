@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   `idoit-install`: Enable systemd unit for PHP-FPM on CentOS
 -   `idoit-install`: Fix hardware checks because of wrong locale (found on Ubuntu 18.04 LTS)
 -   `idoit-support`: Add missing destination for file `appliance_version`
+-   `idoit-install`: Fix missing authentication statement for MariaDB configuration
 
 ## [0.13][] – 2019-07-10
 
