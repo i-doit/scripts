@@ -729,7 +729,6 @@ function configureCentOS8 {
         abort "Unable to install packages"
 
 <<<<<<< HEAD
-<<<<<<< HEAD
     if ! rpm -qa | grep "epel-release" > /dev/null; then
         log "Import EPEL public GPG key"
         rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8 || \
@@ -755,10 +754,6 @@ function configureCentOS8 {
             abort "Unable to install Perl module IPC::Run"
 =======
 
-||||||| parent of 54a847f (- RHEL 8 is now installed with 'moreutils' based on the official repositories epel-releases and codeready-builder)
-
-=======
->>>>>>> 54a847f (- RHEL 8 is now installed with 'moreutils' based on the official repositories epel-releases and codeready-builder)
     if ! rpm -qa | grep "epel-release" > /dev/null; then
         log "Import EPEL public GPG key"
         rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8 || \
@@ -769,7 +764,6 @@ function configureCentOS8 {
 >>>>>>> 8ed960e (- CentOS 8 is now installed with 'moreutils' based on the official repositories epel-releases and powertool)
     fi
 
-<<<<<<< HEAD
 <<<<<<< HEAD
     log "Enable PowerTools for CentOS 8"
     dnf --assumeyes --quiet config-manager --set-enabled powertools || \
@@ -782,11 +776,6 @@ function configureCentOS8 {
 ||||||| parent of 8ed960e (- CentOS 8 is now installed with 'moreutils' based on the official repositories epel-releases and powertool)
 =======
     log "Enable PowerTools for CentOS"
-||||||| parent of 54a847f (- RHEL 8 is now installed with 'moreutils' based on the official repositories epel-releases and codeready-builder)
-    log "Enable PowerTools for CentOS"
-=======
-    log "Enable PowerTools for CentOS 8"
->>>>>>> 54a847f (- RHEL 8 is now installed with 'moreutils' based on the official repositories epel-releases and codeready-builder)
     dnf --assumeyes --quiet config-manager --set-enabled powertools || \
         abort "Unable to enable PowerTools"
 
