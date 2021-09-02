@@ -7,61 +7,40 @@ on:
 
 jobs:
 
-  docs:
-    name: Docs
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Re-use NPM cache
-        uses: actions/cache@v2
+      - name: Setup NPM
+        uses: actions/setup-node@v2
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-      - name: Pull container base image
-        run: |
-          docker-compose \
-            -f docker-compose-ci.yml \
-            pull
-      - name: Re-use container image layers
-        uses: satackey/action-docker-layer-caching@v0.0.11
-        continue-on-error: true
-      - name: Build container image
-        run: |
-          docker-compose \
-            -f docker-compose-ci.yml \
-            build \
-            --build-arg USER_ID="$(id -u)" \
-            --build-arg GROUP_ID="$(id -g)"
-      - name: Install toolchain
-        run: |
-          docker-compose \
-            -f docker-compose-ci.yml \
-            run docs \
-            npm install
-      - name: Test
-        run: |
-          docker-compose \
-            -f docker-compose-ci.yml \
-            run docs \
-            npm test
-      - name: Build
-        run: |
-          docker-compose \
-            -f docker-compose-ci.yml \
-            run docs \
-            npm run docs:build
-      - name: Publish
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: appleboy/scp-action@v0.1.1
-        with:
-          host: ${{ secrets.HOST }}
-          fingerprint: ${{ secrets.FINGERPRINT }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
-          port: ${{ secrets.PORT }}
-          source: "site/*"
-          target: ${{ secrets.PATH }}
+          node-version: lts/*
+      - name: Install node modules
+        run: npm install
+      - name: Lint markdown files
+        run: make lint-markdown
+      - name: Lint YAML files
+        run: make lint-yaml
+
+  shellcheck:
+    name: Shell check
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        files:
+          - i-doit.sh
+          - idoit
+          - idoit-backup
+          - idoit-hotfix
+          - idoit-install
+          - idoit-jobs
+          - idoit-pwd
+          - idoit-restore
+          - idoit-support
+    steps:
+      - name: Lint ${{ matrix.files }}
+        uses: ludeeus/action-shellcheck@master
+        env:
+          SHELLCHECK_OPTS: ${{ matrix.files }}
