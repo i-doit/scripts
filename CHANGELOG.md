@@ -245,16 +245,16 @@ Happy holidays 🎄
 
 Initial release
 
-[Unreleased]: https://github.com/bheisig/i-doit-scripts/compare/0.13...HEAD
-[0.13]: https://github.com/bheisig/i-doit-scripts/compare/0.12...0.13
-[0.12]: https://github.com/bheisig/i-doit-scripts/compare/0.11...0.12
-[0.11]: https://github.com/bheisig/i-doit-scripts/compare/0.10...0.11
-[0.10]: https://github.com/bheisig/i-doit-scripts/compare/0.9...0.10
-[0.9]: https://github.com/bheisig/i-doit-scripts/compare/0.8...0.9
-[0.8]: https://github.com/bheisig/i-doit-scripts/compare/0.7...0.8
-[0.7]: https://github.com/bheisig/i-doit-scripts/compare/0.6...0.7
-[0.6]: https://github.com/bheisig/i-doit-scripts/compare/0.5...0.6
-[0.5]: https://github.com/bheisig/i-doit-scripts/compare/0.4...0.5
-[0.4]: https://github.com/bheisig/i-doit-scripts/compare/0.3...0.4
-[0.3]: https://github.com/bheisig/i-doit-scripts/compare/0.2...0.3
-[0.2]: https://github.com/bheisig/i-doit-scripts/compare/0.1...0.2
+[Unreleased]: https://github.com/i-doit/scripts/compare/0.13...HEAD
+[0.13]: https://github.com/i-doit/scripts/compare/0.12...0.13
+[0.12]: https://github.com/i-doit/scripts/compare/0.11...0.12
+[0.11]: https://github.com/i-doit/scripts/compare/0.10...0.11
+[0.10]: https://github.com/i-doit/scripts/compare/0.9...0.10
+[0.9]: https://github.com/i-doit/scripts/compare/0.8...0.9
+[0.8]: https://github.com/i-doit/scripts/compare/0.7...0.8
+[0.7]: https://github.com/i-doit/scripts/compare/0.6...0.7
+[0.6]: https://github.com/i-doit/scripts/compare/0.5...0.6
+[0.5]: https://github.com/i-doit/scripts/compare/0.4...0.5
+[0.4]: https://github.com/i-doit/scripts/compare/0.3...0.4
+[0.3]: https://github.com/i-doit/scripts/compare/0.2...0.3
+[0.2]: https://github.com/i-doit/scripts/compare/0.1...0.2

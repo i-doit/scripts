@@ -11,7 +11,7 @@ deb :
 		--maintainer "Benjamin Heisig <bheisig@i-doit.com>" \
 		--vendor "synetics GmbH <info@i-doit.com>" \
 		--description "Useful scripts to maintain i-doit" \
-		--url "https://github.com/bheisig/i-doit-scripts" \
+		--url "https://github.com/i-doit/scripts" \
 		--deb-no-default-config-files \
 		--deb-changelog CHANGELOG.md \
 		--no-depends \
