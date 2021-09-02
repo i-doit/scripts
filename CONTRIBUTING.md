@@ -14,11 +14,11 @@ If you have questions how to use it properly read the [documentation](README.md)
 
 ## Report bugs
 
-If you find something strange please report it to [our issue tracker](https://github.com/bheisig/i-doit-scripts/issues).
+If you find something strange please report it to [our issue tracker](https://github.com/i-doit/scripts/issues).
 
 ## Make a wish
 
-Of course, there are some features in the pipeline. However, if you have good ideas how to improve this application please let us know! Write a feature request [in our issue tracker](https://github.com/bheisig/i-doit-scripts/issues).
+Of course, there are some features in the pipeline. However, if you have good ideas how to improve this application please let us know! Write a feature request [in our issue tracker](https://github.com/i-doit/scripts/issues).
 
 ## Requirements
 
@@ -45,7 +45,7 @@ apt install build-essentials git make shellcheck lintian nodejs
 If you like to contribute source code, documentation snippets, self-explaining examples or other useful bits, fork this repository, setup the environment and make a pull request.
 
 ~~~ {.bash}
-git clone https://github.com/bheisig/i-doit-scripts.git
+git clone https://github.com/i-doit/scripts.git
 cd i-doit-scripts
 npm install
 ~~~
@@ -97,7 +97,7 @@ Run `make lint-shell` to check your code. This makes sure your code follows the 
 
 Don't forget to add new shell scripts to the [`Makefile`](Makefile). This is necessary for some make rules like `make lint-shell`.
 
-If there are any questions just [raise an issue](https://github.com/bheisig/i-doit-scripts/issues).
+If there are any questions just [raise an issue](https://github.com/i-doit/scripts/issues).
 
 ## Make rules
 

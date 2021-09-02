@@ -13,13 +13,13 @@
     "homepage": "https://i-doit.com/",
     "repository": {
         "type": "git",
-        "url": "https://github.com/bheisig/i-doit-scripts"
+        "url": "https://github.com/i-doit/scripts"
     },
     "bugs": {
-        "url": "https://github.com/bheisig/i-doit-scripts/issues"
+        "url": "https://github.com/i-doit/scripts/issues"
     },
     "license": "AGPL-3.0-or-later",
-    "author": "Benjamin Heisig <bheisig@i-doit.com> (https://i-doit.com/)",
+    "author": "synetics GmbH <info@i-doit.com> (https://i-doit.com/)",
     "dependencies": {
         "remark-cli": "^6.0.1",
         "remark-lint": "^6.0.5",
