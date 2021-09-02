@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased][]
 
+Note: We moved this repository to [a new location](http://github.com/i-doit/scripts).
+
 ### Added
 
 -   `idoit-install`: Add support for CentOS 8
