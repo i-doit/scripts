@@ -11,7 +11,7 @@ deb :
 		--maintainer "Benjamin Heisig <bheisig@i-doit.com>" \
 		--vendor "synetics GmbH <info@i-doit.com>" \
 		--description "Useful scripts to maintain i-doit" \
-		--url "https://github.com/bheisig/i-doit-scripts" \
+		--url "https://github.com/i-doit/scripts" \
 		--deb-no-default-config-files \
 		--deb-changelog CHANGELOG.md \
 		--no-depends \
@@ -30,21 +30,13 @@ lintian :
 	lintian *.deb
 
 lint-markdown :
-	./node_modules/.bin/remark . .github/ --frail --ignore-path .gitignore
+	npm run test:markdown
 
 lint-shell :
-	shellcheck i-doit.sh
-	shellcheck idoit
-	shellcheck idoit-backup
-	shellcheck idoit-hotfix
-	shellcheck idoit-install
-	shellcheck idoit-jobs
-	shellcheck idoit-pwd
-	shellcheck idoit-restore
-	shellcheck idoit-support
+	npm run test:shell
 
 lint-yaml :
-	./node_modules/.bin/yamllint *.yml *.yaml .*.yml .*.yaml
+	npm run test:yaml
 
 install :
 	install idoit* $(PREFIX)/bin/

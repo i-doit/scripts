@@ -2,7 +2,7 @@
 
 Useful scripts to maintain i-doit
 
-[![Build Status](https://travis-ci.org/bheisig/i-doit-scripts.svg?branch=master)](https://travis-ci.org/bheisig/i-doit-scripts)
+![Build Status](https://github.com/i-doit/scripts/actions/workflows/main.yml/badge.svg)
 
 ## About
 
@@ -51,13 +51,13 @@ Connect to your freshly installed OS, for example via **SSH**. Download the scri
 Download:
 
 ~~~ {.bash}
-wget https://raw.githubusercontent.com/bheisig/i-doit-scripts/master/idoit-install
+wget https://raw.githubusercontent.com/i-doit/scripts/main/idoit-install
 ~~~
 
 Alternatively, use cURL for the download:
 
 ~~~ {.bash}
-curl -LO https://raw.githubusercontent.com/bheisig/i-doit-scripts/master/idoit-install
+curl -LO https://raw.githubusercontent.com/i-doit/scripts/main/idoit-install
 ~~~
 
 Make the script executable:
@@ -199,7 +199,7 @@ idoit-support
 
 ## Alter passwords for various users and remove default users
 
-[`idoit-pwd`](idoit-pwd) works smoothly with the [i-doit Virtual Appliance](https://github.com/bheisig/i-doit-appliance):
+[`idoit-pwd`](idoit-pwd) works smoothly with the [i-doit Virtual Appliance](https://github.com/i-doit/appliance):
 
 ~~~
 idoit-pwd
@@ -241,10 +241,10 @@ The installation script `idoit-install` will ask the user to change most of the 
 
 ## Contribute & support
 
-Please, report any issues to [our issue tracker](https://github.com/bheisig/i-doit-scripts/issues). Pull requests are very welcomed. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for more details.
+Please, report any issues to [our issue tracker](https://github.com/i-doit/scripts/issues). Pull requests are very welcomed. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for more details.
 
 ## Copyright & license
 
-Copyright (C) 2017-19 [synetics GmbH](https://i-doit.com/)
+Copyright (C) 2017-21 [synetics GmbH](https://i-doit.com/)
 
 Licensed under the [GNU Affero GPL version 3 or later (AGPLv3+)](https://gnu.org/licenses/agpl.html). This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
