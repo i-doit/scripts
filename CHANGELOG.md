@@ -12,6 +12,7 @@ Note: We moved this repository to [a new location](http://github.com/i-doit/scri
 ### Added
 
 -   `idoit-install`: Add support for CentOS 8
+-   `idoit-install`: Add support for Debian 11 "bullseye"
 -   `idoit-install`: Add support for Ubuntu Linux 20.04 LTS "focal fossa"
 -   `idoit-install`: Add support for openSUSE "leap" 15, 15.1 and 15.2
 -   `idoit-install`: Add new logic to configure MariaDB based on the operating system and MariaDB version used
