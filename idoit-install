@@ -1173,7 +1173,7 @@ function configurePHPFPM {
     log "Configure PHP-FPM"
 
     case "$OS" in
-        "debian10"|"ubuntu1804"|"ubuntu2004")
+        "debian10"|"debian11"|"ubuntu1804"|"ubuntu2004")
             unitctl "restart" "$PHP_FPM_UNIT"
             ;;
         "rhel7"|"rhel8"|"centos7"|"centos8")
