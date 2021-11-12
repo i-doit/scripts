@@ -20,7 +20,7 @@ Note: We moved this repository to [a new location](http://github.com/i-doit/scri
 
 ### Changed
 
--   `idoit-install`: Maintained support for Ubuntu Linux 18.04 LTS "bionic"
+-   `idoit-install`: Add PHP 7.4 and MariaDB 10.5 support for Ubuntu Linux 18.04 LTS "bionic"
 -   `idoit-install`: Change default answer to yes when asking to continue without fulfilling all hardware requirements
 -   `idoit-install`: Do not install recommended software packages automatically (Debian/Ubuntu)
 -   `idoit-install`: Mark PHP 5.6 and PHP 7.0 as unsupported

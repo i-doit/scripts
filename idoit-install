@@ -407,13 +407,13 @@ function identifyOS {
         APACHE_GROUP="www-data"
         APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
         MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
-        PHP_CONFIG_FILE="/etc/php/7.2/mods-available/i-doit.ini"
+        PHP_CONFIG_FILE="/etc/php/7.4/mods-available/i-doit.ini"
         MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
-        PHP_FPM_SOCKET="/var/run/php/php7.2-fpm.sock"
+        PHP_FPM_SOCKET="/var/run/php/php7.4-fpm.sock"
         APACHE_UNIT="apache2"
         MARIADB_UNIT="mysql"
         MEMCACHED_UNIT="memcached"
-        PHP_FPM_UNIT="php7.2-fpm"
+        PHP_FPM_UNIT="php7.4-fpm"
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "16.04" ]]; then
         abort "Error: Ubuntu 16.04 is out-dated. It's not supported anymore. Please upgrade."
     else
@@ -622,15 +622,48 @@ function configureUbuntu1804 {
     apt-get -qq --yes clean || abort "Unable to cleanup Ubuntu packages"
     apt-get -qq --yes autoremove || abort "Unable to remove unnecessary Ubuntu packages"
 
-    log "Install required Ubuntu packages"
-    apt-get -qq --yes install --no-install-recommends \
-        apache2 libapache2-mod-fcgid \
-        mariadb-client mariadb-server \
-        php7.2-bcmath php7.2-cli php7.2-common php7.2-curl php7.2-fpm php7.2-gd php7.2-json \
-        php7.2-ldap php7.2-mbstring php7.2-mysql php7.2-opcache php7.2-pgsql \
-        php7.2-soap php7.2-xml php7.2-zip \
-        php-memcached \
-        memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
+    log "Ubuntu 18.04 has out-dated packages for PHP and MariaDB."
+    log "This script will fix this issue by enabling these 3rd party repositories:"
+    log ""
+    log "    ondrej/php PPA for PHP 7.4"
+    log "    Official MariaDB repository for MariaDB 10.5"
+    log ""
+
+    if askYesNo "Do you agree with it?"; then
+
+        log "Install software-properties-common package"
+        apt-get -qq --yes install software-properties-common || \
+            abort "Unable to install software-properties-common package"
+        log "Add ondrej/php PPA repository"
+        add-apt-repository --yes --update ppa:ondrej/php || \
+            abort "Unable to add ondrej/php PPA repository"
+
+        log "Install required Ubuntu packages"
+        apt-get -qq --yes install --no-install-recommends \
+            apache2 libapache2-mod-fcgid \
+            php7.4-bcmath php7.4-cli php7.4-common php7.4-curl php7.4-fpm php7.4-gd php7.4-json \
+            php7.4-ldap php7.4-mbstring php7.4-mysql php7.4-opcache php7.4-pgsql \
+            php7.4-soap php7.4-xml php7.4-zip \
+            php7.4-memcached \
+            memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
+
+        log "Enable MariaDB repository"
+        cat << EOF > /etc/apt/sources.list.d/MariaDB.list || \
+            abort "Unable to create and edit file '/etc/apt/sources.list.d/MariaDB.list'"
+# MariaDB 10.5 repository list
+# https://mariadb.org/download/
+deb [arch=amd64,arm64,ppc64el] https://mirror.dogado.de/mariadb/repo/10.5/ubuntu bionic main
+deb-src https://mirror.dogado.de/mariadb/repo/10.5/ubuntu bionic main
+EOF
+
+        log "Install MariaDB packages"
+        apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xF1656F24C74CD1D8 || \
+            abort "Unable to import GPG key from MariaDB"
+        apt-get -qq --yes update || \
+            abort "Unable to update MariaDB package repositories"
+        apt-get -qq --yes install --no-install-recommends mariadb-client mariadb-server &> /dev/null || \
+            bort "Unable to install MariaDB"
+    fi
 }
 
 function configureUbuntu2004 {
