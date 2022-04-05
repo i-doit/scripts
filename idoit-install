@@ -1787,15 +1787,15 @@ function updateApacheConfig {
 }
 
 function installIDoit {
-    local prefix=""
-    local config_file=""
+    local prefix="php"
+    local console="${INSTALL_DIR}/console.php"
 
     log "Install i-doit via console.php"
     echo -n -e \
         "Please enter a Admin Center password [leave empty for '${IDOIT_ADMIN_CENTER_PASSWORD}']: "
     read -r answer
 
-    sudo -u www-data ${prefix}${CONSOLE_BIN} install \
+    sudo -u ${APACHE_USER} ${prefix} ${console} install \
     -u "$MARIADB_SUPERUSER_USERNAME" \
     -p "$MARIADB_SUPERUSER_PASSWORD" \
     --host="$MARIADB_HOSTNAME" \
@@ -1814,7 +1814,8 @@ function installIDoit {
 }
 
 function create_tenant {
-    local prefix=""
+    local prefix="php"
+    local console="${INSTALL_DIR}/console.php"
     local tenant_name="Your company name"
 
     log "Install i-doit via console.php"
@@ -1822,7 +1823,7 @@ function create_tenant {
         "Please enter a tenant name [leave empty for '${tenant_name}']: "
     read -r answer
 
-    sudo -u www-data ${prefix}${CONSOLE_BIN} tenant-create \
+    sudo -u ${APACHE_USER} ${prefix} ${console} tenant-create \
     -u "$MARIADB_SUPERUSER_USERNAME" \
     -p "$MARIADB_SUPERUSER_PASSWORD" \
     -U "$MARIADB_IDOIT_USERNAME" \
@@ -1877,7 +1878,7 @@ function deployJobScript {
 }
 
 function deployCronJobs {
-    local download_url="https://raw.githubusercontent.com/i-doit/scripts/master/cron"
+    local download_url="https://raw.githubusercontent.com/i-doit/scripts/main/cron"
     local file="$TMP_DIR/cron"
 
     test ! -f "$file" && (
@@ -1905,7 +1906,7 @@ function deployBackupAndRestore {
 function deployScript {
     local file="$1"
     local tmp_file="${TMP_DIR}/$file"
-    local url="https://raw.githubusercontent.com/i-doit/scripts/master/$file"
+    local url="https://raw.githubusercontent.com/i-doit/scripts/main/$file"
 
     log "Deploy script '$file'"
 
