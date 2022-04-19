@@ -42,6 +42,8 @@ Note: We moved this repository to [a new location](http://github.com/i-doit/scri
 -   `idoit-install`: Fix hardware checks because of wrong locale (found on Ubuntu 18.04 LTS)
 -   `idoit-support`: Add missing destination for file `appliance_version`
 -   `idoit-install`: Fix missing authentication statement for MariaDB configuration
+-   `idoit-install`: Fix PHP version checker to support the recommended PHP version
+
 
 ## [0.13][] – 2019-07-10
 

@@ -1147,14 +1147,14 @@ function configurePHP {
     php_version=$(php --version | head -n1 -c7 | tail -c3)
 
     case "$php_version" in
-        "5.4"|"5.5"|"5.6"|"7.0")
+        "5.4"|"5.5"|"5.6"|"7.0"|"7.1"|"7.2")
             abort "PHP ${php_version} is way too old. Please upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
             ;;
-        "7.1")
+        "7.3")
             log "PHP ${php_version} is installed, but this version is deprecated. Please consider to upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
             php_en_mod=$(command -v phpenmod)
             ;;
-        "7.2"|"7.3"|"7.4")
+        "7.4")
             php_en_mod=$(command -v phpenmod)
             ;;
         "8.0")
