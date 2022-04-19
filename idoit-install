@@ -5,7 +5,7 @@
 ##
 
 ##
-## Copyright (C) 2017-19 synetics GmbH, <https://i-doit.com/>
+## Copyright (C) 2017-22 synetics GmbH, <https://i-doit.com/>
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU Affero General Public License as published by
@@ -171,7 +171,11 @@ function execute {
         log ""
         log "    http://${ip_address}/"
         log ""
-        log "with your Web browser and login with username/password 'admin'"
+        log "with your Web browser and login to the Admin Center 'admin' to create Tenants manually"
+
+        log "\\n--------------------------------------------------------------------------------\\n"
+
+        askYesNo "Do you want to create the initial i-doit tenant automatically?" && create_tenant
 
         status=1
     else
@@ -1783,81 +1787,52 @@ function updateApacheConfig {
 }
 
 function installIDoit {
-    local config_file=""
+    local prefix="php"
+    local console="${INSTALL_DIR}/console.php"
 
-    log "Install i-doit"
-
-    echo -e -n "Please enter the password for the new MariaDB user '${MARIADB_IDOIT_USERNAME}' [leave empty for '${MARIADB_IDOIT_PASSWORD}']: "
+    log "Install i-doit via console.php"
+    echo -n -e \
+        "Please enter a Admin Center password [leave empty for '${IDOIT_ADMIN_CENTER_PASSWORD}']: "
     read -r answer
-    if [[ -n "$answer" ]]; then
-        MARIADB_IDOIT_PASSWORD="$answer"
-    fi
 
-    echo -e -n "Please enter the password for the i-doit Admin Center [leave empty for '${IDOIT_ADMIN_CENTER_PASSWORD}']: "
-    read -r answer
-    if [[ -n "$answer" ]]; then
-        IDOIT_ADMIN_CENTER_PASSWORD="$answer"
-    fi
-
-    echo -e -n "Please enter the name of the first tenant [leave empty for '${IDOIT_DEFAULT_TENANT}']: "
-    read -r answer
-    if [[ -n "$answer" ]]; then
-        IDOIT_DEFAULT_TENANT="$answer"
-    fi
-
-    addDB "idoit_system"
-    addDB "idoit_data"
-
-    cd "${INSTALL_DIR}/setup" || abort "Directory '${INSTALL_DIR}/setup' not accessible"
-
-    log "Run i-doit's setup script"
-    ./install.sh -n "$IDOIT_DEFAULT_TENANT" \
-        -s "idoit_system" -m "idoit_data" -h "$MARIADB_HOSTNAME" \
-        -u "$MARIADB_IDOIT_USERNAME" \
-        -p "$MARIADB_IDOIT_PASSWORD" \
-        -a "$IDOIT_ADMIN_CENTER_PASSWORD" -q || \
-            abort "i-doit setup script returned an error"
-
-    log "Fix tenant table"
-    "$MARIADB_BIN" \
-        -h"$MARIADB_HOSTNAME" \
-        -u"$MARIADB_IDOIT_USERNAME" -p"$MARIADB_IDOIT_PASSWORD" \
-        -e"UPDATE idoit_system.isys_mandator SET isys_mandator__db_user = '${MARIADB_IDOIT_USERNAME}', isys_mandator__db_pass = '${MARIADB_IDOIT_PASSWORD}';" || \
-        abort "SQL statement failed"
+    sudo -u ${APACHE_USER} ${prefix} ${console} install \
+    -u "$MARIADB_SUPERUSER_USERNAME" \
+    -p "$MARIADB_SUPERUSER_PASSWORD" \
+    --host="$MARIADB_HOSTNAME" \
+    -d idoit_system \
+    -U "$MARIADB_IDOIT_USERNAME" \
+    -P "$MARIADB_IDOIT_PASSWORD" \
+    --admin-password "$IDOIT_ADMIN_CENTER_PASSWORD" \
+    -n  || \
+        abort "Installation of i-doit failed"
 
     config_file="${INSTALL_DIR}/src/config.inc.php"
 
     log "Fix configuration file '${config_file}'"
 
-    sed -i -- \
-        "s/'user' => '${MARIADB_SUPERUSER_USERNAME}'/'user' => '${MARIADB_IDOIT_USERNAME}'/g" \
-        "$config_file" || \
-        abort "Unable to replace MariaDB username"
-
-    sed -i -- \
-        "s/'pass' => '${MARIADB_SUPERUSER_PASSWORD}'/'pass' => '${MARIADB_IDOIT_PASSWORD}'/g" \
-        "$config_file" || \
-        abort "Unable to replace MariaDB password"
-
     chown "$APACHE_USER":"$APACHE_GROUP" "$config_file" || abort "Unable to change ownership"
 }
 
-function addDB {
-    local dbName="$1"
+function create_tenant {
+    local prefix="php"
+    local console="${INSTALL_DIR}/console.php"
+    local tenant_name="Your company name"
 
-    log "Create database '${dbName}'"
-    "$MARIADB_BIN" \
-        -h"$MARIADB_HOSTNAME" \
-        -u"$MARIADB_SUPERUSER_USERNAME" -p"$MARIADB_SUPERUSER_PASSWORD" \
-        -e"CREATE DATABASE $dbName;" || \
-        abort "SQL statement failed"
+    log "Install i-doit via console.php"
+    echo -n -e \
+        "Please enter a tenant name [leave empty for '${tenant_name}']: "
+    read -r answer
 
-    log "Grant MariaDB user '${MARIADB_IDOIT_USERNAME}' access to database '${dbName}'"
-    "$MARIADB_BIN" \
-        -h"$MARIADB_HOSTNAME" \
-        -u"$MARIADB_SUPERUSER_USERNAME" -p"$MARIADB_SUPERUSER_PASSWORD" \
-        -e"GRANT ALL PRIVILEGES ON ${dbName}.* TO '${MARIADB_IDOIT_USERNAME}'@'localhost' IDENTIFIED BY '${MARIADB_IDOIT_PASSWORD}';" || \
-        abort "SQL statement failed"
+    sudo -u ${APACHE_USER} ${prefix} ${console} tenant-create \
+    -u "$MARIADB_SUPERUSER_USERNAME" \
+    -p "$MARIADB_SUPERUSER_PASSWORD" \
+    -U "$MARIADB_IDOIT_USERNAME" \
+    -P "$MARIADB_IDOIT_PASSWORD" \
+    -d idoit_data \
+    -n  || \
+        abort "Creating tenant failed"
+
+    log "Tenant '$tenant_name' created"
 }
 
 function deployScriptSettings {
@@ -1903,7 +1878,7 @@ function deployJobScript {
 }
 
 function deployCronJobs {
-    local download_url="https://raw.githubusercontent.com/i-doit/scripts/master/cron"
+    local download_url="https://raw.githubusercontent.com/i-doit/scripts/main/cron"
     local file="$TMP_DIR/cron"
 
     test ! -f "$file" && (
@@ -1931,7 +1906,7 @@ function deployBackupAndRestore {
 function deployScript {
     local file="$1"
     local tmp_file="${TMP_DIR}/$file"
-    local url="https://raw.githubusercontent.com/i-doit/scripts/master/$file"
+    local url="https://raw.githubusercontent.com/i-doit/scripts/main/$file"
 
     log "Deploy script '$file'"
 
