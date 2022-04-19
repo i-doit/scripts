@@ -14,7 +14,7 @@ Note: We moved this repository to [a new location](http://github.com/i-doit/scri
 -   `idoit-install`: Add support for CentOS 8
 -   `idoit-install`: Add support for Debian 11 "bullseye"
 -   `idoit-install`: Add support for Ubuntu Linux 20.04 LTS "focal fossa"
--   `idoit-install`: Add support for openSUSE "leap" 15, 15.1 and 15.2
+-   `idoit-install`: Add support for openSUSE "leap" 15, 15.1, 15.2 and 15.3
 -   `idoit-install`: Add new logic to configure MariaDB based on the operating system and MariaDB version used
 -   `idoit-install`: Add support for MariaDB 10.4 and MariaDB 10.5
 -   `idoit-install`: Added "create_tenant" function to "function execute"
