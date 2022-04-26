@@ -1510,7 +1510,7 @@ function configureMariaDB {
     mv /var/lib/mysql/ib_logfile[01] "$TMP_DIR" || abort "Unable to remove old log files"
 
     log "How many bytes of your RAM do you like to spend to MariaDB?"
-    echo -n -e "You SHOULD give MariaDB ~ 50 per cent of your RAM. You can use G for Gigabyte or M for Megabyte as Value e.g. 1024M or 1G [leave empty for '${MARIADB_INNODB_BUFFER_POOL_SIZE}']: "
+    echo -n -e "You SHOULD give MariaDB ~ 50 per cent of your RAM. You can use G for Gigabyte or M for Megabyte, e.g. 1024M or 1G [leave empty for '${MARIADB_INNODB_BUFFER_POOL_SIZE}']: "
 
     read -r answer
 
@@ -1793,10 +1793,10 @@ function installIDoit {
     log "Install i-doit via console.php"
     echo -n -e \
         "Please enter a Admin Center password [leave empty for '${IDOIT_ADMIN_CENTER_PASSWORD}']: "
-    read -r AdminCenterPass
+    read -r adminCenterPass
 
-    if [[ -n "$AdminCenterPass" ]]; then
-        IDOIT_ADMIN_CENTER_PASSWORD="$AdminCenterPass"
+    if [[ -n "$adminCenterPass" ]]; then
+        IDOIT_ADMIN_CENTER_PASSWORD="$adminCenterPass"
     fi
 
     echo -n -e \
