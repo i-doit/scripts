@@ -1510,7 +1510,7 @@ function configureMariaDB {
     mv /var/lib/mysql/ib_logfile[01] "$TMP_DIR" || abort "Unable to remove old log files"
 
     log "How many bytes of your RAM do you like to spend to MariaDB?"
-    echo -n -e "You SHOULD give MariaDB ~ 50 per cent of your RAM [leave empty for '${MARIADB_INNODB_BUFFER_POOL_SIZE}']: "
+    echo -n -e "You SHOULD give MariaDB ~ 50 per cent of your RAM. You can use G for Gigabytes or M for Megabytes, e.g. 1024M or 1G [leave empty for '${MARIADB_INNODB_BUFFER_POOL_SIZE}']: "
 
     read -r answer
 
@@ -1793,7 +1793,27 @@ function installIDoit {
     log "Install i-doit via console.php"
     echo -n -e \
         "Please enter a Admin Center password [leave empty for '${IDOIT_ADMIN_CENTER_PASSWORD}']: "
-    read -r answer
+    read -r adminCenterPass
+
+    if [[ -n "$adminCenterPass" ]]; then
+        IDOIT_ADMIN_CENTER_PASSWORD="$adminCenterPass"
+    fi
+
+    echo -n -e \
+        "Please enter a username for a new MySQL user (This user will be authorized to the i-doit databases only) [leave empty for '${MARIADB_IDOIT_USERNAME}']: "
+    read -r mariaDBidoitUsername
+
+    if [[ -n "$mariaDBidoitUsername" ]]; then
+        MARIADB_IDOIT_USERNAME="$mariaDBidoitUsername"
+    fi
+
+    echo -n -e \
+        "Please enter a password for a the new MySQL user [leave empty for '${MARIADB_IDOIT_PASSWORD}']: "
+    read -r mariaDBidoitPassword
+
+    if [[ -n "$mariaDBidoitPassword" ]]; then
+        MARIADB_IDOIT_PASSWORD="$mariaDBidoitPassword"
+    fi
 
     sudo -u ${APACHE_USER} ${prefix} ${console} install \
     -u "$MARIADB_SUPERUSER_USERNAME" \
@@ -1821,7 +1841,11 @@ function create_tenant {
     log "Install i-doit via console.php"
     echo -n -e \
         "Please enter a tenant name [leave empty for '${tenant_name}']: "
-    read -r answer
+    read -r tenantName
+
+    if [[ -n "$tenantName" ]]; then
+        tenant_name="$tenantName"
+    fi
 
     sudo -u ${APACHE_USER} ${prefix} ${console} tenant-create \
     -u "$MARIADB_SUPERUSER_USERNAME" \
@@ -1829,6 +1853,7 @@ function create_tenant {
     -U "$MARIADB_IDOIT_USERNAME" \
     -P "$MARIADB_IDOIT_PASSWORD" \
     -d idoit_data \
+    -t "$tenant_name" \
     -n  || \
         abort "Creating tenant failed"
 
