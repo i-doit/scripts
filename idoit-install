@@ -1142,11 +1142,17 @@ EOF
             chown "$APACHE_USER":"$APACHE_GROUP" -R "${INSTALL_DIR}/" || \
                 abort "Unable to change ownership"
 
-            log "SELinux: Allow Apache Web server to read/write files under ${INSTALL_DIR}/"
-            chcon -t httpd_sys_content_t "${INSTALL_DIR}/" -R || \
-                abort "Unable to give read permissions recursively"
-            chcon -t httpd_sys_rw_content_t "${INSTALL_DIR}/" -R || \
-                abort "Unable to give write permissions recursively"
+            log "Check if selinux is enabled"
+            if [ $? -ne 0 ]
+            then 
+                log "selinux is disable"
+            else
+                log "SELinux: Allow Apache Web server to read/write files under ${INSTALL_DIR}/"
+                chcon -t httpd_sys_content_t "${INSTALL_DIR}/" -R || \
+                    abort "Unable to give read permissions recursively"
+                chcon -t httpd_sys_rw_content_t "${INSTALL_DIR}/" -R || \
+                   abort "Unable to give write permissions recursively"
+            fi
             
             log "SELinux: Allow Apache to use PHP-LDAP"
             setsebool -P httpd_can_connect_ldap on || \
