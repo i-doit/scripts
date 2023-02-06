@@ -1,9 +1,11 @@
 #!/bin/bash
+
 ##
 ## Install i-doit on a GNU/Linux operating system
 ##
+
 ##
-## Copyright (C) 2017-19 synetics GmbH, <https://i-doit.com/>
+## Copyright (C) 2017-22 synetics GmbH, <https://i-doit.com/>
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU Affero General Public License as published by
@@ -49,14 +51,14 @@ IFS=$'\n\t'
 : "${JOBS_BIN:="/usr/local/bin/idoit-jobs"}"
 : "${CRON_FILE:="/etc/cron.d/i-doit"}"
 : "${BACKUP_DIR:="/var/backups/i-doit"}"
-: "${RECOMMENDED_PHP_VERSION:="7.3"}"
+: "${RECOMMENDED_PHP_VERSION:="7.4"}"
+: "${RECOMMENDED_MARIADB_VERSION:="10.5"}"
 
 ##
 ## Runtime settings
 ##
 ## DO NOT EDIT THESE SETTINGS.
 ##
-
 
 OS=""
 DATE="$(date +%Y-%m-%d)"
@@ -71,8 +73,6 @@ MARIADB_UNIT=""
 MEMCACHED_UNIT=""
 PHP_FPM_UNIT=""
 APACHE_CONFIG_FILE=""
-APACHE_CERT=""
-APACHE_CERT_KEY=""
 MARIADB_CONFIG_FILE=""
 PHP_CONFIG_FILE=""
 MARIADB_SOCKET=""
@@ -108,7 +108,7 @@ function execute {
     log "It comes with absolutely no warranty."
     log "Read the documentation carefully before you continue:"
     log ""
-    log "    https://github.com/bheisig/i-doit-scripts"
+    log "    https://github.com/i-doit/scripts"
     log ""
     log "This script will automatically…"
     log ""
@@ -171,7 +171,11 @@ function execute {
         log ""
         log "    http://${ip_address}/"
         log ""
-        log "with your Web browser and login with username/password 'admin'"
+        log "with your Web browser and login to the Admin Center 'admin' to create Tenants manually"
+
+        log "\\n--------------------------------------------------------------------------------\\n"
+
+        askYesNo "Do you want to create the initial i-doit tenant automatically?" && create_tenant
 
         status=1
     else
@@ -289,14 +293,27 @@ function identifyOS {
         MARIADB_UNIT="mariadb"
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
+    elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "11 (bullseye)" ]]; then
+            export DEBIAN_FRONTEND="noninteractive"
+
+            OS="debian11"
+            APACHE_USER="www-data"
+            APACHE_GROUP="www-data"
+            APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
+            MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
+            PHP_CONFIG_FILE="/etc/php/7.4/mods-available/i-doit.ini"
+            MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
+            PHP_FPM_SOCKET="/var/run/php/php7.4-fpm.sock"
+            APACHE_UNIT="apache2"
+            MARIADB_UNIT="mysql"
+            MEMCACHED_UNIT="memcached"
+            PHP_FPM_UNIT="php7.4-fpm"
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "10 (buster)" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
 
         OS="debian10"
         APACHE_USER="www-data"
         APACHE_GROUP="www-data"
-        APACHE_CERT="/etc/ssl/certs/ssl-cert-snakeoil.pem"
-        APACHE_CERT_KEY="/etc/ssl/private/ssl-cert-snakeoil.key"
         APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
         MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
         PHP_CONFIG_FILE="/etc/php/7.3/mods-available/i-doit.ini"
@@ -350,18 +367,34 @@ function identifyOS {
         MARIADB_SOCKET="/var/run/mysql/mysql.sock"
         PHP_FPM_SOCKET="/var/run/php-fpm.sock"
         APACHE_UNIT="apache2"
-        MARIADB_UNIT="mysql"
+        MARIADB_UNIT="mariadb"
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" = "SLES" && "$VERSION_ID" == 12* ]]; then
         abort "Error: SLES 12 is out-dated. It's not supported anymore. Please upgrade."
+
+    elif [[ "$NAME" == "openSUSE Leap" && "$VERSION" == 15* ]]; then
+        OS="opensuse15"
+        INSTALL_DIR="/srv/www/htdocs"
+        APACHE_USER="wwwrun"
+        APACHE_GROUP="www"
+        APACHE_CONFIG_FILE="/etc/apache2/vhosts.d/i-doit.conf"
+        MARIADB_CONFIG_FILE="/etc/my.cnf.d/99-i-doit.cnf"
+        PHP_CONFIG_FILE="/etc/php7/conf.d/i-doit.ini"
+        MARIADB_SOCKET="/var/run/mysql/mysql.sock"
+        PHP_FPM_SOCKET="/var/run/php-fpm.sock"
+        APACHE_UNIT="apache2"
+        MARIADB_UNIT="mariadb"
+        MEMCACHED_UNIT="memcached"
+        PHP_FPM_UNIT="php-fpm"
+    elif [[ "$NAME" = "openSUSE" && "$VERSION_ID" == 12* ]]; then
+        abort "Error: openSUSE 12 is out-dated. It's not supported anymore. Please upgrade."
+
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "20.04" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
         OS="ubuntu2004"
         APACHE_USER="www-data"
         APACHE_GROUP="www-data"
-        APACHE_CERT="/etc/ssl/certs/ssl-cert-snakeoil.pem"
-        APACHE_CERT_KEY="/etc/ssl/private/ssl-cert-snakeoil.key"
         APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
         MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
         PHP_CONFIG_FILE="/etc/php/7.4/mods-available/i-doit.ini"
@@ -376,17 +409,15 @@ function identifyOS {
         OS="ubuntu1804"
         APACHE_USER="www-data"
         APACHE_GROUP="www-data"
-        APACHE_CERT="/etc/ssl/certs/ssl-cert-snakeoil.pem"
-        APACHE_CERT_KEY="/etc/ssl/private/ssl-cert-snakeoil.key"
         APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
         MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
-        PHP_CONFIG_FILE="/etc/php/7.2/mods-available/i-doit.ini"
+        PHP_CONFIG_FILE="/etc/php/7.4/mods-available/i-doit.ini"
         MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
-        PHP_FPM_SOCKET="/var/run/php/php7.2-fpm.sock"
+        PHP_FPM_SOCKET="/var/run/php/php7.4-fpm.sock"
         APACHE_UNIT="apache2"
         MARIADB_UNIT="mysql"
         MEMCACHED_UNIT="memcached"
-        PHP_FPM_UNIT="php7.2-fpm"
+        PHP_FPM_UNIT="php7.4-fpm"
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "16.04" ]]; then
         abort "Error: Ubuntu 16.04 is out-dated. It's not supported anymore. Please upgrade."
     else
@@ -517,6 +548,9 @@ function checkSoftwareRequirements {
 
 function configureOS {
     case "$OS" in
+        "debian11")
+            configureDebian11
+            ;;
         "debian10")
             configureDebian10
             ;;
@@ -541,9 +575,30 @@ function configureOS {
         "sles15")
             configureSLES15
             ;;
+        "opensuse15")
+            configureOpenSuse15
+            ;;
         *)
             abort "Unkown operating system '${OS}'!?!"
     esac
+}
+
+function configureDebian11 {
+    log "Keep your Debian packages up-to-date"
+    apt-get -qq --yes update || abort "Unable to update Debian package repositories"
+    apt-get -qq --yes full-upgrade || abort "Unable to perform update of Debian packages"
+    apt-get -qq --yes clean || abort "Unable to cleanup Debian packages"
+    apt-get -qq --yes autoremove || abort "Unable to remove unnecessary Debian packages"
+
+    log "Install required Debian packages"
+    apt-get -qq --yes install --no-install-recommends \
+        apache2 libapache2-mod-fcgid \
+        mariadb-client mariadb-server \
+        php7.4-bcmath php7.4-cli php7.4-common php7.4-curl php7.4-fpm php7.4-gd php7.4-json \
+        php7.4-ldap php7.4-mbstring php7.4-mysql php7.4-opcache php7.4-pgsql \
+        php7.4-soap php7.4-xml php7.4-zip \
+        php-memcached \
+        memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
 }
 
 function configureDebian10 {
@@ -561,7 +616,7 @@ function configureDebian10 {
         php7.3-ldap php7.3-mbstring php7.3-mysql php7.3-opcache php7.3-pgsql \
         php7.3-soap php7.3-xml php7.3-zip \
         php-memcached \
-        memcached unzip sudo moreutils ssl-cert || abort "Unable to install required Debian packages"
+        memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
 }
 
 function configureUbuntu1804 {
@@ -571,15 +626,48 @@ function configureUbuntu1804 {
     apt-get -qq --yes clean || abort "Unable to cleanup Ubuntu packages"
     apt-get -qq --yes autoremove || abort "Unable to remove unnecessary Ubuntu packages"
 
-    log "Install required Ubuntu packages"
-    apt-get -qq --yes install --no-install-recommends \
-        apache2 libapache2-mod-fcgid \
-        mariadb-client mariadb-server \
-        php7.2-bcmath php7.2-cli php7.2-common php7.2-curl php7.2-fpm php7.2-gd php7.2-json \
-        php7.2-ldap php7.2-mbstring php7.2-mysql php7.2-opcache php7.2-pgsql \
-        php7.2-soap php7.2-xml php7.2-zip \
-        php-memcached \
-        memcached unzip moreutils ssl-cert || abort "Unable to install required Ubuntu packages"
+    log "Ubuntu 18.04 has out-dated packages for PHP and MariaDB."
+    log "This script will fix this issue by enabling these 3rd party repositories:"
+    log ""
+    log "    ondrej/php PPA for PHP 7.4"
+    log "    Official MariaDB repository for MariaDB 10.5"
+    log ""
+
+    if askYesNo "Do you agree with it?"; then
+
+        log "Install software-properties-common package"
+        apt-get -qq --yes install software-properties-common || \
+            abort "Unable to install software-properties-common package"
+        log "Add ondrej/php PPA repository"
+        add-apt-repository --yes --update ppa:ondrej/php || \
+            abort "Unable to add ondrej/php PPA repository"
+
+        log "Install required Ubuntu packages"
+        apt-get -qq --yes install --no-install-recommends \
+            apache2 libapache2-mod-fcgid \
+            php7.4-bcmath php7.4-cli php7.4-common php7.4-curl php7.4-fpm php7.4-gd php7.4-json \
+            php7.4-ldap php7.4-mbstring php7.4-mysql php7.4-opcache php7.4-pgsql \
+            php7.4-soap php7.4-xml php7.4-zip \
+            php7.4-memcached \
+            memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
+
+        log "Enable MariaDB repository"
+        cat << EOF > /etc/apt/sources.list.d/MariaDB.list || \
+            abort "Unable to create and edit file '/etc/apt/sources.list.d/MariaDB.list'"
+# MariaDB 10.5 repository list
+# https://mariadb.org/download/
+deb [arch=amd64,arm64,ppc64el] https://mirror.dogado.de/mariadb/repo/10.5/ubuntu bionic main
+deb-src https://mirror.dogado.de/mariadb/repo/10.5/ubuntu bionic main
+EOF
+
+        log "Install MariaDB packages"
+        apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xF1656F24C74CD1D8 || \
+            abort "Unable to import GPG key from MariaDB"
+        apt-get -qq --yes update || \
+            abort "Unable to update MariaDB package repositories"
+        apt-get -qq --yes install --no-install-recommends mariadb-client mariadb-server &> /dev/null || \
+            bort "Unable to install MariaDB"
+    fi
 }
 
 function configureUbuntu2004 {
@@ -597,7 +685,7 @@ function configureUbuntu2004 {
         php7.4-ldap php7.4-mbstring php7.4-mysql php7.4-opcache php7.4-pgsql \
         php7.4-soap php7.4-xml php7.4-zip \
         php-memcached \
-        memcached unzip moreutils ssl-cert || abort "Unable to install required Ubuntu packages"
+        memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
 }
 
 function configureCentOS7 {
@@ -608,7 +696,7 @@ function configureCentOS7 {
     rm -rf /var/cache/yum || abort "Unable to remove orphaned yum caches"
 
     log "Install some important packages, for example Apache Web server"
-    yum --assumeyes --quiet install httpd memcached unzip wget zip mod_ssl || \
+    yum --assumeyes --quiet install httpd memcached unzip wget zip || \
         abort "Unable to install packages"
 
     log "RHEL 7 has out-dated packages for PHP and MariaDB."
@@ -679,7 +767,6 @@ EOF
         unitctl "start" "firewalld"
     )
     firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
-    firewall-cmd --permanent --add-service=https || abort "Unable to configure firewall"
     unitctl "restart" "firewalld"
 }
 
@@ -690,34 +777,34 @@ function configureCentOS8 {
     yum --assumeyes --quiet clean all || abort "Unable to clean yum caches"
     rm -rf /var/cache/yum || abort "Unable to remove orphaned yum caches"
 
-    for appStream in httpd:2.4 mariadb:10.3 php:7.2; do
+    for appStream in httpd:2.4 mariadb:10.3 php:7.4; do
         log "Install AppStream $appStream"
         yum --assumeyes --quiet module install "$appStream"
     done
 
     log "Install some important packages"
     yum --assumeyes --quiet install \
-        memcached unzip wget zip mod_ssl \
+        memcached unzip wget zip \
         php-bcmath php-gd php-ldap php-mysqli php-mysqlnd \
         php-pgsql php-soap php-zip || \
         abort "Unable to install packages"
 
-    if [[ ! -x "$(command -v chronic)" ]]; then
-        log "Install 'chronic'"
-        ## TODO: I know, this seems to be pretty ugly, but:
-        ## Why the hack is moreutils not included in the standard repositories?!?
-        wget --quiet -O "${TMP_DIR}/chronic" \
-            https://git.joeyh.name/index.cgi/moreutils.git/plain/chronic || \
-            abort "Unable to download 'chronic'"
-        chmod +x "${TMP_DIR}/chronic" || \
-            abort "Unable to set executable bit"
-        mv "${TMP_DIR}/chronic" /usr/local/bin || \
-            abort "Unable to move 'chronic' to '/usr/local/bin'"
-        yum --assumeyes --quiet module install perl-App-cpanminus || \
-            abort "Unable to install cpanm"
-        cpanm --quiet --notest --install IPC::Run || \
-            abort "Unable to install Perl module IPC::Run"
+    if ! rpm -qa | grep "epel-release" > /dev/null; then
+        log "Import EPEL public GPG key"
+        rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8 || \
+            abort "Unable to import public GPG key from EPEL"
+        log "Add epel releases repository"
+        rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm || \
+            abort "Unable to install epel releases repository"
     fi
+
+    log "Enable PowerTools for CentOS 8"
+    dnf --assumeyes --quiet config-manager --set-enabled powertools || \
+        abort "Unable to enable PowerTools"
+
+    log "Install moreutils with all dependencies"
+    dnf --assumeyes --quiet install moreutils || \
+        abort "Unable to install moreutils"
 
     for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT $PHP_FPM_UNIT; do
         unitctl "enable" "$unit"
@@ -730,7 +817,6 @@ function configureCentOS8 {
         unitctl "start" "firewalld"
     )
     firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
-    firewall-cmd --permanent --add-service=https || abort "Unable to configure firewall"
     unitctl "restart" "firewalld"
 }
 
@@ -741,34 +827,34 @@ function configureRHEL8 {
     yum --assumeyes --quiet clean all || abort "Unable to clean yum caches"
     rm -rf /var/cache/yum || abort "Unable to remove orphaned yum caches"
 
-    for appStream in httpd:2.4 mariadb:10.3 php:7.2; do
+    for appStream in httpd:2.4 mariadb:10.3 php:7.4; do
         log "Install AppStream $appStream"
         yum --assumeyes --quiet module install "$appStream"
     done
 
     log "Install some important packages"
     yum --assumeyes --quiet install \
-        memcached unzip wget zip mod_ssl \
+        memcached unzip wget zip \
         php-bcmath php-gd php-ldap php-mysqli php-mysqlnd \
         php-pgsql php-soap php-zip || \
         abort "Unable to install packages"
 
-    if [[ ! -x "$(command -v chronic)" ]]; then
-        log "Install 'chronic'"
-        ## TODO: I know, this seems to be pretty ugly, but:
-        ## Why the hack is moreutils not included in the standard repositories?!?
-        wget --quiet -O "${TMP_DIR}/chronic" \
-            https://git.joeyh.name/index.cgi/moreutils.git/plain/chronic || \
-            abort "Unable to download 'chronic'"
-        chmod +x "${TMP_DIR}/chronic" || \
-            abort "Unable to set executable bit"
-        mv "${TMP_DIR}/chronic" /usr/local/bin || \
-            abort "Unable to move 'chronic' to '/usr/local/bin'"
-        yum --assumeyes --quiet module install perl-App-cpanminus || \
-            abort "Unable to install cpanm"
-        cpanm --quiet --notest --install IPC::Run || \
-            abort "Unable to install Perl module IPC::Run"
+    if ! rpm -qa | grep "epel-release" > /dev/null; then
+        log "Import EPEL public GPG key"
+        rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8 || \
+            abort "Unable to import public GPG key from EPEL"
+        log "Add epel releases repository"
+        rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm || \
+            abort "Unable to install epel releases repository"
     fi
+
+    log "Enable codeready-builder for RHEL 8"
+    subscription-manager repos --enable "codeready-builder-for-rhel-8-x86_64-rpms" || \
+        abort "Unable to enable Codeready-Builder"
+
+    log "Install moreutils with all dependencies"
+    dnf --assumeyes --quiet install moreutils || \
+        abort "Unable to install moreutils"
 
     for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT $PHP_FPM_UNIT; do
         unitctl "enable" "$unit"
@@ -781,7 +867,6 @@ function configureRHEL8 {
         unitctl "start" "firewalld"
     )
     firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
-    firewall-cmd --permanent --add-service=https || abort "Unable to configure firewall"
     unitctl "restart" "firewalld"
 }
 
@@ -793,7 +878,7 @@ function configureRHEL7 {
     rm -rf /var/cache/yum || abort "Unable to remove orphaned yum caches"
 
     log "Install some important packages, for example Apache Web server"
-    yum --assumeyes --quiet install httpd memcached unzip wget zip mod_ssl || \
+    yum --assumeyes --quiet install httpd memcached unzip wget zip || \
         abort "Unable to install packages"
 
     log "RHEL 7 has out-dated packages for PHP and MariaDB."
@@ -870,7 +955,6 @@ EOF
         unitctl "start" "firewalld"
     )
     firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
-    firewall-cmd --permanent --add-service=https || abort "Unable to configure firewall"
     unitctl "restart" "firewalld"
 }
 
@@ -925,12 +1009,30 @@ function configureSLES15 {
         log ""
         log "    https://software.opensuse.org/download.html?project=server%3Aphp%3Aextensions%3Aphp7&package=php7-memcached"
 
-        zypper --quiet --non-interactive addrepo \
-            --gpgcheck --refresh \
-            https://download.opensuse.org/repositories/server:php:extensions:php7/SLE_15/server:php:extensions:php7.repo || \
-            abort "Unable to add repository"
-        zypper --quiet --non-interactive --gpg-auto-import-keys refresh || \
-            abort "Unable to refresh software repositories"
+        if [[ "$VERSION_ID" == 15 ]]; then
+            zypper --quiet --non-interactive addrepo \
+                --gpgcheck --refresh \
+                https://download.opensuse.org/repositories/server:php:extensions:php7/SLE_15/server:php:extensions:php7.repo || \
+                abort "Unable to add repository"
+            zypper --quiet --non-interactive --gpg-auto-import-keys refresh || \
+                abort "Unable to refresh software repositories"
+
+        elif [[ "$VERSION_ID" == 15.1 ]]; then
+            zypper --quiet --non-interactive addrepo \
+                --gpgcheck --refresh \
+                https://download.opensuse.org/repositories/server:/php:/extensions/SLE_15_SP1/server:php:extensions.repo || \
+                abort "Unable to add repository"
+            zypper --quiet --non-interactive --gpg-auto-import-keys refresh || \
+                abort "Unable to refresh software repositories"
+
+        elif [[ "$VERSION_ID" == 15.2 ]]; then
+            zypper --quiet --non-interactive addrepo \
+                --gpgcheck --refresh \
+                https://download.opensuse.org/repositories/server:/php:/extensions/SLE_15_SP2/server:php:extensions.repo || \
+                abort "Unable to add repository"
+            zypper --quiet --non-interactive --gpg-auto-import-keys refresh || \
+                abort "Unable to refresh software repositories"
+        fi
     fi
 
     zypper --quiet --non-interactive install --no-recommends php7-memcached || \
@@ -949,7 +1051,58 @@ function configureSLES15 {
         unitctl "start" "firewalld"
     )
     firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
-    firewall-cmd --permanent --add-service=https || abort "Unable to configure firewall"
+    unitctl "restart" "firewalld"
+
+    if [[ ! -x "$(command -v chronic)" ]]; then
+        log "Install 'chronic'"
+        ## TODO: I know, this seems to be pretty ugly, but:
+        ## Why the hack is moreutils not included in the standard repositories?!?
+        wget --quiet -O "${TMP_DIR}/chronic" \
+            https://git.joeyh.name/index.cgi/moreutils.git/plain/chronic || \
+            abort "Unable to download 'chronic'"
+        chmod +x "${TMP_DIR}/chronic" || \
+            abort "Unable to set executable bit"
+        mv "${TMP_DIR}/chronic" /usr/bin || \
+            abort "Unable to move 'chronic' to '/usr/bin'"
+        wget --quiet -O - https://cpanmin.us | perl - App::cpanminus || \
+            abort "Unable to install cpanminus"
+        cpanm --quiet --notest --install IPC::Run || \
+            abort "Unable to install Perl module IPC::Run"
+    fi
+}
+
+function configureOpenSuse15 {
+    local web_repos=""
+    local openSuseRepo=""
+
+    log "Keep your packages up-to-date"
+    zypper --quiet --non-interactive refresh || abort "Unable to refresh software repositories"
+    zypper --quiet --non-interactive update || abort "Unable to update software packages"
+
+    log "Install software packages"
+    zypper --quiet --non-interactive install --no-recommends \
+        apache2 \
+        mariadb mariadb-client \
+        memcached \
+        make sudo unzip \
+        php7 php7-bcmath php7-bz2 php7-ctype php7-curl php7-fpm php7-gd php7-gettext php7-fileinfo \
+        php7-json php7-ldap php7-mbstring php7-mysql php7-memcached php7-opcache php7-openssl php7-pdo \
+        php7-pgsql php7-phar php7-posix php7-soap php7-sockets php7-sqlite php7-xsl php7-zip php7-zlib || \
+        abort "Unable to install required software packages"
+
+    zypper --quiet --non-interactive clean || abort "Unable to clean up cached software packages"
+
+    for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT; do
+        unitctl "enable" "$unit"
+        unitctl "start" "$unit"
+    done
+
+    log "Allow incoming HTTP traffic"
+    systemctl -q is-active firewalld.service || (
+        log "Firewall is inactive."
+        unitctl "start" "firewalld"
+    )
+    firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
     unitctl "restart" "firewalld"
 
     if [[ ! -x "$(command -v chronic)" ]]; then
@@ -998,14 +1151,14 @@ function configurePHP {
     php_version=$(php --version | head -n1 -c7 | tail -c3)
 
     case "$php_version" in
-        "5.4"|"5.5"|"5.6"|"7.0")
+        "5.4"|"5.5"|"5.6"|"7.0"|"7.1"|"7.2")
             abort "PHP ${php_version} is way too old. Please upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
             ;;
-        "7.1")
+        "7.3")
             log "PHP ${php_version} is installed, but this version is deprecated. Please consider to upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
             php_en_mod=$(command -v phpenmod)
             ;;
-        "7.2"|"7.3"|"7.4")
+        "7.4")
             php_en_mod=$(command -v phpenmod)
             ;;
         "8.0")
@@ -1057,7 +1210,7 @@ function configurePHPFPM {
     log "Configure PHP-FPM"
 
     case "$OS" in
-        "debian10"|"ubuntu1804"|"ubuntu2004")
+        "debian10"|"debian11"|"ubuntu1804"|"ubuntu2004")
             unitctl "restart" "$PHP_FPM_UNIT"
             ;;
         "rhel7"|"rhel8"|"centos7"|"centos8")
@@ -1082,7 +1235,7 @@ security.limit_extensions = .php
 EOF
             unitctl "restart" "$PHP_FPM_UNIT"
             ;;
-        "sles15")
+        "sles15" | "opensuse15" )
             log "Enable PHP FPM configuration files"
             mv /etc/php7/fpm/php-fpm.conf{.default,} || \
                 abort "Unable to move file"
@@ -1126,9 +1279,6 @@ function configureApache {
         "rhel7"|"rhel8"|"centos7"|"centos8")
             cat << EOF > ${APACHE_CONFIG_FILE} || \
                 abort "Unable to create and edit file '${APACHE_CONFIG_FILE}'"
-RewriteEngine on
-RewriteRule ^(.*)$ https://%{HTTP_HOST}\$1 [R=301,L]
-
 DirectoryIndex index.php
 DocumentRoot ${INSTALL_DIR}/
 
@@ -1184,7 +1334,7 @@ EOF
 
             unitctl "restart" "$APACHE_UNIT"
             ;;
-        "sles15")
+        "sles15" | "opensuse15")
             a2_en_mod=$(command -v a2enmod)
 
             cat << EOF > ${APACHE_CONFIG_FILE} || \
@@ -1233,7 +1383,7 @@ EOF
 
             unitctl "restart" "$APACHE_UNIT"
             ;;
-        "debian10"|"ubuntu1604"|"ubuntu1804"|"ubuntu2004")
+        "debian11"|"debian10"|"ubuntu1604"|"ubuntu1804"|"ubuntu2004")
             a2_en_site=$(command -v a2ensite)
             a2_dis_site=$(command -v a2dissite)
             a2_en_mod=$(command -v a2enmod)
@@ -1244,15 +1394,7 @@ EOF
 ServerName ${hostname}
 
 <VirtualHost *:80>
-    RewriteEngine on
-    RewriteRule ^(.*)$ https://%{HTTP_HOST}\$1 [R=301,L]
-</VirtualHost>
-
-<VirtualHost *:443>
     ServerAdmin i-doit@example.net
-    SSLEngine On
-    SSLCertificateFile  ${APACHE_CERT}
-    SSLCertificateKeyFile ${APACHE_CERT_KEY}
 
     DirectoryIndex index.php
     DocumentRoot ${INSTALL_DIR}/
@@ -1299,8 +1441,6 @@ EOF
             "$a2_en_mod" proxy_fcgi || abort "Unable to enable Apache module proxy_fcgi"
             log "Enable Apache module setenvif"
             "$a2_en_mod" setenvif || abort "Unable to enable Apache module setenvif"
-            log "Enable Apache module ssl"
-            "$a2_en_mod" ssl || abort "Unable to enable Apache module ssl"
             log "Let every user read the logs"
             chmod 755 /var/log/apache2 || abort "Unable to change permissions"
             chmod 664 /var/log/apache2/* || abort "Unable to change permissions"
@@ -1370,7 +1510,7 @@ function configureMariaDB {
     mv /var/lib/mysql/ib_logfile[01] "$TMP_DIR" || abort "Unable to remove old log files"
 
     log "How many bytes of your RAM do you like to spend to MariaDB?"
-    echo -n -e "You SHOULD give MariaDB ~ 50 per cent of your RAM [leave empty for '${MARIADB_INNODB_BUFFER_POOL_SIZE}']: "
+    echo -n -e "You SHOULD give MariaDB ~ 50 per cent of your RAM. You can use G for Gigabytes or M for Megabytes, e.g. 1024M or 1G [leave empty for '${MARIADB_INNODB_BUFFER_POOL_SIZE}']: "
 
     read -r answer
 
@@ -1390,7 +1530,7 @@ function configureMariaDB {
 innodb_buffer_pool_size = ${MARIADB_INNODB_BUFFER_POOL_SIZE}
 
 # Use multiple instances if you have innodb_buffer_pool_size > 10G, 1 every 4GB
-innodb_buffer_pool_instances = 8
+innodb_buffer_pool_instances = 1
 
 # Redo log file size, the higher the better.
 # MySQL/MariaDB writes two of these log files in a default installation.
@@ -1401,7 +1541,7 @@ sort_buffer_size = 262144 # default
 join_buffer_size = 262144 # default
 
 max_allowed_packet = 128M
-max_heap_table_size = 64M
+max_heap_table_size = 32M
 query_cache_min_res_unit = 4096
 query_cache_type = 1
 query_cache_limit = 5M
@@ -1415,7 +1555,7 @@ innodb_file_per_table = 1
 innodb_thread_concurrency = 0
 
 # Disable this (= 0) if you have slow harddisks
-innodb_flush_log_at_trx_commit = 2
+innodb_flush_log_at_trx_commit = 1
 innodb_flush_method = O_DIRECT
 
 innodb_lru_scan_depth = 2048
@@ -1425,8 +1565,6 @@ table_open_cache = 2048
 #table_open_cache_instances = 4
 
 innodb_stats_on_metadata = 0
-
-skip-log-bin
 
 sql-mode = ""
 EOF
@@ -1441,6 +1579,10 @@ EOF
 }
 
 function secureMariaDB {
+    local mariadb_version=""
+
+    mariadb_version=$(mysql --version | head -n1 -c28 | tail -c 4)
+
     echo -n -e \
         "Please enter a new password for MariaDB's super user '${MARIADB_SUPERUSER_USERNAME}' [leave empty for '${MARIADB_SUPERUSER_PASSWORD}']: "
 
@@ -1451,48 +1593,100 @@ function secureMariaDB {
     fi
 
     log "Set $MARIADB_SUPERUSER_USERNAME password and plugin 'mysql_native_password'"
-    "$MARIADB_BIN" \
-        -h"$MARIADB_HOSTNAME" \
-        -u"$MARIADB_SUPERUSER_USERNAME" \
-        -e"UPDATE mysql.user SET Password=PASSWORD('${MARIADB_SUPERUSER_PASSWORD}'), plugin='mysql_native_password' WHERE User='${MARIADB_SUPERUSER_USERNAME}';" || \
-        abort "SQL statement failed"
+    case "$mariadb_version" in
+        "10.4"|"10.5")
+            "$MARIADB_BIN" \
+            -h"$MARIADB_HOSTNAME" \
+            -u"$MARIADB_SUPERUSER_USERNAME" \
+            -p"$MARIADB_SUPERUSER_PASSWORD" \
+            -e"SET PASSWORD FOR '${MARIADB_SUPERUSER_USERNAME}'@'localhost' = PASSWORD('${MARIADB_SUPERUSER_PASSWORD}');" \
+            -e"ALTER USER '${MARIADB_SUPERUSER_USERNAME}'@'localhost' IDENTIFIED VIA mysql_native_password USING PASSWORD('${MARIADB_SUPERUSER_PASSWORD}');" || \
+            abort "SQL statement failed"
+            ;;
 
-    log "Allow $MARIADB_SUPERUSER_USERNAME login only from localhost"
-    "$MARIADB_BIN" \
-        -h"$MARIADB_HOSTNAME" \
-        -u"$MARIADB_SUPERUSER_USERNAME" \
-        -e"DELETE FROM mysql.user WHERE User='${MARIADB_SUPERUSER_USERNAME}' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" || \
-        abort "SQL statement failed"
+        "10.1"|"10.2"|"10.3")
+            "$MARIADB_BIN" \
+            -h"$MARIADB_HOSTNAME" \
+            -u"$MARIADB_SUPERUSER_USERNAME" \
+            -p"$MARIADB_SUPERUSER_PASSWORD" \
+            -e"UPDATE mysql.user SET Password=PASSWORD('${MARIADB_SUPERUSER_PASSWORD}'), plugin='mysql_native_password' WHERE User='${MARIADB_SUPERUSER_USERNAME}';" || \
+            abort "SQL statement failed"
+            ;;
 
-    log "Remove anonymous user"
-    "$MARIADB_BIN" \
-        -h"$MARIADB_HOSTNAME" \
-        -u"$MARIADB_SUPERUSER_USERNAME" \
-        -e"DELETE FROM mysql.user WHERE User='';" || \
-        abort "SQL statement failed"
+        *)
+            abort "MariaDB ${mariadb_version} is not supported. Please follow the system requirements. We recommend version ${RECOMMENDED_MARIADB_VERSION}."
+            ;;
+    esac
 
-    log "Remove test database"
-    "$MARIADB_BIN" \
-        -h"$MARIADB_HOSTNAME" \
-        -u"$MARIADB_SUPERUSER_USERNAME" \
-        -e"DELETE FROM mysql.db WHERE Db='test' OR Db='test_%';" || \
-        abort "SQL statement failed"
+    case "$OS" in
+        "rhel7"|"rhel8"|"centos7"|"centos8")
+            log "Allow $MARIADB_SUPERUSER_USERNAME login only from localhost"
+            "$MARIADB_BIN" \
+                -h"$MARIADB_HOSTNAME" \
+                -u"$MARIADB_SUPERUSER_USERNAME" \
+                -p"$MARIADB_SUPERUSER_PASSWORD" \
+                -e"DELETE FROM mysql.user WHERE User='${MARIADB_SUPERUSER_USERNAME}' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" || \
+                abort "SQL statement failed"
 
-    log "Flush MariaDB user privileges"
-    "$MARIADB_BIN" \
-        -h"$MARIADB_HOSTNAME" \
-        -u"$MARIADB_SUPERUSER_USERNAME" \
-        -e"FLUSH PRIVILEGES;" || \
-        abort "SQL statement failed"
-    
-    log "Set User / Password in /root.my.cnf"
-    cat << EOF > "/root/.my.cnf" || \
-    abort "Unable to create and edit file '/root/.my.cnf'"
-[client]
-user=root
-password=${MARIADB_SUPERUSER_PASSWORD}
-EOF
+            log "Remove anonymous user"
+            "$MARIADB_BIN" \
+                -h"$MARIADB_HOSTNAME" \
+                -u"$MARIADB_SUPERUSER_USERNAME" \
+                -p"$MARIADB_SUPERUSER_PASSWORD" \
+                -e"DELETE FROM mysql.user WHERE User='';" || \
+                abort "SQL statement failed"
 
+            log "Remove test database"
+            "$MARIADB_BIN" \
+                -h"$MARIADB_HOSTNAME" \
+                -u"$MARIADB_SUPERUSER_USERNAME" \
+                -p"$MARIADB_SUPERUSER_PASSWORD" \
+                -e"DELETE FROM mysql.db WHERE Db='test' OR Db='test_%';" || \
+                abort "SQL statement failed"
+
+            log "Flush MariaDB user privileges"
+            "$MARIADB_BIN" \
+                -h"$MARIADB_HOSTNAME" \
+                -u"$MARIADB_SUPERUSER_USERNAME" \
+                -p"$MARIADB_SUPERUSER_PASSWORD" \
+                -e"FLUSH PRIVILEGES;" || \
+                abort "SQL statement failed"
+            ;;
+
+        "sles15"|"opensuse15"|"debian10"|"debian11"|"ubuntu1804"|"ubuntu2004")
+            log "Allow $MARIADB_SUPERUSER_USERNAME login only from localhost"
+            "$MARIADB_BIN" \
+                -h"$MARIADB_HOSTNAME" \
+                -u"$MARIADB_SUPERUSER_USERNAME" \
+                -p"$MARIADB_SUPERUSER_PASSWORD" \
+                -e"DELETE FROM mysql.user WHERE User='${MARIADB_SUPERUSER_USERNAME}' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" || \
+                abort "SQL statement failed"
+
+            log "Remove anonymous user"
+            "$MARIADB_BIN" \
+                -h"$MARIADB_HOSTNAME" \
+                -u"$MARIADB_SUPERUSER_USERNAME" \
+                -p"$MARIADB_SUPERUSER_PASSWORD" \
+                -e"DELETE FROM mysql.user WHERE User='';" || \
+                abort "SQL statement failed"
+
+            log "Remove test database"
+            "$MARIADB_BIN" \
+                -h"$MARIADB_HOSTNAME" \
+                -u"$MARIADB_SUPERUSER_USERNAME" \
+                -p"$MARIADB_SUPERUSER_PASSWORD" \
+                -e"DELETE FROM mysql.db WHERE Db='test' OR Db='test_%';" || \
+                abort "SQL statement failed"
+
+            log "Flush MariaDB user privileges"
+            "$MARIADB_BIN" \
+                -h"$MARIADB_HOSTNAME" \
+                -u"$MARIADB_SUPERUSER_USERNAME" \
+                -p"$MARIADB_SUPERUSER_PASSWORD" \
+                -e"FLUSH PRIVILEGES;" || \
+                abort "SQL statement failed"
+            ;;
+        esac
 }
 
 function prepareIDoit {
@@ -1593,81 +1787,77 @@ function updateApacheConfig {
 }
 
 function installIDoit {
-    local config_file=""
+    local prefix="php"
+    local console="${INSTALL_DIR}/console.php"
 
-    log "Install i-doit"
+    log "Install i-doit via console.php"
+    echo -n -e \
+        "Please enter a Admin Center password [leave empty for '${IDOIT_ADMIN_CENTER_PASSWORD}']: "
+    read -r adminCenterPass
 
-    echo -e -n "Please enter the password for the new MariaDB user '${MARIADB_IDOIT_USERNAME}' [leave empty for '${MARIADB_IDOIT_PASSWORD}']: "
-    read -r answer
-    if [[ -n "$answer" ]]; then
-        MARIADB_IDOIT_PASSWORD="$answer"
+    if [[ -n "$adminCenterPass" ]]; then
+        IDOIT_ADMIN_CENTER_PASSWORD="$adminCenterPass"
     fi
 
-    echo -e -n "Please enter the password for the i-doit Admin Center [leave empty for '${IDOIT_ADMIN_CENTER_PASSWORD}']: "
-    read -r answer
-    if [[ -n "$answer" ]]; then
-        IDOIT_ADMIN_CENTER_PASSWORD="$answer"
+    echo -n -e \
+        "Please enter a username for a new MySQL user (This user will be authorized to the i-doit databases only) [leave empty for '${MARIADB_IDOIT_USERNAME}']: "
+    read -r mariaDBidoitUsername
+
+    if [[ -n "$mariaDBidoitUsername" ]]; then
+        MARIADB_IDOIT_USERNAME="$mariaDBidoitUsername"
     fi
 
-    echo -e -n "Please enter the name of the first tenant [leave empty for '${IDOIT_DEFAULT_TENANT}']: "
-    read -r answer
-    if [[ -n "$answer" ]]; then
-        IDOIT_DEFAULT_TENANT="$answer"
+    echo -n -e \
+        "Please enter a password for a the new MySQL user [leave empty for '${MARIADB_IDOIT_PASSWORD}']: "
+    read -r mariaDBidoitPassword
+
+    if [[ -n "$mariaDBidoitPassword" ]]; then
+        MARIADB_IDOIT_PASSWORD="$mariaDBidoitPassword"
     fi
 
-    addDB "idoit_system"
-    addDB "idoit_data"
-
-    cd "${INSTALL_DIR}/setup" || abort "Directory '${INSTALL_DIR}/setup' not accessible"
-
-    log "Run i-doit's setup script"
-    ./install.sh -n "$IDOIT_DEFAULT_TENANT" \
-        -s "idoit_system" -m "idoit_data" -h "$MARIADB_HOSTNAME" \
-        -u "$MARIADB_IDOIT_USERNAME" \
-        -p "$MARIADB_IDOIT_PASSWORD" \
-        -a "$IDOIT_ADMIN_CENTER_PASSWORD" -q || \
-            abort "i-doit setup script returned an error"
-
-    log "Fix tenant table"
-    "$MARIADB_BIN" \
-        -h"$MARIADB_HOSTNAME" \
-        -u"$MARIADB_IDOIT_USERNAME" -p"$MARIADB_IDOIT_PASSWORD" \
-        -e"UPDATE idoit_system.isys_mandator SET isys_mandator__db_user = '${MARIADB_IDOIT_USERNAME}', isys_mandator__db_pass = '${MARIADB_IDOIT_PASSWORD}';" || \
-        abort "SQL statement failed"
+    sudo -u ${APACHE_USER} ${prefix} ${console} install \
+    -u "$MARIADB_SUPERUSER_USERNAME" \
+    -p "$MARIADB_SUPERUSER_PASSWORD" \
+    --host="$MARIADB_HOSTNAME" \
+    -d idoit_system \
+    -U "$MARIADB_IDOIT_USERNAME" \
+    -P "$MARIADB_IDOIT_PASSWORD" \
+    --admin-password "$IDOIT_ADMIN_CENTER_PASSWORD" \
+    -n  || \
+        abort "Installation of i-doit failed"
 
     config_file="${INSTALL_DIR}/src/config.inc.php"
 
     log "Fix configuration file '${config_file}'"
 
-    sed -i -- \
-        "s/'user' => '${MARIADB_SUPERUSER_USERNAME}'/'user' => '${MARIADB_IDOIT_USERNAME}'/g" \
-        "$config_file" || \
-        abort "Unable to replace MariaDB username"
-
-    sed -i -- \
-        "s/'pass' => '${MARIADB_SUPERUSER_PASSWORD}'/'pass' => '${MARIADB_IDOIT_PASSWORD}'/g" \
-        "$config_file" || \
-        abort "Unable to replace MariaDB password"
-
     chown "$APACHE_USER":"$APACHE_GROUP" "$config_file" || abort "Unable to change ownership"
 }
 
-function addDB {
-    local dbName="$1"
+function create_tenant {
+    local prefix="php"
+    local console="${INSTALL_DIR}/console.php"
+    local tenant_name="Your company name"
 
-    log "Create database '${dbName}'"
-    "$MARIADB_BIN" \
-        -h"$MARIADB_HOSTNAME" \
-        -u"$MARIADB_SUPERUSER_USERNAME" -p"$MARIADB_SUPERUSER_PASSWORD" \
-        -e"CREATE DATABASE $dbName;" || \
-        abort "SQL statement failed"
+    log "Install i-doit via console.php"
+    echo -n -e \
+        "Please enter a tenant name [leave empty for '${tenant_name}']: "
+    read -r tenantName
 
-    log "Grant MariaDB user '${MARIADB_IDOIT_USERNAME}' access to database '${dbName}'"
-    "$MARIADB_BIN" \
-        -h"$MARIADB_HOSTNAME" \
-        -u"$MARIADB_SUPERUSER_USERNAME" -p"$MARIADB_SUPERUSER_PASSWORD" \
-        -e"GRANT ALL PRIVILEGES ON ${dbName}.* TO '${MARIADB_IDOIT_USERNAME}'@'localhost' IDENTIFIED BY '${MARIADB_IDOIT_PASSWORD}';" || \
-        abort "SQL statement failed"
+    if [[ -n "$tenantName" ]]; then
+        tenant_name="$tenantName"
+    fi
+
+    sudo -u ${APACHE_USER} ${prefix} ${console} tenant-create \
+    -u "$MARIADB_SUPERUSER_USERNAME" \
+    -p "$MARIADB_SUPERUSER_PASSWORD" \
+    -U "$MARIADB_IDOIT_USERNAME" \
+    -P "$MARIADB_IDOIT_PASSWORD" \
+    -d idoit_data \
+    -t "$tenant_name" \
+    -n  || \
+        abort "Creating tenant failed"
+
+    log "Tenant '$tenant_name' created"
 }
 
 function deployScriptSettings {
@@ -1699,8 +1889,6 @@ export IDOIT_PASSWORD="admin"
 export BACKUP_DIR="$BACKUP_DIR"
 # Max. age of backup files (in days):
 export BACKUP_AGE=30
-# mysql root PW:    ${MARIADB_SUPERUSER_PASSWORD}
-# Admincenter PW:   ${IDOIT_ADMIN_CENTER_PASSWORD} 
 EOF
 }
 
@@ -1715,11 +1903,11 @@ function deployJobScript {
 }
 
 function deployCronJobs {
-    local download_url="https://raw.githubusercontent.com/bheisig/i-doit-scripts/master/cron"
+    local download_url="https://raw.githubusercontent.com/i-doit/scripts/main/cron"
     local file="$TMP_DIR/cron"
 
     test ! -f "$file" && (
-        "$WGET_BIN" --quiet -O "$file" "$download_url" || \
+        "$WGET_BIN" -4 --quiet -O "$file" "$download_url" || \
             abort "Unable to fetch file from '${download_url}'"
     )
 
@@ -1743,12 +1931,12 @@ function deployBackupAndRestore {
 function deployScript {
     local file="$1"
     local tmp_file="${TMP_DIR}/$file"
-    local url="https://raw.githubusercontent.com/bheisig/i-doit-scripts/master/$file"
+    local url="https://raw.githubusercontent.com/i-doit/scripts/main/$file"
 
     log "Deploy script '$file'"
 
     test ! -f "$tmp_file" && (
-        "$WGET_BIN" --quiet -O "$tmp_file" "$url" || \
+        "$WGET_BIN" -4 --quiet -O "$tmp_file" "$url" || \
             abort "Unable to fetch file from '${url}'"
     )
 
@@ -1900,4 +2088,3 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
 
     setup && execute && finish
 fi
-
