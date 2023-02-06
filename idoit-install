@@ -37,11 +37,11 @@ IFS=$'\n\t'
 
 : "${MARIADB_HOSTNAME:="localhost"}"
 : "${MARIADB_SUPERUSER_USERNAME:="root"}"
-: "${MARIADB_SUPERUSER_PASSWORD:="idoit"}"
-: "${MARIADB_INNODB_BUFFER_POOL_SIZE:="1G"}"
-: "${IDOIT_ADMIN_CENTER_PASSWORD:="admin"}"
+: "${MARIADB_SUPERUSER_PASSWORD:=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 20)}"
+: "${MARIADB_INNODB_BUFFER_POOL_SIZE:=$(vmstat --stats --unit b | grep -i "total memory" | awk '{print int($1/1000/1000/1000*0.6)}')"G"}"
+: "${IDOIT_ADMIN_CENTER_PASSWORD:=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 20)}"
 : "${MARIADB_IDOIT_USERNAME:="idoit"}"
-: "${MARIADB_IDOIT_PASSWORD:="idoit"}"
+: "${MARIADB_IDOIT_PASSWORD:=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 20)}"
 : "${IDOIT_DEFAULT_TENANT:="CMDB"}"
 : "${INSTALL_DIR:="/var/www/html"}"
 : "${UPDATE_FILE_PRO:="https://i-doit.com/updates.xml"}"
@@ -1907,7 +1907,7 @@ function deployCronJobs {
     local file="$TMP_DIR/cron"
 
     test ! -f "$file" && (
-        "$WGET_BIN" --quiet -O "$file" "$download_url" || \
+        "$WGET_BIN" -4 --quiet -O "$file" "$download_url" || \
             abort "Unable to fetch file from '${download_url}'"
     )
 
@@ -1936,7 +1936,7 @@ function deployScript {
     log "Deploy script '$file'"
 
     test ! -f "$tmp_file" && (
-        "$WGET_BIN" --quiet -O "$tmp_file" "$url" || \
+        "$WGET_BIN" -4 --quiet -O "$tmp_file" "$url" || \
             abort "Unable to fetch file from '${url}'"
     )
 
