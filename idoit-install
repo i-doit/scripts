@@ -73,6 +73,8 @@ MARIADB_UNIT=""
 MEMCACHED_UNIT=""
 PHP_FPM_UNIT=""
 APACHE_CONFIG_FILE=""
+APACHE_CERT=""
+APACHE_CERT_KEY=""
 MARIADB_CONFIG_FILE=""
 PHP_CONFIG_FILE=""
 MARIADB_SOCKET=""
@@ -299,6 +301,8 @@ function identifyOS {
             OS="debian11"
             APACHE_USER="www-data"
             APACHE_GROUP="www-data"
+            APACHE_CERT="/etc/ssl/certs/ssl-cert-snakeoil.pem"
+            APACHE_CERT_KEY="/etc/ssl/private/ssl-cert-snakeoil.key"
             APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
             MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
             PHP_CONFIG_FILE="/etc/php/7.4/mods-available/i-doit.ini"
@@ -314,6 +318,8 @@ function identifyOS {
         OS="debian10"
         APACHE_USER="www-data"
         APACHE_GROUP="www-data"
+        APACHE_CERT="/etc/ssl/certs/ssl-cert-snakeoil.pem"
+        APACHE_CERT_KEY="/etc/ssl/private/ssl-cert-snakeoil.key"
         APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
         MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
         PHP_CONFIG_FILE="/etc/php/7.3/mods-available/i-doit.ini"
@@ -395,6 +401,8 @@ function identifyOS {
         OS="ubuntu2004"
         APACHE_USER="www-data"
         APACHE_GROUP="www-data"
+        APACHE_CERT="/etc/ssl/certs/ssl-cert-snakeoil.pem"
+        APACHE_CERT_KEY="/etc/ssl/private/ssl-cert-snakeoil.key"
         APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
         MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
         PHP_CONFIG_FILE="/etc/php/7.4/mods-available/i-doit.ini"
@@ -409,6 +417,8 @@ function identifyOS {
         OS="ubuntu1804"
         APACHE_USER="www-data"
         APACHE_GROUP="www-data"
+        APACHE_CERT="/etc/ssl/certs/ssl-cert-snakeoil.pem"
+        APACHE_CERT_KEY="/etc/ssl/private/ssl-cert-snakeoil.key"
         APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
         MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
         PHP_CONFIG_FILE="/etc/php/7.4/mods-available/i-doit.ini"
@@ -598,7 +608,7 @@ function configureDebian11 {
         php7.4-ldap php7.4-mbstring php7.4-mysql php7.4-opcache php7.4-pgsql \
         php7.4-soap php7.4-xml php7.4-zip \
         php-memcached \
-        memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
+        memcached unzip sudo moreutils ssl-cert || abort "Unable to install required Debian packages"
 }
 
 function configureDebian10 {
@@ -616,7 +626,7 @@ function configureDebian10 {
         php7.3-ldap php7.3-mbstring php7.3-mysql php7.3-opcache php7.3-pgsql \
         php7.3-soap php7.3-xml php7.3-zip \
         php-memcached \
-        memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
+        memcached unzip sudo moreutils ssl-cert || abort "Unable to install required Debian packages"
 }
 
 function configureUbuntu1804 {
@@ -649,7 +659,7 @@ function configureUbuntu1804 {
             php7.4-ldap php7.4-mbstring php7.4-mysql php7.4-opcache php7.4-pgsql \
             php7.4-soap php7.4-xml php7.4-zip \
             php7.4-memcached \
-            memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
+            memcached unzip moreutils ssl-cert || abort "Unable to install required Ubuntu packages"
 
         log "Enable MariaDB repository"
         cat << EOF > /etc/apt/sources.list.d/MariaDB.list || \
@@ -685,7 +695,7 @@ function configureUbuntu2004 {
         php7.4-ldap php7.4-mbstring php7.4-mysql php7.4-opcache php7.4-pgsql \
         php7.4-soap php7.4-xml php7.4-zip \
         php-memcached \
-        memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
+        memcached unzip moreutils ssl-cert|| abort "Unable to install required Ubuntu packages"
 }
 
 function configureCentOS7 {
@@ -696,7 +706,7 @@ function configureCentOS7 {
     rm -rf /var/cache/yum || abort "Unable to remove orphaned yum caches"
 
     log "Install some important packages, for example Apache Web server"
-    yum --assumeyes --quiet install httpd memcached unzip wget zip || \
+    yum --assumeyes --quiet install httpd memcached unzip wget zip mod_ssl|| \
         abort "Unable to install packages"
 
     log "RHEL 7 has out-dated packages for PHP and MariaDB."
@@ -767,6 +777,7 @@ EOF
         unitctl "start" "firewalld"
     )
     firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
+    firewall-cmd --permanent --add-service=https || abort "Unable to configure firewall"
     unitctl "restart" "firewalld"
 }
 
@@ -784,7 +795,7 @@ function configureCentOS8 {
 
     log "Install some important packages"
     yum --assumeyes --quiet install \
-        memcached unzip wget zip \
+        memcached unzip wget zip mod_ssl \
         php-bcmath php-gd php-ldap php-mysqli php-mysqlnd \
         php-pgsql php-soap php-zip || \
         abort "Unable to install packages"
@@ -817,6 +828,8 @@ function configureCentOS8 {
         unitctl "start" "firewalld"
     )
     firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
+    firewall-cmd --permanent --add-service=https || abort "Unable to configure firewall"
+
     unitctl "restart" "firewalld"
 }
 
@@ -834,7 +847,7 @@ function configureRHEL8 {
 
     log "Install some important packages"
     yum --assumeyes --quiet install \
-        memcached unzip wget zip \
+        memcached unzip wget zip mod_ssl \
         php-bcmath php-gd php-ldap php-mysqli php-mysqlnd \
         php-pgsql php-soap php-zip || \
         abort "Unable to install packages"
@@ -867,6 +880,7 @@ function configureRHEL8 {
         unitctl "start" "firewalld"
     )
     firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
+    firewall-cmd --permanent --add-service=https || abort "Unable to configure firewall"
     unitctl "restart" "firewalld"
 }
 
@@ -878,7 +892,7 @@ function configureRHEL7 {
     rm -rf /var/cache/yum || abort "Unable to remove orphaned yum caches"
 
     log "Install some important packages, for example Apache Web server"
-    yum --assumeyes --quiet install httpd memcached unzip wget zip || \
+    yum --assumeyes --quiet install httpd memcached unzip wget zip mod_ssl || \
         abort "Unable to install packages"
 
     log "RHEL 7 has out-dated packages for PHP and MariaDB."
@@ -955,6 +969,7 @@ EOF
         unitctl "start" "firewalld"
     )
     firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
+    firewall-cmd --permanent --add-service=https || abort "Unable to configure firewall"
     unitctl "restart" "firewalld"
 }
 
@@ -1051,6 +1066,8 @@ function configureSLES15 {
         unitctl "start" "firewalld"
     )
     firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
+    firewall-cmd --permanent --add-service=https || abort "Unable to configure firewall"
+
     unitctl "restart" "firewalld"
 
     if [[ ! -x "$(command -v chronic)" ]]; then
@@ -1103,6 +1120,8 @@ function configureOpenSuse15 {
         unitctl "start" "firewalld"
     )
     firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
+    firewall-cmd --permanent --add-service=https || abort "Unable to configure firewall"
+
     unitctl "restart" "firewalld"
 
     if [[ ! -x "$(command -v chronic)" ]]; then
@@ -1279,6 +1298,10 @@ function configureApache {
         "rhel7"|"rhel8"|"centos7"|"centos8")
             cat << EOF > ${APACHE_CONFIG_FILE} || \
                 abort "Unable to create and edit file '${APACHE_CONFIG_FILE}'"
+                
+RewriteEngine on
+RewriteRule ^(.*)$ https://%{HTTP_HOST}\$1 [R=301,L]
+
 DirectoryIndex index.php
 DocumentRoot ${INSTALL_DIR}/
 
@@ -1342,7 +1365,15 @@ EOF
 ServerName ${hostname}
 
 <VirtualHost *:80>
+    RewriteEngine on
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}\$1 [R=301,L]
+</VirtualHost>
+
+<VirtualHost *:443>
     ServerAdmin i-doit@example.net
+    SSLEngine On
+    SSLCertificateFile  ${APACHE_CERT}
+    SSLCertificateKeyFile ${APACHE_CERT_KEY}
 
     DirectoryIndex index.php
     DocumentRoot ${INSTALL_DIR}/
@@ -1363,8 +1394,8 @@ ServerName ${hostname}
     </FilesMatch>
 
     LogLevel warn
-    ErrorLog /var/log/apache2/error.log
-    CustomLog /var/log/apache2/access.log combined
+    ErrorLog \${APACHE_LOG_DIR}/error.log
+    CustomLog \${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
 EOF
 
@@ -1394,7 +1425,15 @@ EOF
 ServerName ${hostname}
 
 <VirtualHost *:80>
+    RewriteEngine on
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}\$1 [R=301,L]
+</VirtualHost>
+
+<VirtualHost *:443>
     ServerAdmin i-doit@example.net
+    SSLEngine On
+    SSLCertificateFile  ${APACHE_CERT}
+    SSLCertificateKeyFile ${APACHE_CERT_KEY}
 
     DirectoryIndex index.php
     DocumentRoot ${INSTALL_DIR}/
@@ -1441,6 +1480,8 @@ EOF
             "$a2_en_mod" proxy_fcgi || abort "Unable to enable Apache module proxy_fcgi"
             log "Enable Apache module setenvif"
             "$a2_en_mod" setenvif || abort "Unable to enable Apache module setenvif"
+            log "Enable Apache module ssl"
+            "$a2_en_mod" ssl || abort "Unable to enable Apache module ssl"
             log "Let every user read the logs"
             chmod 755 /var/log/apache2 || abort "Unable to change permissions"
             chmod 664 /var/log/apache2/* || abort "Unable to change permissions"
@@ -1456,14 +1497,33 @@ EOF
 ServerName ${hostname}
 
 <VirtualHost *:80>
-    ServerAdmin i-doit@example.net
+    RewriteEngine on
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}\$1 [R=301,L]
+</VirtualHost>
 
+<VirtualHost *:443>
+    ServerAdmin i-doit@example.net
+    SSLEngine On
+    SSLCertificateFile  ${APACHE_CERT}
+    SSLCertificateKeyFile ${APACHE_CERT_KEY}
+
+    DirectoryIndex index.php
     DocumentRoot ${INSTALL_DIR}/
+
     <Directory ${INSTALL_DIR}/>
-        # See ${INSTALL_DIR}/.htaccess for details
-        AllowOverride All
-        Require all granted
+        AllowOverride None
+
+        ${APACHE_HTACCESS_SUBSTITUTION}
     </Directory>
+
+    TimeOut 600
+    ProxyTimeout 600
+
+    <FilesMatch "\\.php$">
+        <If "-f %{REQUEST_FILENAME}">
+            SetHandler "proxy:unix:${PHP_FPM_SOCKET}|fcgi://localhost"
+        </If>
+    </FilesMatch>
 
     LogLevel warn
     ErrorLog \${APACHE_LOG_DIR}/error.log
@@ -1530,7 +1590,7 @@ function configureMariaDB {
 innodb_buffer_pool_size = ${MARIADB_INNODB_BUFFER_POOL_SIZE}
 
 # Use multiple instances if you have innodb_buffer_pool_size > 10G, 1 every 4GB
-innodb_buffer_pool_instances = 1
+innodb_buffer_pool_instances = 8
 
 # Redo log file size, the higher the better.
 # MySQL/MariaDB writes two of these log files in a default installation.
@@ -1541,7 +1601,7 @@ sort_buffer_size = 262144 # default
 join_buffer_size = 262144 # default
 
 max_allowed_packet = 128M
-max_heap_table_size = 32M
+max_heap_table_size = 64M
 query_cache_min_res_unit = 4096
 query_cache_type = 1
 query_cache_limit = 5M
@@ -1555,7 +1615,7 @@ innodb_file_per_table = 1
 innodb_thread_concurrency = 0
 
 # Disable this (= 0) if you have slow harddisks
-innodb_flush_log_at_trx_commit = 1
+innodb_flush_log_at_trx_commit = 2
 innodb_flush_method = O_DIRECT
 
 innodb_lru_scan_depth = 2048
@@ -1565,6 +1625,8 @@ table_open_cache = 2048
 #table_open_cache_instances = 4
 
 innodb_stats_on_metadata = 0
+
+skip-log-bin
 
 sql-mode = ""
 EOF
