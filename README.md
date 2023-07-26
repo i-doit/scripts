@@ -69,7 +69,7 @@ chmod 755 idoit-install
 Either run the script as `root`:
 
 ~~~ {.bash}
-su
+su -
 ./idoit-install
 ~~~
 
