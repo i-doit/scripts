@@ -1190,6 +1190,7 @@ function configurePHP {
             abort "PHP ${php_version} is way too old. Please upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
             ;;
         "7.4")
+            log "PHP ${php_version} is installed, but this version is deprecated. Please consider to upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
             php_en_mod=$(command -v phpenmod)
             ;;
         "8.0")
