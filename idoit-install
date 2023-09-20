@@ -51,8 +51,8 @@ IFS=$'\n\t'
 : "${JOBS_BIN:="/usr/local/bin/idoit-jobs"}"
 : "${CRON_FILE:="/etc/cron.d/i-doit"}"
 : "${BACKUP_DIR:="/var/backups/i-doit"}"
-: "${RECOMMENDED_PHP_VERSION:="7.4"}"
-: "${RECOMMENDED_MARIADB_VERSION:="10.5"}"
+: "${RECOMMENDED_PHP_VERSION:="8.0"}"
+: "${RECOMMENDED_MARIADB_VERSION:="10.6"}"
 
 ##
 ## Runtime settings
