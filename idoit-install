@@ -390,6 +390,20 @@ function identifyOS {
     elif [[ "$NAME" = "openSUSE" && "$VERSION_ID" == 12* ]]; then
         abort "Error: openSUSE 12 is out-dated. It's not supported anymore. Please upgrade."
 
+    elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "22.04" ]]; then
+            export DEBIAN_FRONTEND="noninteractive"
+            OS="ubuntu2204"
+            APACHE_USER="www-data"
+            APACHE_GROUP="www-data"
+            APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
+            MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
+            PHP_CONFIG_FILE="/etc/php/8.1/mods-available/i-doit.ini"
+            MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
+            PHP_FPM_SOCKET="/var/run/php/php8.1-fpm.sock"
+            APACHE_UNIT="apache2"
+            MARIADB_UNIT="mysql"
+            MEMCACHED_UNIT="memcached"
+            PHP_FPM_UNIT="php8.1-fpm"
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "20.04" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
         OS="ubuntu2004"
@@ -554,6 +568,9 @@ function configureOS {
         "debian10")
             configureDebian10
             ;;
+        "ubuntu2204")
+            configureUbuntu2204
+            ;;
         "ubuntu2004")
             configureUbuntu2004
             ;;
@@ -684,6 +701,24 @@ function configureUbuntu2004 {
         php7.4-bcmath php7.4-cli php7.4-common php7.4-curl php7.4-fpm php7.4-gd php7.4-json \
         php7.4-ldap php7.4-mbstring php7.4-mysql php7.4-opcache php7.4-pgsql \
         php7.4-soap php7.4-xml php7.4-zip \
+        php-memcached \
+        memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
+}
+
+function configureUbuntu2204 {
+    log "Keep your Ubuntu packages up-to-date"
+    apt-get -qq --yes update || abort "Unable to update Ubuntu package repositories"
+    apt-get -qq --yes full-upgrade || abort "Unable to perform update of Ubuntu packages"
+    apt-get -qq --yes clean || abort "Unable to cleanup Ubuntu packages"
+    apt-get -qq --yes autoremove || abort "Unable to remove unnecessary Ubuntu packages"
+
+    log "Install required Ubuntu packages"
+    apt-get -qq --yes install --no-install-recommends \
+        apache2 libapache2-mod-fcgid \
+        mariadb-client mariadb-server \
+        php8.1-bcmath php8.1-cli php8.1-common php8.1-curl php8.1-fpm php8.1-gd \
+        php8.1-ldap php8.1-mbstring php8.1-mysql php8.1-opcache php8.1-pgsql \
+        php8.1-soap php8.1-xml php8.1-zip \
         php-memcached \
         memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
 }
@@ -1151,18 +1186,17 @@ function configurePHP {
     php_version=$(php --version | head -n1 -c7 | tail -c3)
 
     case "$php_version" in
-        "5.4"|"5.5"|"5.6"|"7.0"|"7.1"|"7.2")
+        "5.4"|"5.5"|"5.6"|"7.0"|"7.1"|"7.2"|"7.3")
             abort "PHP ${php_version} is way too old. Please upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
-            ;;
-        "7.3")
-            log "PHP ${php_version} is installed, but this version is deprecated. Please consider to upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
-            php_en_mod=$(command -v phpenmod)
             ;;
         "7.4")
             php_en_mod=$(command -v phpenmod)
             ;;
         "8.0")
-            abort "PHP ${php_version} is installed, but this version is not suitable in a productive environment. Please consider to downgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
+            php_en_mod=$(command -v phpenmod)
+            ;;
+        "8.1")
+            php_en_mod=$(command -v phpenmod)
             ;;
         *)
             abort "PHP ${php_version} is not supported. Please follow the system requirements. We recommend version ${RECOMMENDED_PHP_VERSION}."
@@ -1210,7 +1244,7 @@ function configurePHPFPM {
     log "Configure PHP-FPM"
 
     case "$OS" in
-        "debian10"|"debian11"|"ubuntu1804"|"ubuntu2004")
+        "debian10"|"debian11"|"ubuntu1804"|"ubuntu2004"|"ubuntu2204")
             unitctl "restart" "$PHP_FPM_UNIT"
             ;;
         "rhel7"|"rhel8"|"centos7"|"centos8")
@@ -1383,7 +1417,7 @@ EOF
 
             unitctl "restart" "$APACHE_UNIT"
             ;;
-        "debian11"|"debian10"|"ubuntu1604"|"ubuntu1804"|"ubuntu2004")
+        "debian11"|"debian10"|"ubuntu1604"|"ubuntu1804"|"ubuntu2004"|"ubuntu2204")
             a2_en_site=$(command -v a2ensite)
             a2_dis_site=$(command -v a2dissite)
             a2_en_mod=$(command -v a2enmod)
@@ -1594,7 +1628,7 @@ function secureMariaDB {
 
     log "Set $MARIADB_SUPERUSER_USERNAME password and plugin 'mysql_native_password'"
     case "$mariadb_version" in
-        "10.4"|"10.5")
+        "10.4"|"10.5"|"10.6")
             "$MARIADB_BIN" \
             -h"$MARIADB_HOSTNAME" \
             -u"$MARIADB_SUPERUSER_USERNAME" \
@@ -1653,7 +1687,7 @@ function secureMariaDB {
                 abort "SQL statement failed"
             ;;
 
-        "sles15"|"opensuse15"|"debian10"|"debian11"|"ubuntu1804"|"ubuntu2004")
+        "sles15"|"opensuse15"|"debian10"|"debian11"|"ubuntu1804"|"ubuntu2004"|"ubuntu2204")
             log "Allow $MARIADB_SUPERUSER_USERNAME login only from localhost"
             "$MARIADB_BIN" \
                 -h"$MARIADB_HOSTNAME" \
