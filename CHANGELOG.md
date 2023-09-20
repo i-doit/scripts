@@ -13,10 +13,10 @@ Note: We moved this repository to [a new location](http://github.com/i-doit/scri
 
 -   `idoit-install`: Add support for CentOS 8
 -   `idoit-install`: Add support for Debian 11 "bullseye"
--   `idoit-install`: Add support for Ubuntu Linux 20.04 LTS "focal fossa"
+-   `idoit-install`: Add support for Ubuntu Linux 20.04 LTS "focal fossa" and 22.04 LTS "jammy jellyfish"
 -   `idoit-install`: Add support for openSUSE "leap" 15, 15.1, 15.2 and 15.3
 -   `idoit-install`: Add new logic to configure MariaDB based on the operating system and MariaDB version used
--   `idoit-install`: Add support for MariaDB 10.4 and MariaDB 10.5
+-   `idoit-install`: Add support for MariaDB 10.4, 10.5 and 10.6
 -   `idoit-install`: Added "create_tenant" function to "function execute"
 
 ### Changed
@@ -27,15 +27,17 @@ Note: We moved this repository to [a new location](http://github.com/i-doit/scri
 -   `idoit-install`: Mark PHP 5.6 and PHP 7.0 as unsupported
 -   `idoit-install`: Mark PHP 7.1 as deprecated
 -   `idoit-install`: Mark PHP 7.4 as stable
--   `idoit-install`: Mark PHP 8.0 as unsupported
--   `idoit-install`: Mark MariaDB 10.5 as recommended
--   `idoit-install`: Mark PHP 7.4 as recommended
+-   `idoit-install`: Mark PHP 8.0 as supported
+-   `idoit-install`: Mark PHP 8.1 as supported
+-   `idoit-install`: Mark MariaDB 10.6 as recommended
+-   `idoit-install`: Mark PHP 8.0 as recommended
 -   `idoit-install`: Deprecate support for RHEL 7
 -   `idoit-install`: Deprecate support for CentOS 7
 -   `idoit-install`: Remove support for Debian GNU/Linux 9 "stretch"
 -   `idoit-install`: Remove support for Ubuntu Linux 16.04 LTS "xenial"
 -   `idoit-install`: Remove support for SLES 12
--   `idoit-install`: Changed Copyright to 2022
+-   `idoit-install`: Remove outdated i-doit controller
+-   `idoit-install`: Changed Copyright to 2023
 -   `idoit-install`: Changed installIDoit to use console.php for installation
 -   `idoit-install`: Changed installIDoit to use console.php for tenant creation
 
