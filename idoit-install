@@ -1800,8 +1800,6 @@ EOF
     chown "$APACHE_USER":"$APACHE_GROUP" -R . || abort "Unable to change ownership"
     find . -type d -name \* -exec chmod 775 {} \; || abort "Unable to change directory permissions"
     find . -type f -exec chmod 664 {} \; || abort "Unable to change file permissions"
-    chmod 774 controller ./*.sh setup/*.sh || \
-        abort "Unable to change executable permissions"
 }
 
 function updateApacheConfig {
