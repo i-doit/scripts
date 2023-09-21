@@ -18,7 +18,7 @@ The script [`idoit-install`](idoit-install) allows you to easily install the **l
 on a **fresh installation of a GNU/Linux operating system**. Supported OSs are:
 
 -   Debian GNU/Linux 10 "buster" , DebianGNU/Linux 11 (bullseye) (**recommended**)
--   Ubuntu Linux 18.04 LTS "bionic" and 20.04 LTS "focal fossa"
+-   Ubuntu Linux 18.04 LTS "bionic", 20.04 LTS "focal fossa" and 22.04 LTS "jammy jellyfish"
 -   Red Hat Enterprise Linux (RHEL) 7 (deprecated) and (RHEL) 8
 -   CentOS 7 (deprecated) and CentOS 8
 -   SUSE Linux Enterprise Server 15, 15 SP1, 15 SP2 and 15 SP3
@@ -245,6 +245,6 @@ Please, report any issues to [our issue tracker](https://github.com/i-doit/scrip
 
 ## Copyright & license
 
-Copyright (C) 2017-21 [synetics GmbH](https://i-doit.com/)
+Copyright (C) 2017-23 [synetics GmbH](https://i-doit.com/)
 
 Licensed under the [GNU Affero GPL version 3 or later (AGPLv3+)](https://gnu.org/licenses/agpl.html). This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
