@@ -46,6 +46,7 @@ IFS=$'\n\t'
 : "${INSTALL_DIR:="/var/www/html"}"
 : "${UPDATE_FILE_PRO:="https://i-doit.com/updates.xml"}"
 : "${UPDATE_FILE_OPEN:="https://i-doit.org/updates.xml"}"
+: "${UPDATE_FILE_EVAL:="https://eval-downloads.i-doit.com/idoit-eval.zip"}"
 : "${SCRIPT_SETTINGS:="/etc/i-doit/i-doit.sh"}"
 : "${CONSOLE_BIN:="/usr/local/bin/idoit"}"
 : "${JOBS_BIN:="/usr/local/bin/idoit-jobs"}"
@@ -1737,12 +1738,16 @@ function prepareIDoit {
     rm -rf "${INSTALL_DIR:?}/"* || abort "Unable to remove files"
     rm -f "${INSTALL_DIR}"/.htaccess || abort "Unable to remove files"
 
-    echo -n -e "Which variant of i-doit do you like to install? [PRO|open]: "
+    echo -n -e "Which variant of i-doit do you like to install? [EVAL|PRO|open]: "
 
     read -r wanted_variant
 
     case "$wanted_variant" in
-        ""|"PRO"|"Pro"|"pro")
+        ""|"EVAL"|"Eval"|"eval")
+            update_file_url="$UPDATE_FILE_EVAL"
+            variant="eval"
+            ;;
+        "PRO"|"Pro"|"pro")
             update_file_url="$UPDATE_FILE_PRO"
             variant="pro"
             ;;
@@ -1756,41 +1761,55 @@ function prepareIDoit {
 
     log "Install i-doit $variant"
 
-    log "Identify latest version of i-doit $variant"
-    test ! -f "$TMP_DIR/updates.xml" && \
-        "$WGET_BIN" --quiet -O "${TMP_DIR}/updates.xml" "$update_file_url"
-    test -f "$TMP_DIR/updates.xml" || \
-        abort "Unable to fetch file from '${update_file_url}'"
+    case "$variant" in
+        "pro"|"open")
+            log "Identify latest version of i-doit $variant"
+            test ! -f "$TMP_DIR/updates.xml" && \
+                "$WGET_BIN" --quiet -O "${TMP_DIR}/updates.xml" "$update_file_url"
+            test -f "$TMP_DIR/updates.xml" || \
+                abort "Unable to fetch file from '${update_file_url}'"
 
-    parse_updates_script="${TMP_DIR}/parseupdates.php"
+            parse_updates_script="${TMP_DIR}/parseupdates.php"
 
-    cat << EOF > "$parse_updates_script" || \
-        abort "Unable to create and edit file '${parse_updates_script}'"
+            cat << EOF > "$parse_updates_script" || \
+                abort "Unable to create and edit file '${parse_updates_script}'"
 <?php
 \$attribute = \$argv[1];
 \$xml = new SimpleXMLElement(trim(file_get_contents('${TMP_DIR}/updates.xml')));
 echo \$xml->updates->update[count(\$xml->updates->update) - 1]->\$attribute;
 EOF
 
-    url=$($PHP_BIN "$parse_updates_script" "filename" | sed "s/-update.zip/.zip/")
+            url=$($PHP_BIN "$parse_updates_script" "filename" | sed "s/-update.zip/.zip/")
 
-    test -n "$url" || abort "Missing URL"
+            test -n "$url" || abort "Missing URL"
 
-    version=$($PHP_BIN "$parse_updates_script" "version")
+            version=$($PHP_BIN "$parse_updates_script" "version")
 
-    test -n "$version" || abort "Missing version"
+            test -n "$version" || abort "Missing version"
 
-    release_date=$($PHP_BIN "$parse_updates_script" "release")
+            release_date=$($PHP_BIN "$parse_updates_script" "release")
 
-    test -n "$release_date" || abort "Missing release date"
+            test -n "$release_date" || abort "Missing release date"
 
-    log "Download i-doit $variant $version (released on ${release_date})"
+            log "Download i-doit $variant $version (released on ${release_date})"
 
-    "$WGET_BIN" --quiet -O "$file" "$url" || \
-        abort "Unable to download installation file"
+            "$WGET_BIN" --quiet -O "$file" "$url" || \
+                abort "Unable to download installation file"
+
+            ;;
+        "eval")
+            log "Download i-doit EVAL version"
+
+            "$WGET_BIN" --quiet -O "$file" "$update_file_url" || \
+                abort "Unable to download installation file"
+
+            ;;
+        *)
+            abort "Unknown variant"
+    esac
 
     cp "$file" "${INSTALL_DIR}/i-doit.zip" || \
-        abort "Unable to copy installation file"
+    abort "Unable to copy installation file"
 
     log "Unzip package"
     cd "$INSTALL_DIR" || abort "Unable to change to installation directory '${INSTALL_DIR}'"
