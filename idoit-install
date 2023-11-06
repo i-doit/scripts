@@ -1738,7 +1738,7 @@ function prepareIDoit {
     rm -rf "${INSTALL_DIR:?}/"* || abort "Unable to remove files"
     rm -f "${INSTALL_DIR}"/.htaccess || abort "Unable to remove files"
 
-    echo -n -e "Which variant of i-doit do you like to install? [EVAL|PRO|open]: "
+    echo -n -e "Which variant of i-doit do you like to install? [EVAL|pro|open]: "
 
     read -r wanted_variant
 
