@@ -18,6 +18,7 @@ Note: We moved this repository to [a new location](http://github.com/i-doit/scri
 -   `idoit-install`: Add new logic to configure MariaDB based on the operating system and MariaDB version used
 -   `idoit-install`: Add support for MariaDB 10.4, 10.5 and 10.6
 -   `idoit-install`: Added "create_tenant" function to "function execute"
+-   `idoit-install`: Added EVAL installation routine and set as default
 
 ### Changed
 
