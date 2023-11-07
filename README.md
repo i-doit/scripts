@@ -12,6 +12,7 @@ Useful scripts to maintain i-doit
 
 The script [`idoit-install`](idoit-install) allows you to easily install the **latest version** of
 
+-   i-doit EVAL (default) or
 -   i-doit pro or
 -   i-doit open
 
@@ -81,7 +82,7 @@ sudo ./idoit-install
 
 The script will ask you several questions. All of them have default answers. This allows you to just hit `ENTER` whenever a user interaction is needed.
 
-It's also possible to run this script without any user interaction. For example, use `yes` to accept all default answers:
+It's also possible to run this script without any user interaction. For example, use `yes` to accept all default answers to automatically install the variant **i-doit EVAL**:
 
 ~~~ {.bash}
 yes "" | ./idoit-install
