@@ -264,7 +264,7 @@ function identifyOS {
     if [[ "$NAME" == "CentOS Linux" && "$VERSION_ID" == "7" ]]; then
         log "Warning: This OS is not officially supported by i-doit"
         log "Warning: CentOS 7 is out-dated. Please consider to upgrade your OS."
-        askYesNo "Do you really want to continue?" || cancel
+        askNoYes "Do you really want to continue?" || cancel
 
         OS="centos7"
         APACHE_USER="apache"
@@ -280,7 +280,7 @@ function identifyOS {
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" == "CentOS Linux" && "$VERSION_ID" == "8" ]]; then
         log "Warning: This OS is not officially supported by i-doit"
-        askYesNo "Do you really want to continue?" || cancel
+        askNoYes "Do you really want to continue?" || cancel
 
         OS="centos8"
         APACHE_USER="apache"
@@ -343,7 +343,7 @@ function identifyOS {
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" == "Red Hat Enterprise Linux Server" && "$VERSION_ID" == 7* ]]; then
         log "Warning: RHEL 7 is out-dated. Please consider to upgrade your OS."
-        askYesNo "Do you really want to continue?" || cancel
+        askNoYes "Do you really want to continue?" || cancel
 
         OS="rhel7"
         APACHE_USER="apache"
@@ -452,7 +452,7 @@ function checkHardwareRequirements {
     if [[ "$arch" != "x86_64" ]]; then
         log "Attention! The system architecture is not x86 64 bit, but ${arch}. This could cause unwanted behaviour."
 
-        askYesNo "Do you really want to continue?" || cancel
+        askNoYes "Do you really want to continue?" || cancel
     fi
 
     cores=$(nproc)
@@ -466,7 +466,7 @@ function checkHardwareRequirements {
         log ""
         log "    <https://kb.i-doit.com/display/en/System+Requirements>"
         log ""
-        askYesNo "Do you really want to continue?" || cancel
+        askNoYes "Do you really want to continue?" || cancel
     fi
 
     ram=$(vmstat --stats --unit b | grep -i "total memory" | awk '{print $1}')
@@ -480,7 +480,7 @@ function checkHardwareRequirements {
         log ""
         log "    <https://kb.i-doit.com/display/en/System+Requirements>"
         log ""
-        askYesNo "Do you really want to continue?" || cancel
+        askNoYes "Do you really want to continue?" || cancel
     fi
 }
 
