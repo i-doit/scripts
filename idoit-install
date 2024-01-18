@@ -1737,6 +1737,12 @@ function prepareIDoit {
     log "Cleanup VHost directory"
     rm -rf "${INSTALL_DIR:?}/"* || abort "Unable to remove files"
     rm -f "${INSTALL_DIR}"/.htaccess || abort "Unable to remove files"
+    
+    log ""
+    log "For evaluation use \033[32mEVAL\033[0m"
+    log "If you have a license use \033[32mPRO\033[0m"
+    log "If you want the open version use \033[32mOPEN\033[0m"
+    log ""
 
     echo -n -e "Which variant of i-doit do you like to install? [EVAL|pro|open]: "
 
