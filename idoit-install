@@ -68,7 +68,7 @@ APACHE_USER="www-data"
 APACHE_GROUP="www-data"
 MIN_CPU_CORES=2
 ## Be tolerant, use 1000 instead of 1024:
-MIN_RAM=$((1000*1000*1000*2))
+MIN_RAM=$((1000 * 1000 * 1000 * 2))
 APACHE_UNIT=""
 MARIADB_UNIT=""
 MEMCACHED_UNIT=""
@@ -189,7 +189,6 @@ function execute {
     if [[ "$status" = 1 ]]; then
         log "\\n--------------------------------------------------------------------------------\\n"
 
-
         if askYesNo "Do you want to configure i-doit cron jobs?"; then
             deployScriptSettings
             deployConsole
@@ -244,9 +243,9 @@ function execute {
     log "\\n--------------------------------------------------------------------------------\\n"
 
     case "$OS" in
-        "ubuntu1604")
-            log "To garantee that all your changes take effect you should restart your system."
-            ;;
+    "ubuntu1604")
+        log "To garantee that all your changes take effect you should restart your system."
+        ;;
     esac
 }
 
@@ -294,40 +293,42 @@ function identifyOS {
         MARIADB_UNIT="mariadb"
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
-    elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "11 (bullseye)" ]]; then
-            export DEBIAN_FRONTEND="noninteractive"
-
-            OS="debian11"
-            APACHE_USER="www-data"
-            APACHE_GROUP="www-data"
-            APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
-            MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
-            PHP_CONFIG_FILE="/etc/php/7.4/mods-available/i-doit.ini"
-            MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
-            PHP_FPM_SOCKET="/var/run/php/php7.4-fpm.sock"
-            APACHE_UNIT="apache2"
-            MARIADB_UNIT="mysql"
-            MEMCACHED_UNIT="memcached"
-            PHP_FPM_UNIT="php7.4-fpm"
-    elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "10 (buster)" ]]; then
+    elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "12 (bookworm)" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
 
-        OS="debian10"
+        OS="debian12"
         APACHE_USER="www-data"
         APACHE_GROUP="www-data"
         APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
         MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
-        PHP_CONFIG_FILE="/etc/php/7.3/mods-available/i-doit.ini"
+        PHP_CONFIG_FILE="/etc/php/8.2/mods-available/i-doit.ini"
         MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
-        PHP_FPM_SOCKET="/var/run/php/php7.3-fpm.sock"
+        PHP_FPM_SOCKET="/var/run/php/php8.2-fpm.sock"
         APACHE_UNIT="apache2"
         MARIADB_UNIT="mysql"
         MEMCACHED_UNIT="memcached"
-        PHP_FPM_UNIT="php7.3-fpm"
+        PHP_FPM_UNIT="php8.2-fpm"
+    elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "11 (bullseye)" ]]; then
+        export DEBIAN_FRONTEND="noninteractive"
+
+        OS="debian11"
+        APACHE_USER="www-data"
+        APACHE_GROUP="www-data"
+        APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
+        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
+        PHP_CONFIG_FILE="/etc/php/7.4/mods-available/i-doit.ini"
+        MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
+        PHP_FPM_SOCKET="/var/run/php/php7.4-fpm.sock"
+        APACHE_UNIT="apache2"
+        MARIADB_UNIT="mysql"
+        MEMCACHED_UNIT="memcached"
+        PHP_FPM_UNIT="php7.4-fpm"
+    elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "10 (buster)" ]]; then
+        abort "Error: This version of Debian GNU/Linux is not supported anymore. Please upgrade to Debian 12."
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "9 (stretch)" ]]; then
-        abort "Error: This is the oldstable version of Debian GNU/Linux. It's not supported anymore. Please upgrade."
+        abort "Error: This version of Debian GNU/Linux is not supported anymore. Please upgrade to Debian 12."
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "8 (jessie)" ]]; then
-        abort "Error: This is the oldoldstable version of Debian GNU/Linux. It's not supported anymore. Please upgrade."
+        abort "Error: This version of Debian GNU/Linux is not supported anymore. Please upgrade to Debian 12."
     elif [[ "$NAME" == "Red Hat Enterprise Linux" && "$VERSION_ID" == 8* ]]; then
         OS="rhel8"
         APACHE_USER="apache"
@@ -373,7 +374,6 @@ function identifyOS {
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" = "SLES" && "$VERSION_ID" == 12* ]]; then
         abort "Error: SLES 12 is out-dated. It's not supported anymore. Please upgrade."
-
     elif [[ "$NAME" == "openSUSE Leap" && "$VERSION" == 15* ]]; then
         OS="opensuse15"
         INSTALL_DIR="/srv/www/htdocs"
@@ -390,21 +390,20 @@ function identifyOS {
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" = "openSUSE" && "$VERSION_ID" == 12* ]]; then
         abort "Error: openSUSE 12 is out-dated. It's not supported anymore. Please upgrade."
-
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "22.04" ]]; then
-            export DEBIAN_FRONTEND="noninteractive"
-            OS="ubuntu2204"
-            APACHE_USER="www-data"
-            APACHE_GROUP="www-data"
-            APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
-            MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
-            PHP_CONFIG_FILE="/etc/php/8.1/mods-available/i-doit.ini"
-            MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
-            PHP_FPM_SOCKET="/var/run/php/php8.1-fpm.sock"
-            APACHE_UNIT="apache2"
-            MARIADB_UNIT="mysql"
-            MEMCACHED_UNIT="memcached"
-            PHP_FPM_UNIT="php8.1-fpm"
+        export DEBIAN_FRONTEND="noninteractive"
+        OS="ubuntu2204"
+        APACHE_USER="www-data"
+        APACHE_GROUP="www-data"
+        APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
+        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
+        PHP_CONFIG_FILE="/etc/php/8.1/mods-available/i-doit.ini"
+        MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
+        PHP_FPM_SOCKET="/var/run/php/php8.1-fpm.sock"
+        APACHE_UNIT="apache2"
+        MARIADB_UNIT="mysql"
+        MEMCACHED_UNIT="memcached"
+        PHP_FPM_UNIT="php8.1-fpm"
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "20.04" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
         OS="ubuntu2004"
@@ -420,19 +419,7 @@ function identifyOS {
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php7.4-fpm"
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "18.04" ]]; then
-        export DEBIAN_FRONTEND="noninteractive"
-        OS="ubuntu1804"
-        APACHE_USER="www-data"
-        APACHE_GROUP="www-data"
-        APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
-        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
-        PHP_CONFIG_FILE="/etc/php/7.4/mods-available/i-doit.ini"
-        MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
-        PHP_FPM_SOCKET="/var/run/php/php7.4-fpm.sock"
-        APACHE_UNIT="apache2"
-        MARIADB_UNIT="mysql"
-        MEMCACHED_UNIT="memcached"
-        PHP_FPM_UNIT="php7.4-fpm"
+        abort "Error: Ubuntu 18.04 is out-dated. It's not supported anymore. Please upgrade."
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "16.04" ]]; then
         abort "Error: Ubuntu 16.04 is out-dated. It's not supported anymore. Please upgrade."
     else
@@ -506,12 +493,12 @@ function checkSoftwareRequirements {
     binaries["memcached"]=$(command -v memcached)
 
     case "$OS" in
-        "rhel7"|"rhel8"|"centos7"|"centos8")
-            binaries["httpd"]=$(command -v httpd)
-            ;;
-        *)
-            binaries["apachectl"]=$(command -v apachectl)
-            ;;
+    "rhel7" | "rhel8" | "centos7" | "centos8")
+        binaries["httpd"]=$(command -v httpd)
+        ;;
+    *)
+        binaries["apachectl"]=$(command -v apachectl)
+        ;;
     esac
 
     for bin in "${!binaries[@]}"; do
@@ -527,19 +514,19 @@ function checkSoftwareRequirements {
         log "Check for installed PHP extensions…"
 
         case "$OS" in
-            ## TODO There is no php-memcached on RHEL 8:
-            "rhel8"|"centos8")
-                local phpExtensions=(bcmath ctype curl fileinfo gd json ldap \
-                    mbstring mysqli mysqlnd pgsql session soap xml zip)
-                ;;
-            *)
-                local phpExtensions=(bcmath ctype curl fileinfo gd json ldap \
-                    mbstring memcached mysqli mysqlnd pgsql session soap xml zip)
-                ;;
+        ## TODO There is no php-memcached on RHEL 8:
+        "rhel8" | "centos8")
+            local phpExtensions=(bcmath ctype curl fileinfo gd json ldap
+                mbstring mysqli mysqlnd pgsql session soap xml zip)
+            ;;
+        *)
+            local phpExtensions=(bcmath ctype curl fileinfo gd json ldap
+                mbstring memcached mysqli mysqlnd pgsql session soap xml zip)
+            ;;
         esac
 
         for phpExtension in "${phpExtensions[@]}"; do
-            if "$PHP_BIN" -m | grep "$phpExtension" > /dev/null; then
+            if "$PHP_BIN" -m | grep "$phpExtension" >/dev/null; then
                 log "PHP extension $phpExtension: found"
             else
                 log "PHP extension $phpExtension: missing"
@@ -549,56 +536,71 @@ function checkSoftwareRequirements {
     fi
 
     case "$failed" in
-        0)
-            log "All software requirements met. Excellent."
-            ;;
-        1)
-            abort "Important software requirement is missing. Please install and configure it."
-            ;;
-        *)
-            abort "Important software requirements are missing. Please install and configure them."
-            ;;
+    0)
+        log "All software requirements met. Excellent."
+        ;;
+    1)
+        abort "Important software requirement is missing. Please install and configure it."
+        ;;
+    *)
+        abort "Important software requirements are missing. Please install and configure them."
+        ;;
     esac
 }
 
 function configureOS {
     case "$OS" in
-        "debian11")
-            configureDebian11
-            ;;
-        "debian10")
-            configureDebian10
-            ;;
-        "ubuntu2204")
-            configureUbuntu2204
-            ;;
-        "ubuntu2004")
-            configureUbuntu2004
-            ;;
-        "ubuntu1804")
-            configureUbuntu1804
-            ;;
-        "rhel7")
-            configureRHEL7
-            ;;
-        "rhel8")
-            configureRHEL8
-            ;;
-        "centos7")
-            configureCentOS7
-            ;;
-        "centos8")
-            configureCentOS8
-            ;;
-        "sles15")
-            configureSLES15
-            ;;
-        "opensuse15")
-            configureOpenSuse15
-            ;;
-        *)
-            abort "Unkown operating system '${OS}'!?!"
+    "debian12")
+        configureDebian12
+        ;;
+    "debian11")
+        configureDebian11
+        ;;
+    "ubuntu2204")
+        configureUbuntu2204
+        ;;
+    "ubuntu2004")
+        configureUbuntu2004
+        ;;
+    "rhel7")
+        configureRHEL7
+        ;;
+    "rhel8")
+        configureRHEL8
+        ;;
+    "centos7")
+        configureCentOS7
+        ;;
+    "centos8")
+        configureCentOS8
+        ;;
+    "sles15")
+        configureSLES15
+        ;;
+    "opensuse15")
+        configureOpenSuse15
+        ;;
+    *)
+        abort "Unkown operating system '${OS}'!?!"
+        ;;
     esac
+}
+function configureDebian12 {
+    log "Keep your Debian packages up-to-date"
+    apt-get -qq --yes update || abort "Unable to update Debian package repositories"
+    apt-get -qq --yes full-upgrade || abort "Unable to perform update of Debian packages"
+    apt-get -qq --yes clean || abort "Unable to cleanup Debian packages"
+    apt-get -qq --yes autoremove || abort "Unable to remove unnecessary Debian packages"
+
+    log "Install required Debian 12 packages"
+    apt-get -qq --yes install --no-install-recommends \
+        apache2 libapache2-mod-fcgid \
+        mariadb-client mariadb-server \
+        php-bcmath php-cli php-common php-curl php-fpm php-gd \
+        php-ldap php-mbstring php-mysql php-opcache php-pgsql \
+        php-soap php-xml php-zip \
+        php-memcached \
+        memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
 }
 
 function configureDebian11 {
@@ -617,75 +619,6 @@ function configureDebian11 {
         php7.4-soap php7.4-xml php7.4-zip \
         php-memcached \
         memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
-}
-
-function configureDebian10 {
-    log "Keep your Debian packages up-to-date"
-    apt-get -qq --yes update || abort "Unable to update Debian package repositories"
-    apt-get -qq --yes full-upgrade || abort "Unable to perform update of Debian packages"
-    apt-get -qq --yes clean || abort "Unable to cleanup Debian packages"
-    apt-get -qq --yes autoremove || abort "Unable to remove unnecessary Debian packages"
-
-    log "Install required Debian packages"
-    apt-get -qq --yes install --no-install-recommends \
-        apache2 libapache2-mod-fcgid \
-        mariadb-client mariadb-server \
-        php7.3-bcmath php7.3-cli php7.3-common php7.3-curl php7.3-fpm php7.3-gd php7.3-json \
-        php7.3-ldap php7.3-mbstring php7.3-mysql php7.3-opcache php7.3-pgsql \
-        php7.3-soap php7.3-xml php7.3-zip \
-        php-memcached \
-        memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
-}
-
-function configureUbuntu1804 {
-    log "Keep your Ubuntu packages up-to-date"
-    apt-get -qq --yes update || abort "Unable to update Ubuntu package repositories"
-    apt-get -qq --yes full-upgrade || abort "Unable to perform update of Ubuntu packages"
-    apt-get -qq --yes clean || abort "Unable to cleanup Ubuntu packages"
-    apt-get -qq --yes autoremove || abort "Unable to remove unnecessary Ubuntu packages"
-
-    log "Ubuntu 18.04 has out-dated packages for PHP and MariaDB."
-    log "This script will fix this issue by enabling these 3rd party repositories:"
-    log ""
-    log "    ondrej/php PPA for PHP 7.4"
-    log "    Official MariaDB repository for MariaDB 10.5"
-    log ""
-
-    if askYesNo "Do you agree with it?"; then
-
-        log "Install software-properties-common package"
-        apt-get -qq --yes install software-properties-common || \
-            abort "Unable to install software-properties-common package"
-        log "Add ondrej/php PPA repository"
-        add-apt-repository --yes --update ppa:ondrej/php || \
-            abort "Unable to add ondrej/php PPA repository"
-
-        log "Install required Ubuntu packages"
-        apt-get -qq --yes install --no-install-recommends \
-            apache2 libapache2-mod-fcgid \
-            php7.4-bcmath php7.4-cli php7.4-common php7.4-curl php7.4-fpm php7.4-gd php7.4-json \
-            php7.4-ldap php7.4-mbstring php7.4-mysql php7.4-opcache php7.4-pgsql \
-            php7.4-soap php7.4-xml php7.4-zip \
-            php7.4-memcached \
-            memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
-
-        log "Enable MariaDB repository"
-        cat << EOF > /etc/apt/sources.list.d/MariaDB.list || \
-            abort "Unable to create and edit file '/etc/apt/sources.list.d/MariaDB.list'"
-# MariaDB 10.5 repository list
-# https://mariadb.org/download/
-deb [arch=amd64,arm64,ppc64el] https://mirror.dogado.de/mariadb/repo/10.5/ubuntu bionic main
-deb-src https://mirror.dogado.de/mariadb/repo/10.5/ubuntu bionic main
-EOF
-
-        log "Install MariaDB packages"
-        apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xF1656F24C74CD1D8 || \
-            abort "Unable to import GPG key from MariaDB"
-        apt-get -qq --yes update || \
-            abort "Unable to update MariaDB package repositories"
-        apt-get -qq --yes install --no-install-recommends mariadb-client mariadb-server &> /dev/null || \
-            bort "Unable to install MariaDB"
-    fi
 }
 
 function configureUbuntu2004 {
@@ -732,8 +665,7 @@ function configureCentOS7 {
     rm -rf /var/cache/yum || abort "Unable to remove orphaned yum caches"
 
     log "Install some important packages, for example Apache Web server"
-    yum --assumeyes --quiet install httpd memcached unzip wget zip || \
-        abort "Unable to install packages"
+    yum --assumeyes --quiet install httpd memcached unzip wget zip || abort "Unable to install packages"
 
     log "RHEL 7 has out-dated packages for PHP and MariaDB."
     log "This script will fix this issue by enabling these 3rd party repositories:"
@@ -743,34 +675,28 @@ function configureCentOS7 {
     log ""
 
     if askYesNo "Do you agree with it?"; then
-        if ! rpm -qa | grep "epel-release" > /dev/null; then
+        if ! rpm -qa | grep "epel-release" >/dev/null; then
             log "Import EPEL public GPG key"
-            rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7 || \
-                abort "Unable to import public GPG key from EPEL"
+            rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7 || abort "Unable to import public GPG key from EPEL"
             log "Add EPEL releases"
-            rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm || \
-                abort "Unable to install epel-releases via yum"
+            rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm || abort "Unable to install epel-releases via yum"
         fi
 
-        if ! rpm -qa | grep "webtatic-release" > /dev/null; then
-            log "Import Webtatic public GPG key"
-            rpm --import --quiet https://mirror.webtatic.com/yum/RPM-GPG-KEY-webtatic-el7 || \
-                abort "Unable to import GPG key from Webtatic"
+        if ! rpm -qa | grep "webtatic-release" >/dev/null; then
+            log "Import W            ebtatic public GPG key"
+            rpm --import --quiet https://mirror.webtatic.com/yum/RPM-GPG-KEY-webtatic-el7 || abort "Unable to import GPG key from Webtatic"
             log "Add Webtatic releases"
-            rpm -Uvh --quiet https://mirror.webtatic.com/yum/el7/webtatic-release.rpm || \
-                abort "Unable to add Webtatic"
+            rpm -Uvh --quiet https://mirror.webtatic.com/yum/el7/webtatic-release.rpm || abort "Unable to add Webtatic"
         fi
 
         log "Install PHP packages"
         yum --assumeyes --quiet install \
             php72w-bcmath php72w-cli php72w-common php72w-fpm php72w-gd php72w-ldap \
             php72w-mbstring php72w-mysqlnd php72w-opcache php72w-pdo \
-            php72w-pecl-memcached php72w-pgsql php72w-soap php72w-xml || \
-            abort "Unable to install PHP packages"
+            php72w-pecl-memcached php72w-pgsql php72w-soap php72w-xml || abort "Unable to install PHP packages"
 
         log "Enable MariaDB repository"
-        cat << EOF > /etc/yum.repos.d/MariaDB.repo || \
-            abort "Unable to create and edit file '/etc/yum.repos.d/MariaDB.repo'"
+        cat <<EOF >/etc/yum.repos.d/MariaDB.repo || abort "Unable to create and edit file '/etc/yum.repos.d/MariaDB.repo'"
 # MariaDB 10.3 repository list
 # http://downloads.mariadb.org/mariadb/repositories/
 [mariadb]
@@ -781,16 +707,13 @@ gpgcheck=1
 EOF
 
         log "Install MariaDB packages"
-        rpm --import --quiet https://yum.mariadb.org/RPM-GPG-KEY-MariaDB || \
-            abort "Unable to import GPG key from MariaDB"
+        rpm --import --quiet https://yum.mariadb.org/RPM-GPG-KEY-MariaDB || abort "Unable to import GPG key from MariaDB"
         ## Suppress unnecessary notices which could confuse the user:
-        yum --assumeyes --quiet install MariaDB-server MariaDB-client &> /dev/null || \
-            abort "Unable to install MariaDB"
+        yum --assumeyes --quiet install MariaDB-server MariaDB-client &>/dev/null || abort "Unable to install MariaDB"
     fi
 
     log "Install 'moreutils'"
-    yum --assumeyes --quiet install moreutils || \
-        abort "Unable to install packages"
+    yum --assumeyes --quiet install moreutils || abort "Unable to install packages"
 
     for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT $PHP_FPM_UNIT; do
         unitctl "enable" "$unit"
@@ -822,25 +745,20 @@ function configureCentOS8 {
     yum --assumeyes --quiet install \
         memcached unzip wget zip \
         php-bcmath php-gd php-ldap php-mysqli php-mysqlnd \
-        php-pgsql php-soap php-zip || \
-        abort "Unable to install packages"
+        php-pgsql php-soap php-zip || abort "Unable to install packages"
 
-    if ! rpm -qa | grep "epel-release" > /dev/null; then
+    if ! rpm -qa | grep "epel-release" >/dev/null; then
         log "Import EPEL public GPG key"
-        rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8 || \
-            abort "Unable to import public GPG key from EPEL"
+        rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8 || abort "Unable to import public GPG key from EPEL"
         log "Add epel releases repository"
-        rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm || \
-            abort "Unable to install epel releases repository"
+        rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm || abort "Unable to install epel releases repository"
     fi
 
     log "Enable PowerTools for CentOS 8"
-    dnf --assumeyes --quiet config-manager --set-enabled powertools || \
-        abort "Unable to enable PowerTools"
+    dnf --assumeyes --quiet config-manager --set-enabled powertools || abort "Unable to enable PowerTools"
 
     log "Install moreutils with all dependencies"
-    dnf --assumeyes --quiet install moreutils || \
-        abort "Unable to install moreutils"
+    dnf --assumeyes --quiet install moreutils || abort "Unable to install moreutils"
 
     for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT $PHP_FPM_UNIT; do
         unitctl "enable" "$unit"
@@ -872,25 +790,20 @@ function configureRHEL8 {
     yum --assumeyes --quiet install \
         memcached unzip wget zip \
         php-bcmath php-gd php-ldap php-mysqli php-mysqlnd \
-        php-pgsql php-soap php-zip || \
-        abort "Unable to install packages"
+        php-pgsql php-soap php-zip || abort "Unable to install packages"
 
-    if ! rpm -qa | grep "epel-release" > /dev/null; then
+    if ! rpm -qa | grep "epel-release" >/dev/null; then
         log "Import EPEL public GPG key"
-        rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8 || \
-            abort "Unable to import public GPG key from EPEL"
+        rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8 || abort "Unable to import public GPG key from EPEL"
         log "Add epel releases repository"
-        rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm || \
-            abort "Unable to install epel releases repository"
+        rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm || abort "Unable to install epel releases repository"
     fi
 
     log "Enable codeready-builder for RHEL 8"
-    subscription-manager repos --enable "codeready-builder-for-rhel-8-x86_64-rpms" || \
-        abort "Unable to enable Codeready-Builder"
+    subscription-manager repos --enable "codeready-builder-for-rhel-8-x86_64-rpms" || abort "Unable to enable Codeready-Builder"
 
     log "Install moreutils with all dependencies"
-    dnf --assumeyes --quiet install moreutils || \
-        abort "Unable to install moreutils"
+    dnf --assumeyes --quiet install moreutils || abort "Unable to install moreutils"
 
     for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT $PHP_FPM_UNIT; do
         unitctl "enable" "$unit"
@@ -914,8 +827,7 @@ function configureRHEL7 {
     rm -rf /var/cache/yum || abort "Unable to remove orphaned yum caches"
 
     log "Install some important packages, for example Apache Web server"
-    yum --assumeyes --quiet install httpd memcached unzip wget zip || \
-        abort "Unable to install packages"
+    yum --assumeyes --quiet install httpd memcached unzip wget zip || abort "Unable to install packages"
 
     log "RHEL 7 has out-dated packages for PHP and MariaDB."
     log "This script will fix this issue by enabling these 3rd party repositories:"
@@ -925,34 +837,28 @@ function configureRHEL7 {
     log ""
 
     if askYesNo "Do you agree with it?"; then
-        if ! rpm -qa | grep "epel-release" > /dev/null; then
+        if ! rpm -qa | grep "epel-release" >/dev/null; then
             log "Import EPEL public GPG key"
-            rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7 || \
-                abort "Unable to import public GPG key from EPEL"
+            rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7 || abort "Unable to import public GPG key from EPEL"
             log "Add EPEL releases"
-            rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm || \
-                abort "Unable to install epel-releases via yum"
+            rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm || abort "Unable to install epel-releases via yum"
         fi
 
-        if ! rpm -qa | grep "webtatic-release" > /dev/null; then
+        if ! rpm -qa | grep "webtatic-release" >/dev/null; then
             log "Import Webtatic public GPG key"
-            rpm --import --quiet https://mirror.webtatic.com/yum/RPM-GPG-KEY-webtatic-el7 || \
-                abort "Unable to import GPG key from Webtatic"
+            rpm --import --quiet https://mirror.webtatic.com/yum/RPM-GPG-KEY-webtatic-el7 || abort "Unable to import GPG key from Webtatic"
             log "Add Webtatic releases"
-            rpm -Uvh --quiet https://mirror.webtatic.com/yum/el7/webtatic-release.rpm || \
-                abort "Unable to add Webtatic"
+            rpm -Uvh --quiet https://mirror.webtatic.com/yum/el7/webtatic-release.rpm || abort "Unable to add Webtatic"
         fi
 
         log "Install PHP packages"
         yum --assumeyes --quiet install \
             php72w-bcmath php72w-cli php72w-common php72w-fpm php72w-gd php72w-ldap \
             php72w-mbstring php72w-mysqlnd php72w-opcache php72w-pdo \
-            php72w-pecl-memcached php72w-pgsql php72w-soap php72w-xml || \
-            abort "Unable to install PHP packages"
+            php72w-pecl-memcached php72w-pgsql php72w-soap php72w-xml || abort "Unable to install PHP packages"
 
         log "Enable MariaDB repository"
-        cat << EOF > /etc/yum.repos.d/MariaDB.repo || \
-            abort "Unable to create and edit file '/etc/yum.repos.d/MariaDB.repo'"
+        cat <<EOF >/etc/yum.repos.d/MariaDB.repo || abort "Unable to create and edit file '/etc/yum.repos.d/MariaDB.repo'"
 # MariaDB 10.3 RedHat repository list
 # http://downloads.mariadb.org/mariadb/repositories/
 [mariadb]
@@ -963,22 +869,18 @@ gpgcheck=1
 EOF
 
         log "Install MariaDB packages"
-        rpm --import --quiet https://yum.mariadb.org/RPM-GPG-KEY-MariaDB || \
-            abort "Unable to import GPG key from MariaDB"
+        rpm --import --quiet https://yum.mariadb.org/RPM-GPG-KEY-MariaDB || abort "Unable to import GPG key from MariaDB"
         ## Suppress unnecessary notices which could confuse the user:
-        yum --assumeyes --quiet install MariaDB-server MariaDB-client &> /dev/null || \
-            abort "Unable to install MariaDB"
+        yum --assumeyes --quiet install MariaDB-server MariaDB-client &>/dev/null || abort "Unable to install MariaDB"
     fi
 
     log "Enable required repository 'rhel-7-server-eus-optional-rpms'"
-    subscription-manager repos --enable=rhel-7-server-eus-optional-rpms || \
-        abort "Repository cannot be enabled"
+    subscription-manager repos --enable=rhel-7-server-eus-optional-rpms || abort "Repository cannot be enabled"
     ## Install moreutils *after* EPEL *and* rhel-7-server-eus-optional-rpms have been
     ## enabled!
 
     log "Install 'moreutils'"
-    yum --assumeyes --quiet install moreutils || \
-        abort "Unable to install packages"
+    yum --assumeyes --quiet install moreutils || abort "Unable to install packages"
 
     for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT $PHP_FPM_UNIT; do
         unitctl "enable" "$unit"
@@ -1014,8 +916,7 @@ function configureSLES15 {
         log "This script will activate it."
 
         if askYesNo "Do you agree with it?"; then
-            SUSEConnect -p "$webScriptingModuleProduct" || \
-                abort "Unable to active module"
+            SUSEConnect -p "$webScriptingModuleProduct" || abort "Unable to active module"
         else
             abort "Essential software repositories are missing"
         fi
@@ -1029,8 +930,7 @@ function configureSLES15 {
         make sudo unzip \
         php7 php7-bcmath php7-bz2 php7-ctype php7-curl php7-fpm php7-gd php7-gettext php7-fileinfo \
         php7-json php7-ldap php7-mbstring php7-mysql php7-opcache php7-openssl php7-pdo php7-pgsql \
-        php7-phar php7-posix php7-soap php7-sockets php7-sqlite php7-xsl php7-zip php7-zlib || \
-        abort "Unable to install required software packages"
+        php7-phar php7-posix php7-soap php7-sockets php7-sqlite php7-xsl php7-zip php7-zlib || abort "Unable to install required software packages"
 
     openSuseRepo=$(zypper repos -E | grep -c "server_php_extensions_php7")
 
@@ -1048,31 +948,24 @@ function configureSLES15 {
         if [[ "$VERSION_ID" == 15 ]]; then
             zypper --quiet --non-interactive addrepo \
                 --gpgcheck --refresh \
-                https://download.opensuse.org/repositories/server:php:extensions:php7/SLE_15/server:php:extensions:php7.repo || \
-                abort "Unable to add repository"
-            zypper --quiet --non-interactive --gpg-auto-import-keys refresh || \
-                abort "Unable to refresh software repositories"
+                https://download.opensuse.org/repositories/server:php:extensions:php7/SLE_15/server:php:extensions:php7.repo || abort "Unable to add repository"
+            zypper --quiet --non-interactive --gpg-auto-import-keys refresh || abort "Unable to refresh software repositories"
 
         elif [[ "$VERSION_ID" == 15.1 ]]; then
             zypper --quiet --non-interactive addrepo \
                 --gpgcheck --refresh \
-                https://download.opensuse.org/repositories/server:/php:/extensions/SLE_15_SP1/server:php:extensions.repo || \
-                abort "Unable to add repository"
-            zypper --quiet --non-interactive --gpg-auto-import-keys refresh || \
-                abort "Unable to refresh software repositories"
+                https://download.opensuse.org/repositories/server:/php:/extensions/SLE_15_SP1/server:php:extensions.repo || abort "Unable to add repository"
+            zypper --quiet --non-interactive --gpg-auto-import-keys refresh || abort "Unable to refresh software repositories"
 
         elif [[ "$VERSION_ID" == 15.2 ]]; then
             zypper --quiet --non-interactive addrepo \
                 --gpgcheck --refresh \
-                https://download.opensuse.org/repositories/server:/php:/extensions/SLE_15_SP2/server:php:extensions.repo || \
-                abort "Unable to add repository"
-            zypper --quiet --non-interactive --gpg-auto-import-keys refresh || \
-                abort "Unable to refresh software repositories"
+                https://download.opensuse.org/repositories/server:/php:/extensions/SLE_15_SP2/server:php:extensions.repo || abort "Unable to add repository"
+            zypper --quiet --non-interactive --gpg-auto-import-keys refresh || abort "Unable to refresh software repositories"
         fi
     fi
 
-    zypper --quiet --non-interactive install --no-recommends php7-memcached || \
-        abort "Unable to install required software package"
+    zypper --quiet --non-interactive install --no-recommends php7-memcached || abort "Unable to install required software package"
 
     zypper --quiet --non-interactive clean || abort "Unable to clean up cached software packages"
 
@@ -1094,16 +987,11 @@ function configureSLES15 {
         ## TODO: I know, this seems to be pretty ugly, but:
         ## Why the hack is moreutils not included in the standard repositories?!?
         wget --quiet -O "${TMP_DIR}/chronic" \
-            https://git.joeyh.name/index.cgi/moreutils.git/plain/chronic || \
-            abort "Unable to download 'chronic'"
-        chmod +x "${TMP_DIR}/chronic" || \
-            abort "Unable to set executable bit"
-        mv "${TMP_DIR}/chronic" /usr/bin || \
-            abort "Unable to move 'chronic' to '/usr/bin'"
-        wget --quiet -O - https://cpanmin.us | perl - App::cpanminus || \
-            abort "Unable to install cpanminus"
-        cpanm --quiet --notest --install IPC::Run || \
-            abort "Unable to install Perl module IPC::Run"
+            https://git.joeyh.name/index.cgi/moreutils.git/plain/chronic || abort "Unable to download 'chronic'"
+        chmod +x "${TMP_DIR}/chronic" || abort "Unable to set executable bit"
+        mv "${TMP_DIR}/chronic" /usr/bin || abort "Unable to move 'chronic' to '/usr/bin'"
+        wget --quiet -O - https://cpanmin.us | perl - App::cpanminus || abort "Unable to install cpanminus"
+        cpanm --quiet --notest --install IPC::Run || abort "Unable to install Perl module IPC::Run"
     fi
 }
 
@@ -1123,8 +1011,7 @@ function configureOpenSuse15 {
         make sudo unzip \
         php7 php7-bcmath php7-bz2 php7-ctype php7-curl php7-fpm php7-gd php7-gettext php7-fileinfo \
         php7-json php7-ldap php7-mbstring php7-mysql php7-memcached php7-opcache php7-openssl php7-pdo \
-        php7-pgsql php7-phar php7-posix php7-soap php7-sockets php7-sqlite php7-xsl php7-zip php7-zlib || \
-        abort "Unable to install required software packages"
+        php7-pgsql php7-phar php7-posix php7-soap php7-sockets php7-sqlite php7-xsl php7-zip php7-zlib || abort "Unable to install required software packages"
 
     zypper --quiet --non-interactive clean || abort "Unable to clean up cached software packages"
 
@@ -1146,16 +1033,11 @@ function configureOpenSuse15 {
         ## TODO: I know, this seems to be pretty ugly, but:
         ## Why the hack is moreutils not included in the standard repositories?!?
         wget --quiet -O "${TMP_DIR}/chronic" \
-            https://git.joeyh.name/index.cgi/moreutils.git/plain/chronic || \
-            abort "Unable to download 'chronic'"
-        chmod +x "${TMP_DIR}/chronic" || \
-            abort "Unable to set executable bit"
-        mv "${TMP_DIR}/chronic" /usr/bin || \
-            abort "Unable to move 'chronic' to '/usr/bin'"
-        wget --quiet -O - https://cpanmin.us | perl - App::cpanminus || \
-            abort "Unable to install cpanminus"
-        cpanm --quiet --notest --install IPC::Run || \
-            abort "Unable to install Perl module IPC::Run"
+            https://git.joeyh.name/index.cgi/moreutils.git/plain/chronic || abort "Unable to download 'chronic'"
+        chmod +x "${TMP_DIR}/chronic" || abort "Unable to set executable bit"
+        mv "${TMP_DIR}/chronic" /usr/bin || abort "Unable to move 'chronic' to '/usr/bin'"
+        wget --quiet -O - https://cpanmin.us | perl - App::cpanminus || abort "Unable to install cpanminus"
+        cpanm --quiet --notest --install IPC::Run || abort "Unable to install Perl module IPC::Run"
     fi
 }
 
@@ -1187,27 +1069,30 @@ function configurePHP {
     php_version=$(php --version | head -n1 -c7 | tail -c3)
 
     case "$php_version" in
-        "5.4"|"5.5"|"5.6"|"7.0"|"7.1"|"7.2"|"7.3")
-            abort "PHP ${php_version} is way too old. Please upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
-            ;;
-        "7.4")
-            log "PHP ${php_version} is installed, but this version is deprecated. Please consider to upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
-            php_en_mod=$(command -v phpenmod)
-            ;;
-        "8.0")
-            php_en_mod=$(command -v phpenmod)
-            ;;
-        "8.1")
-            php_en_mod=$(command -v phpenmod)
-            ;;
-        *)
-            abort "PHP ${php_version} is not supported. Please follow the system requirements. We recommend version ${RECOMMENDED_PHP_VERSION}."
-            ;;
+    "5.4" | "5.5" | "5.6" | "7.0" | "7.1" | "7.2" | "7.3")
+        abort "PHP ${php_version} is way too old. Please upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
+        ;;
+    "7.4")
+        log "PHP ${php_version} is installed, but this version is deprecated. Please consider to upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
+        php_en_mod=$(command -v phpenmod)
+        ;;
+    "8.0")
+        php_en_mod=$(command -v phpenmod)
+        ;;
+    "8.1")
+        php_en_mod=$(command -v phpenmod)
+        ;;
+    "8.2")
+        php_en_mod=$(command -v phpenmod)
+        ;;
+    *)
+        abort "PHP ${php_version} is not supported. Please follow the system requirements. We recommend version ${RECOMMENDED_PHP_VERSION}."
+        ;;
     esac
 
     log "Write PHP settings to '${PHP_CONFIG_FILE}'"
-    cat << EOF > "$PHP_CONFIG_FILE" || \
-        abort "Unable to create and edit file '${PHP_CONFIG_FILE}'"
+    cat <<EOF >"$PHP_CONFIG_FILE" || abort "Unable to create and edit file '${PHP_CONFIG_FILE}'"
+
 allow_url_fopen = Yes
 file_uploads = On
 magic_quotes_gpc = Off
@@ -1246,16 +1131,14 @@ function configurePHPFPM {
     log "Configure PHP-FPM"
 
     case "$OS" in
-        "debian10"|"debian11"|"ubuntu1804"|"ubuntu2004"|"ubuntu2204")
-            unitctl "restart" "$PHP_FPM_UNIT"
-            ;;
-        "rhel7"|"rhel8"|"centos7"|"centos8")
-            log "Disable default configuration file"
-            mv /etc/php-fpm.d/www.conf{,.bak} || \
-                abort "Unable to disable default configuration file"
-            log "Put new settings into file '/etc/php-fpm.d/i-doit.conf'"
-            cat << EOF > /etc/php-fpm.d/i-doit.conf || \
-                abort "Unable to create and edit file '/etc/php-fpm.d/i-doit.conf'"
+    "debian11" | "debian12" | "ubuntu2004" | "ubuntu2204")
+        unitctl "restart" "$PHP_FPM_UNIT"
+        ;;
+    "rhel7" | "rhel8" | "centos7" | "centos8")
+        log "Disable default configuration file"
+        mv /etc/php-fpm.d/www.conf{,.bak} || abort "Unable to disable default configuration file"
+        log "Put new settings into file '/etc/php-fpm.d/i-doit.conf'"
+        cat <<EOF >/etc/php-fpm.d/i-doit.conf || abort "Unable to create and edit file '/etc/php-fpm.d/i-doit.conf'"
 [i-doit]
 listen = ${PHP_FPM_SOCKET}
 user = ${APACHE_USER}
@@ -1269,15 +1152,14 @@ pm.min_spare_servers = 5
 pm.max_spare_servers = 35
 security.limit_extensions = .php
 EOF
-            unitctl "restart" "$PHP_FPM_UNIT"
-            ;;
-        "sles15" | "opensuse15" )
-            log "Enable PHP FPM configuration files"
-            mv /etc/php7/fpm/php-fpm.conf{.default,} || \
-                abort "Unable to move file"
-            log "Put new settings into file '/etc/php7/fpm/php-fpm.d/i-doit.conf'"
-            cat << EOF > /etc/php7/fpm/php-fpm.d/i-doit.conf || \
-                abort "Unable to create and edit file '/etc/php7/fpm/php-fpm.d/i-doit.conf'"
+
+        unitctl "restart" "$PHP_FPM_UNIT"
+        ;;
+    "sles15" | "opensuse15")
+        log "Enable PHP FPM configuration files"
+        mv /etc/php7/fpm/php-fpm.conf{.default,} || abort "Unable to move file"
+        log "Put new settings into file '/etc/php7/fpm/php-fpm.d/i-doit.conf'"
+        cat <<EOF >/etc/php7/fpm/php-fpm.d/i-doit.conf || abort "Unable to create and edit file '/etc/php7/fpm/php-fpm.d/i-doit.conf'"
 [i-doit]
 listen = ${PHP_FPM_SOCKET}
 user = ${APACHE_USER}
@@ -1292,11 +1174,12 @@ pm.max_spare_servers = 3
 security.limit_extensions = .php
 EOF
 
-            unitctl "enable" "$PHP_FPM_UNIT"
-            unitctl "start" "$PHP_FPM_UNIT"
-            ;;
-        *)
-            log "Nope. This OS will stuck on mod_php."
+        unitctl "enable" "$PHP_FPM_UNIT"
+        unitctl "start" "$PHP_FPM_UNIT"
+        ;;
+    *)
+        log "Nope. This OS will stuck on mod_php."
+        ;;
     esac
 }
 
@@ -1312,9 +1195,8 @@ function configureApache {
     hostname="$(cat /etc/hostname)"
 
     case "$OS" in
-        "rhel7"|"rhel8"|"centos7"|"centos8")
-            cat << EOF > ${APACHE_CONFIG_FILE} || \
-                abort "Unable to create and edit file '${APACHE_CONFIG_FILE}'"
+    "rhel7" | "rhel8" | "centos7" | "centos8")
+        cat <<EOF >${APACHE_CONFIG_FILE} || abort "Unable to create and edit file '${APACHE_CONFIG_FILE}'"
 DirectoryIndex index.php
 DocumentRoot ${INSTALL_DIR}/
 
@@ -1334,47 +1216,39 @@ ProxyTimeout 600
 </FilesMatch>
 EOF
 
-            test ! -d "$INSTALL_DIR" && (
-                    mkdir -p "$INSTALL_DIR" || \
-                        abort "Unable to create directory '${INSTALL_DIR}'"
-            )
+        test ! -d "$INSTALL_DIR" && (
+            mkdir -p "$INSTALL_DIR" || abort "Unable to create directory '${INSTALL_DIR}'"
+        )
 
-            log "Change directory ownership"
-            chown "$APACHE_USER":"$APACHE_GROUP" -R "${INSTALL_DIR}/" || \
-                abort "Unable to change ownership"
+        log "Change directory ownership"
+        chown "$APACHE_USER":"$APACHE_GROUP" -R "${INSTALL_DIR}/" || abort "Unable to change ownership"
 
-            log "SELinux: Allow Apache Web server to read/write files under ${INSTALL_DIR}/"
-            chcon -t httpd_sys_content_t "${INSTALL_DIR}/" -R || \
-                abort "Unable to give read permissions recursively"
-            chcon -t httpd_sys_rw_content_t "${INSTALL_DIR}/" -R || \
-                abort "Unable to give write permissions recursively"
+        log "SELinux: Allow Apache Web server to read/write files under ${INSTALL_DIR}/"
+        chcon -t httpd_sys_content_t "${INSTALL_DIR}/" -R || abort "Unable to give read permissions recursively"
+        chcon -t httpd_sys_rw_content_t "${INSTALL_DIR}/" -R || abort "Unable to give write permissions recursively"
 
-            ## mpm_event is already enabled on RHEL 8:
-            if [[ "$OS" != "rhel8" ]]; then
-                log "Disable MPM prefork"
-                sed -i "/.* mpm_prefork_module /s/^#*/#/" /etc/httpd/conf.modules.d/00-mpm.conf || \
-                    abort "sed exited with error"
-                log "Enable MPM event"
-                sed -i "/^#.* mpm_event_module /s/^#//" /etc/httpd/conf.modules.d/00-mpm.conf || \
-                    abort "sed exited with error"
-            fi
+        ## mpm_event is already enabled on RHEL 8:
+        if [[ "$OS" != "rhel8" ]]; then
+            log "Disable MPM prefork"
+            sed -i "/.* mpm_prefork_module /s/^#*/#/" /etc/httpd/conf.modules.d/00-mpm.conf || abort "sed exited with error"
+            log "Enable MPM event"
+            sed -i "/^#.* mpm_event_module /s/^#//" /etc/httpd/conf.modules.d/00-mpm.conf || abort "sed exited with error"
+        fi
 
-            if [[ "$OS" != "centos8" ]]; then
-                log "Disable MPM prefork"
-                sed -i "/.* mpm_prefork_module /s/^#*/#/" /etc/httpd/conf.modules.d/00-mpm.conf || \
-                    abort "sed exited with error"
-                log "Enable MPM event"
-                sed -i "/^#.* mpm_event_module /s/^#//" /etc/httpd/conf.modules.d/00-mpm.conf || \
-                    abort "sed exited with error"
-            fi
+        if [[ "$OS" != "centos8" ]]; then
+            log "Disable MPM prefork"
+            sed -i "/.* mpm_prefork_module /s/^#*/#/" /etc/httpd/conf.modules.d/00-mpm.conf || abort "sed exited with error"
+            log "Enable MPM event"
+            sed -i "/^#.* mpm_event_module /s/^#//" /etc/httpd/conf.modules.d/00-mpm.conf || abort "sed exited with error"
+        fi
 
-            unitctl "restart" "$APACHE_UNIT"
-            ;;
-        "sles15" | "opensuse15")
-            a2_en_mod=$(command -v a2enmod)
+        unitctl "restart" "$APACHE_UNIT"
+        ;;
+    "sles15" | "opensuse15")
+        a2_en_mod=$(command -v a2enmod)
 
-            cat << EOF > ${APACHE_CONFIG_FILE} || \
-                abort "Unable to create and edit file '${APACHE_CONFIG_FILE}'"
+        cat <<EOF >${APACHE_CONFIG_FILE} || abort "Unable to create and edit file '${APACHE_CONFIG_FILE}'"
+
 ServerName ${hostname}
 
 <VirtualHost *:80>
@@ -1404,29 +1278,27 @@ ServerName ${hostname}
 </VirtualHost>
 EOF
 
-            log "Change directory ownership"
-            chown "$APACHE_USER":"$APACHE_GROUP" -R "${INSTALL_DIR}/" || \
-                abort "Unable to change ownership"
+        log "Change directory ownership"
+        chown "$APACHE_USER":"$APACHE_GROUP" -R "${INSTALL_DIR}/" || abort "Unable to change ownership"
 
-            log "Enable Apache module proxy"
-            "$a2_en_mod" proxy || abort "Unable to enable Apache module proxy"
-            log "Enable Apache module proxy_fcgi"
-            "$a2_en_mod" proxy_fcgi || abort "Unable to enable Apache module proxy_fcgi"
-            log "Enable Apache module rewrite"
-            "$a2_en_mod" rewrite || abort "Unable to enable Apache module rewrite"
-            log "Enable Apache module mod_access_compat"
-            "$a2_en_mod" mod_access_compat || abort "Unable to enable Apache module mod_access_compat"
+        log "Enable Apache module proxy"
+        "$a2_en_mod" proxy || abort "Unable to enable Apache module proxy"
+        log "Enable Apache module proxy_fcgi"
+        "$a2_en_mod" proxy_fcgi || abort "Unable to enable Apache module proxy_fcgi"
+        log "Enable Apache module rewrite"
+        "$a2_en_mod" rewrite || abort "Unable to enable Apache module rewrite"
+        log "Enable Apache module mod_access_compat"
+        "$a2_en_mod" mod_access_compat || abort "Unable to enable Apache module mod_access_compat"
 
-            unitctl "restart" "$APACHE_UNIT"
-            ;;
-        "debian11"|"debian10"|"ubuntu1604"|"ubuntu1804"|"ubuntu2004"|"ubuntu2204")
-            a2_en_site=$(command -v a2ensite)
-            a2_dis_site=$(command -v a2dissite)
-            a2_en_mod=$(command -v a2enmod)
-            a2_dis_mod=$(command -v a2dismod)
+        unitctl "restart" "$APACHE_UNIT"
+        ;;
+    "debian11" | "debian12" | "ubuntu2004" | "ubuntu2204")
+        a2_en_site=$(command -v a2ensite)
+        a2_dis_site=$(command -v a2dissite)
+        a2_en_mod=$(command -v a2enmod)
+        a2_dis_mod=$(command -v a2dismod)
 
-            cat << EOF > ${APACHE_CONFIG_FILE} || \
-                abort "Unable to create and edit file '${APACHE_CONFIG_FILE}'"
+        cat <<EOF >${APACHE_CONFIG_FILE} || abort "Unable to create and edit file '${APACHE_CONFIG_FILE}'"
 ServerName ${hostname}
 
 <VirtualHost *:80>
@@ -1456,39 +1328,37 @@ ServerName ${hostname}
 </VirtualHost>
 EOF
 
-            log "Disable default VHost"
-            "$a2_dis_site" 000-default || abort "Unable to disable default VHost"
-            log "Change directory ownership"
-            chown "$APACHE_USER":"$APACHE_GROUP" -R "${INSTALL_DIR}/" || \
-                abort "Unable to change ownership"
-            log "Enable new VHost settings"
-            "$a2_en_site" i-doit || abort "Unable to enable VHost settings"
-            log "Enable Apache module rewrite"
-            "$a2_en_mod" rewrite || abort "Unable to enable Apache module rewrite"
-            log "Enable Apache module alias"
-            "$a2_en_mod" alias || abort "Unable to enable Apache module alias"
-            log "Disable Apache module mpm_prefork"
-            "$a2_dis_mod" mpm_prefork || abort "Unable to enable Apache module mpm_prefork"
-            log "Enable Apache module mpm_event"
-            "$a2_en_mod" mpm_event || abort "Unable to enable Apache module mpm_event"
-            log "Enable Apache module proxy"
-            "$a2_en_mod" proxy || abort "Unable to enable Apache module proxy"
-            log "Enable Apache module proxy_fcgi"
-            "$a2_en_mod" proxy_fcgi || abort "Unable to enable Apache module proxy_fcgi"
-            log "Enable Apache module setenvif"
-            "$a2_en_mod" setenvif || abort "Unable to enable Apache module setenvif"
-            log "Let every user read the logs"
-            chmod 755 /var/log/apache2 || abort "Unable to change permissions"
-            chmod 664 /var/log/apache2/* || abort "Unable to change permissions"
-            unitctl "restart" "$APACHE_UNIT"
-            ;;
-        *)
-            a2_en_site=$(command -v a2ensite)
-            a2_dis_site=$(command -v a2dissite)
-            a2_en_mod=$(command -v a2enmod)
+        log "Disable default VHost"
+        "$a2_dis_site" 000-default || abort "Unable to disable default VHost"
+        log "Change directory ownership"
+        chown "$APACHE_USER":"$APACHE_GROUP" -R "${INSTALL_DIR}/" || abort "Unable to change ownership"
+        log "Enable new VHost settings"
+        "$a2_en_site" i-doit || abort "Unable to enable VHost settings"
+        log "Enable Apache module rewrite"
+        "$a2_en_mod" rewrite || abort "Unable to enable Apache module rewrite"
+        log "Enable Apache module alias"
+        "$a2_en_mod" alias || abort "Unable to enable Apache module alias"
+        log "Disable Apache module mpm_prefork"
+        "$a2_dis_mod" mpm_prefork || abort "Unable to enable Apache module mpm_prefork"
+        log "Enable Apache module mpm_event"
+        "$a2_en_mod" mpm_event || abort "Unable to enable Apache module mpm_event"
+        log "Enable Apache module proxy"
+        "$a2_en_mod" proxy || abort "Unable to enable Apache module proxy"
+        log "Enable Apache module proxy_fcgi"
+        "$a2_en_mod" proxy_fcgi || abort "Unable to enable Apache module proxy_fcgi"
+        log "Enable Apache module setenvif"
+        "$a2_en_mod" setenvif || abort "Unable to enable Apache module setenvif"
+        log "Let every user read the logs"
+        chmod 755 /var/log/apache2 || abort "Unable to change permissions"
+        chmod 664 /var/log/apache2/* || abort "Unable to change permissions"
+        unitctl "restart" "$APACHE_UNIT"
+        ;;
+    *)
+        a2_en_site=$(command -v a2ensite)
+        a2_dis_site=$(command -v a2dissite)
+        a2_en_mod=$(command -v a2enmod)
 
-            cat << EOF > ${APACHE_CONFIG_FILE} || \
-                abort "Unable to create and edit file '${APACHE_CONFIG_FILE}'"
+        cat <<EOF >${APACHE_CONFIG_FILE} || abort "Unable to create and edit file '${APACHE_CONFIG_FILE}'"
 ServerName ${hostname}
 
 <VirtualHost *:80>
@@ -1507,20 +1377,19 @@ ServerName ${hostname}
 </VirtualHost>
 EOF
 
-            log "Disable default VHost"
-            "$a2_dis_site" 000-default || abort "Unable to disable default VHost"
-            log "Change directory ownership"
-            chown "$APACHE_USER":"$APACHE_GROUP" -R "${INSTALL_DIR}/" || \
-                abort "Unable to change ownership"
-            log "Enable new VHost settings"
-            "$a2_en_site" i-doit || abort "Unable to enable VHost settings"
-            log "Enable Apache module rewrite"
-            "$a2_en_mod" rewrite || abort "Unable to enable Apache module rewrite"
-            log "Let every user read the logs"
-            chmod 755 /var/log/apache2 || abort "Unable to change permissions"
-            chmod 664 /var/log/apache2/* || abort "Unable to change permissions"
-            unitctl "restart" "$APACHE_UNIT"
-            ;;
+        log "Disable default VHost"
+        "$a2_dis_site" 000-default || abort "Unable to disable default VHost"
+        log "Change directory ownership"
+        chown "$APACHE_USER":"$APACHE_GROUP" -R "${INSTALL_DIR}/" || abort "Unable to change ownership"
+        log "Enable new VHost settings"
+        "$a2_en_site" i-doit || abort "Unable to enable VHost settings"
+        log "Enable Apache module rewrite"
+        "$a2_en_mod" rewrite || abort "Unable to enable Apache module rewrite"
+        log "Let every user read the logs"
+        chmod 755 /var/log/apache2 || abort "Unable to change permissions"
+        chmod 664 /var/log/apache2/* || abort "Unable to change permissions"
+        unitctl "restart" "$APACHE_UNIT"
+        ;;
     esac
 }
 
@@ -1535,15 +1404,16 @@ function configureMariaDB {
 
     secureMariaDB
 
+    # Check mariadb version
+    local mariadb_version=""
+    mariadb_version=$(mysql --version | head -n1 -c29 | tail -c 5)
+
     log "Prepare shutdown of MariaDB"
     "$MARIADB_BIN" \
         -h"$MARIADB_HOSTNAME" \
         -u"$MARIADB_SUPERUSER_USERNAME" -p"$MARIADB_SUPERUSER_PASSWORD" \
-        -e"SET GLOBAL innodb_fast_shutdown = 0" || \
-        abort "Unable to prepare shutdown"
+        -e"SET GLOBAL innodb_fast_shutdown = 0" || abort "Unable to prepare shutdown"
     unitctl "stop" "$MARIADB_UNIT"
-    log "Move old MariaDB log files"
-    mv /var/lib/mysql/ib_logfile[01] "$TMP_DIR" || abort "Unable to remove old log files"
 
     log "How many bytes of your RAM do you like to spend to MariaDB?"
     echo -n -e "You SHOULD give MariaDB ~ 50 per cent of your RAM. You can use G for Gigabytes or M for Megabytes, e.g. 1024M or 1G [leave empty for '${MARIADB_INNODB_BUFFER_POOL_SIZE}']: "
@@ -1554,56 +1424,83 @@ function configureMariaDB {
         MARIADB_INNODB_BUFFER_POOL_SIZE="$answer"
     fi
 
-    log "Configure MariaDB settings"
-    cat << EOF > "$MARIADB_CONFIG_FILE" || abort "Unable to create and edit file '${MARIADB_CONFIG_FILE}'"
+    if [[ "$mariadb_version" != "10.11" ]]; then
+        log "Move old MariaDB log files"
+        mv /var/lib/mysql/ib_logfile[01] "$TMP_DIR" || abort "Unable to remove old log files"
+
+        log "Configure MariaDB settings"
+        cat <<EOF >"$MARIADB_CONFIG_FILE" || abort "Unable to create and edit file '${MARIADB_CONFIG_FILE}'"
 [mysqld]
 
 # This is the number 1 setting to look at for any performance optimization
 # It is where the data and indexes are cached: having it as large as possible will
 # ensure MySQL uses memory and not disks for most read operations.
-#
+# See https://mariadb.com/kb/en/innodb-buffer-pool/
 # Typical values are 1G (1-2GB RAM), 5-6G (8GB RAM), 20-25G (32GB RAM), 100-120G (128GB RAM).
 innodb_buffer_pool_size = ${MARIADB_INNODB_BUFFER_POOL_SIZE}
-
 # Use multiple instances if you have innodb_buffer_pool_size > 10G, 1 every 4GB
 innodb_buffer_pool_instances = 1
-
 # Redo log file size, the higher the better.
 # MySQL/MariaDB writes two of these log files in a default installation.
 innodb_log_file_size = 512M
-
 innodb_sort_buffer_size = 64M
 sort_buffer_size = 262144 # default
 join_buffer_size = 262144 # default
-
 max_allowed_packet = 128M
 max_heap_table_size = 32M
 query_cache_min_res_unit = 4096
 query_cache_type = 1
 query_cache_limit = 5M
 query_cache_size = 80M
-
 tmp_table_size = 32M
 max_connections = 200
 innodb_file_per_table = 1
-
 # Disable this (= 0) if you have only one to two CPU cores, change it to 4 for a quad core.
 innodb_thread_concurrency = 0
-
 # Disable this (= 0) if you have slow harddisks
 innodb_flush_log_at_trx_commit = 1
 innodb_flush_method = O_DIRECT
-
 innodb_lru_scan_depth = 2048
 table_definition_cache = 1024
 table_open_cache = 2048
-# Only if your have MySQL 5.6 or higher, do not use with MariaDB!
-#table_open_cache_instances = 4
-
 innodb_stats_on_metadata = 0
-
 sql-mode = ""
 EOF
+
+    else
+        cat <<EOF >"$MARIADB_CONFIG_FILE" || abort "Unable to create and edit file '${MARIADB_CONFIG_FILE}'"
+[mysqld]
+# This is the number 1 setting to look at for any performance optimization
+# It is where the data and indexes are cached: having it as large as possible will
+# ensure MySQL uses memory and not disks for most read operations.
+# See https://mariadb.com/kb/en/innodb-buffer-pool/
+# Typical values are 1G (1-2GB RAM), 5-6G (8GB RAM), 20-25G (32GB RAM), 100-120G (128GB RAM).
+innodb_buffer_pool_size = 1G
+# Redo log file size, the higher the better.
+# MySQL/MariaDB writes one of these log files in a default installation.
+innodb_log_file_size = 512M
+innodb_sort_buffer_size = 64M
+sort_buffer_size = 262144 # default
+join_buffer_size = 262144 # default
+max_allowed_packet = 128M
+max_heap_table_size = 32M
+query_cache_min_res_unit = 4096
+query_cache_type = 1
+query_cache_limit = 5M
+query_cache_size = 80M
+tmp_table_size = 32M
+max_connections = 200
+innodb_file_per_table = 1
+# Disable this (= 0) if you have slow hard disks
+innodb_flush_log_at_trx_commit = 1
+innodb_flush_method = O_DIRECT
+innodb_lru_scan_depth = 2048
+table_definition_cache = 1024
+table_open_cache = 2048
+innodb_stats_on_metadata = 0
+sql-mode = ""
+EOF
+    fi
 
     if [[ -d "/var/log/mysql" ]]; then
         log "Let every user read the logs"
@@ -1616,8 +1513,7 @@ EOF
 
 function secureMariaDB {
     local mariadb_version=""
-
-    mariadb_version=$(mysql --version | head -n1 -c28 | tail -c 4)
+    mariadb_version=$(mysql --version | head -n1 -c29 | tail -c 5)
 
     echo -n -e \
         "Please enter a new password for MariaDB's super user '${MARIADB_SUPERUSER_USERNAME}' [leave empty for '${MARIADB_SUPERUSER_PASSWORD}']: "
@@ -1630,99 +1526,98 @@ function secureMariaDB {
 
     log "Set $MARIADB_SUPERUSER_USERNAME password and plugin 'mysql_native_password'"
     case "$mariadb_version" in
-        "10.4"|"10.5"|"10.6")
-            "$MARIADB_BIN" \
+
+    "10.11")
+        "$MARIADB_BIN" \
+            -h"$MARIADB_HOSTNAME" \
+            -u"$MARIADB_SUPERUSER_USERNAME" \
+            -p"$MARIADB_SUPERUSER_PASSWORD" \
+            -e"ALTER USER 'root'@'localhost' IDENTIFIED VIA mysql_native_password USING PASSWORD('${MARIADB_SUPERUSER_PASSWORD}');" || abort "SQL statement failed"
+        ;;
+
+    "10.4" | "10.5" | "10.6")
+        "$MARIADB_BIN" \
             -h"$MARIADB_HOSTNAME" \
             -u"$MARIADB_SUPERUSER_USERNAME" \
             -p"$MARIADB_SUPERUSER_PASSWORD" \
             -e"SET PASSWORD FOR '${MARIADB_SUPERUSER_USERNAME}'@'localhost' = PASSWORD('${MARIADB_SUPERUSER_PASSWORD}');" \
-            -e"ALTER USER '${MARIADB_SUPERUSER_USERNAME}'@'localhost' IDENTIFIED VIA mysql_native_password USING PASSWORD('${MARIADB_SUPERUSER_PASSWORD}');" || \
-            abort "SQL statement failed"
-            ;;
+            -e"ALTER USER '${MARIADB_SUPERUSER_USERNAME}'@'localhost' IDENTIFIED VIA mysql_native_password USING PASSWORD('${MARIADB_SUPERUSER_PASSWORD}');" || abort "SQL statement failed"
+        ;;
 
-        "10.1"|"10.2"|"10.3")
-            "$MARIADB_BIN" \
+    "10.1" | "10.2" | "10.3")
+        "$MARIADB_BIN" \
             -h"$MARIADB_HOSTNAME" \
             -u"$MARIADB_SUPERUSER_USERNAME" \
             -p"$MARIADB_SUPERUSER_PASSWORD" \
-            -e"UPDATE mysql.user SET Password=PASSWORD('${MARIADB_SUPERUSER_PASSWORD}'), plugin='mysql_native_password' WHERE User='${MARIADB_SUPERUSER_USERNAME}';" || \
-            abort "SQL statement failed"
-            ;;
+            -e"UPDATE mysql.user SET Password=PASSWORD('${MARIADB_SUPERUSER_PASSWORD}'), plugin='mysql_native_password' WHERE User='${MARIADB_SUPERUSER_USERNAME}';" || abort "SQL statement failed"
+        ;;
 
-        *)
-            abort "MariaDB ${mariadb_version} is not supported. Please follow the system requirements. We recommend version ${RECOMMENDED_MARIADB_VERSION}."
-            ;;
+    *)
+        abort "MariaDB ${mariadb_version} is not supported. Please follow the system requirements. We recommend version ${RECOMMENDED_MARIADB_VERSION}."
+        ;;
     esac
 
     case "$OS" in
-        "rhel7"|"rhel8"|"centos7"|"centos8")
-            log "Allow $MARIADB_SUPERUSER_USERNAME login only from localhost"
-            "$MARIADB_BIN" \
-                -h"$MARIADB_HOSTNAME" \
-                -u"$MARIADB_SUPERUSER_USERNAME" \
-                -p"$MARIADB_SUPERUSER_PASSWORD" \
-                -e"DELETE FROM mysql.user WHERE User='${MARIADB_SUPERUSER_USERNAME}' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" || \
-                abort "SQL statement failed"
+    "rhel7" | "rhel8" | "centos7" | "centos8")
+        log "Allow $MARIADB_SUPERUSER_USERNAME login only from localhost"
+        "$MARIADB_BIN" \
+            -h"$MARIADB_HOSTNAME" \
+            -u"$MARIADB_SUPERUSER_USERNAME" \
+            -p"$MARIADB_SUPERUSER_PASSWORD" \
+            -e"DELETE FROM mysql.user WHERE User='${MARIADB_SUPERUSER_USERNAME}' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" || abort "SQL statement failed"
 
-            log "Remove anonymous user"
-            "$MARIADB_BIN" \
-                -h"$MARIADB_HOSTNAME" \
-                -u"$MARIADB_SUPERUSER_USERNAME" \
-                -p"$MARIADB_SUPERUSER_PASSWORD" \
-                -e"DELETE FROM mysql.user WHERE User='';" || \
-                abort "SQL statement failed"
+        log "Remove anonymous user"
+        "$MARIADB_BIN" \
+            -h"$MARIADB_HOSTNAME" \
+            -u"$MARIADB_SUPERUSER_USERNAME" \
+            -p"$MARIADB_SUPERUSER_PASSWORD" \
+            -e"DELETE FROM mysql.user WHERE User='';" || abort "SQL statement failed"
 
-            log "Remove test database"
-            "$MARIADB_BIN" \
-                -h"$MARIADB_HOSTNAME" \
-                -u"$MARIADB_SUPERUSER_USERNAME" \
-                -p"$MARIADB_SUPERUSER_PASSWORD" \
-                -e"DELETE FROM mysql.db WHERE Db='test' OR Db='test_%';" || \
-                abort "SQL statement failed"
+        log "Remove test database"
+        "$MARIADB_BIN" \
+            -h"$MARIADB_HOSTNAME" \
+            -u"$MARIADB_SUPERUSER_USERNAME" \
+            -p"$MARIADB_SUPERUSER_PASSWORD" \
+            -e"DELETE FROM mysql.db WHERE Db='test' OR Db='test_%';" || abort "SQL statement failed"
 
-            log "Flush MariaDB user privileges"
-            "$MARIADB_BIN" \
-                -h"$MARIADB_HOSTNAME" \
-                -u"$MARIADB_SUPERUSER_USERNAME" \
-                -p"$MARIADB_SUPERUSER_PASSWORD" \
-                -e"FLUSH PRIVILEGES;" || \
-                abort "SQL statement failed"
-            ;;
+        log "Flush MariaDB user privileges"
+        "$MARIADB_BIN" \
+            -h"$MARIADB_HOSTNAME" \
+            -u"$MARIADB_SUPERUSER_USERNAME" \
+            -p"$MARIADB_SUPERUSER_PASSWORD" \
+            -e"FLUSH PRIVILEGES;" || abort "SQL statement failed"
+        ;;
 
-        "sles15"|"opensuse15"|"debian10"|"debian11"|"ubuntu1804"|"ubuntu2004"|"ubuntu2204")
-            log "Allow $MARIADB_SUPERUSER_USERNAME login only from localhost"
-            "$MARIADB_BIN" \
-                -h"$MARIADB_HOSTNAME" \
-                -u"$MARIADB_SUPERUSER_USERNAME" \
-                -p"$MARIADB_SUPERUSER_PASSWORD" \
-                -e"DELETE FROM mysql.user WHERE User='${MARIADB_SUPERUSER_USERNAME}' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" || \
-                abort "SQL statement failed"
+    "sles15" | "opensuse15" | "debian11" | "ubuntu2004" | "ubuntu2204")
+        log "Allow $MARIADB_SUPERUSER_USERNAME login only from localhost"
+        "$MARIADB_BIN" \
+            -h"$MARIADB_HOSTNAME" \
+            -u"$MARIADB_SUPERUSER_USERNAME" \
+            -p"$MARIADB_SUPERUSER_PASSWORD" \
+            -e"DELETE FROM mysql.user WHERE User='${MARIADB_SUPERUSER_USERNAME}' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" || abort "SQL statement failed"
 
-            log "Remove anonymous user"
-            "$MARIADB_BIN" \
-                -h"$MARIADB_HOSTNAME" \
-                -u"$MARIADB_SUPERUSER_USERNAME" \
-                -p"$MARIADB_SUPERUSER_PASSWORD" \
-                -e"DELETE FROM mysql.user WHERE User='';" || \
-                abort "SQL statement failed"
+        log "Remove anonymous user"
+        "$MARIADB_BIN" \
+            -h"$MARIADB_HOSTNAME" \
+            -u"$MARIADB_SUPERUSER_USERNAME" \
+            -p"$MARIADB_SUPERUSER_PASSWORD" \
+            -e"DELETE FROM mysql.user WHERE User='';" || abort "SQL statement failed"
 
-            log "Remove test database"
-            "$MARIADB_BIN" \
-                -h"$MARIADB_HOSTNAME" \
-                -u"$MARIADB_SUPERUSER_USERNAME" \
-                -p"$MARIADB_SUPERUSER_PASSWORD" \
-                -e"DELETE FROM mysql.db WHERE Db='test' OR Db='test_%';" || \
-                abort "SQL statement failed"
+        log "Remove test database"
+        "$MARIADB_BIN" \
+            -h"$MARIADB_HOSTNAME" \
+            -u"$MARIADB_SUPERUSER_USERNAME" \
+            -p"$MARIADB_SUPERUSER_PASSWORD" \
+            -e"DELETE FROM mysql.db WHERE Db='test' OR Db='test_%';" || abort "SQL statement failed"
 
-            log "Flush MariaDB user privileges"
-            "$MARIADB_BIN" \
-                -h"$MARIADB_HOSTNAME" \
-                -u"$MARIADB_SUPERUSER_USERNAME" \
-                -p"$MARIADB_SUPERUSER_PASSWORD" \
-                -e"FLUSH PRIVILEGES;" || \
-                abort "SQL statement failed"
-            ;;
-        esac
+        log "Flush MariaDB user privileges"
+        "$MARIADB_BIN" \
+            -h"$MARIADB_HOSTNAME" \
+            -u"$MARIADB_SUPERUSER_USERNAME" \
+            -p"$MARIADB_SUPERUSER_PASSWORD" \
+            -e"FLUSH PRIVILEGES;" || abort "SQL statement failed"
+        ;;
+    esac
 }
 
 function prepareIDoit {
@@ -1737,7 +1632,7 @@ function prepareIDoit {
     log "Cleanup VHost directory"
     rm -rf "${INSTALL_DIR:?}/"* || abort "Unable to remove files"
     rm -f "${INSTALL_DIR}"/.htaccess || abort "Unable to remove files"
-    
+
     log ""
     log "For evaluation use \033[32mEVAL\033[0m"
     log "If you have a license use \033[32mPRO\033[0m"
@@ -1749,73 +1644,68 @@ function prepareIDoit {
     read -r wanted_variant
 
     case "$wanted_variant" in
-        ""|"EVAL"|"Eval"|"eval")
-            update_file_url="$UPDATE_FILE_EVAL"
-            variant="eval"
-            ;;
-        "PRO"|"Pro"|"pro")
-            update_file_url="$UPDATE_FILE_PRO"
-            variant="pro"
-            ;;
-        "OPEN"|"Open"|"open")
-            update_file_url="$UPDATE_FILE_OPEN"
-            variant="open"
-            ;;
-        *)
-            abort "Unknown variant"
+    "" | "EVAL" | "Eval" | "eval")
+        update_file_url="$UPDATE_FILE_EVAL"
+        variant="eval"
+        ;;
+    "PRO" | "Pro" | "pro")
+        update_file_url="$UPDATE_FILE_PRO"
+        variant="pro"
+        ;;
+    "OPEN" | "Open" | "open")
+        update_file_url="$UPDATE_FILE_OPEN"
+        variant="open"
+        ;;
+    *)
+        abort "Unknown variant"
+        ;;
     esac
 
     log "Install i-doit $variant"
 
     case "$variant" in
-        "pro"|"open")
-            log "Identify latest version of i-doit $variant"
-            test ! -f "$TMP_DIR/updates.xml" && \
-                "$WGET_BIN" --quiet -O "${TMP_DIR}/updates.xml" "$update_file_url"
-            test -f "$TMP_DIR/updates.xml" || \
-                abort "Unable to fetch file from '${update_file_url}'"
+    "pro" | "open")
+        log "Identify latest version of i-doit $variant"
+        test ! -f "$TMP_DIR/updates.xml" &&
+            "$WGET_BIN" --quiet -O "${TMP_DIR}/updates.xml" "$update_file_url"
+        test -f "$TMP_DIR/updates.xml" ||
+            abort "Unable to fetch file from '${update_file_url}'"
 
-            parse_updates_script="${TMP_DIR}/parseupdates.php"
+        parse_updates_script="${TMP_DIR}/parseupdates.php"
 
-            cat << EOF > "$parse_updates_script" || \
-                abort "Unable to create and edit file '${parse_updates_script}'"
+        cat <<EOF >"$parse_updates_script" || abort "Unable to create and edit file '${parse_updates_script}'"
 <?php
 \$attribute = \$argv[1];
 \$xml = new SimpleXMLElement(trim(file_get_contents('${TMP_DIR}/updates.xml')));
 echo \$xml->updates->update[count(\$xml->updates->update) - 1]->\$attribute;
 EOF
 
-            url=$($PHP_BIN "$parse_updates_script" "filename" | sed "s/-update.zip/.zip/")
+        url=$($PHP_BIN "$parse_updates_script" "filename" | sed "s/-update.zip/.zip/")
+        test -n "$url" || abort "Missing URL"
 
-            test -n "$url" || abort "Missing URL"
+        version=$($PHP_BIN "$parse_updates_script" "version")
+        test -n "$version" || abort "Missing version"
 
-            version=$($PHP_BIN "$parse_updates_script" "version")
+        release_date=$($PHP_BIN "$parse_updates_script" "release")
+        test -n "$release_date" || abort "Missing release date"
 
-            test -n "$version" || abort "Missing version"
+        log "Download i-doit $variant $version (released on ${release_date})"
 
-            release_date=$($PHP_BIN "$parse_updates_script" "release")
+        "$WGET_BIN" --quiet -O "$file" "$url" || abort "Unable to download installation file"
 
-            test -n "$release_date" || abort "Missing release date"
+        ;;
+    "eval")
+        log "Download i-doit EVAL version"
 
-            log "Download i-doit $variant $version (released on ${release_date})"
+        "$WGET_BIN" --quiet -O "$file" "$update_file_url" || abort "Unable to download installation file"
 
-            "$WGET_BIN" --quiet -O "$file" "$url" || \
-                abort "Unable to download installation file"
-
-            ;;
-        "eval")
-            log "Download i-doit EVAL version"
-
-            "$WGET_BIN" --quiet -O "$file" "$update_file_url" || \
-                abort "Unable to download installation file"
-
-            ;;
-        *)
-            abort "Unknown variant"
+        ;;
+    *)
+        abort "Unknown variant"
+        ;;
     esac
 
-    cp "$file" "${INSTALL_DIR}/i-doit.zip" || \
-    abort "Unable to copy installation file"
+    cp "$file" "${INSTALL_DIR}/i-doit.zip" || abort "Unable to copy installation file"
 
     log "Unzip package"
     cd "$INSTALL_DIR" || abort "Unable to change to installation directory '${INSTALL_DIR}'"
@@ -1838,8 +1728,7 @@ function updateApacheConfig {
         -e "r ${htaccessFile}" \
         -e "d" \
         -e "}" \
-        "$APACHE_CONFIG_FILE" || \
-        abort "Unable to change config file"
+        "$APACHE_CONFIG_FILE" || abort "Unable to change config file"
 
     unitctl "restart" "$APACHE_UNIT"
 }
@@ -1874,15 +1763,14 @@ function installIDoit {
     fi
 
     sudo -u ${APACHE_USER} ${prefix} ${console} install \
-    -u "$MARIADB_SUPERUSER_USERNAME" \
-    -p "$MARIADB_SUPERUSER_PASSWORD" \
-    --host="$MARIADB_HOSTNAME" \
-    -d idoit_system \
-    -U "$MARIADB_IDOIT_USERNAME" \
-    -P "$MARIADB_IDOIT_PASSWORD" \
-    --admin-password "$IDOIT_ADMIN_CENTER_PASSWORD" \
-    -n  || \
-        abort "Installation of i-doit failed"
+        -u "$MARIADB_SUPERUSER_USERNAME" \
+        -p "$MARIADB_SUPERUSER_PASSWORD" \
+        --host="$MARIADB_HOSTNAME" \
+        -d idoit_system \
+        -U "$MARIADB_IDOIT_USERNAME" \
+        -P "$MARIADB_IDOIT_PASSWORD" \
+        --admin-password "$IDOIT_ADMIN_CENTER_PASSWORD" \
+        -n || abort "Installation of i-doit failed"
 
     config_file="${INSTALL_DIR}/src/config.inc.php"
 
@@ -1906,14 +1794,13 @@ function create_tenant {
     fi
 
     sudo -u ${APACHE_USER} ${prefix} ${console} tenant-create \
-    -u "$MARIADB_SUPERUSER_USERNAME" \
-    -p "$MARIADB_SUPERUSER_PASSWORD" \
-    -U "$MARIADB_IDOIT_USERNAME" \
-    -P "$MARIADB_IDOIT_PASSWORD" \
-    -d idoit_data \
-    -t "$tenant_name" \
-    -n  || \
-        abort "Creating tenant failed"
+        -u "$MARIADB_SUPERUSER_USERNAME" \
+        -p "$MARIADB_SUPERUSER_PASSWORD" \
+        -U "$MARIADB_IDOIT_USERNAME" \
+        -P "$MARIADB_IDOIT_PASSWORD" \
+        -d idoit_data \
+        -t "$tenant_name" \
+        -n || abort "Creating tenant failed"
 
     log "Tenant '$tenant_name' created"
 }
@@ -1929,8 +1816,7 @@ function deployScriptSettings {
         mkdir -p "$settings_dir" || abort "Unable to create directory '$settings_dir'"
     )
 
-    cat << EOF > "$SCRIPT_SETTINGS" || \
-        abort "Unable to create and edit file '${SCRIPT_SETTINGS}'"
+    cat <<EOF >"$SCRIPT_SETTINGS" || abort "Unable to create and edit file '${SCRIPT_SETTINGS}'"
 #!/bin/bash
 
 export CONSOLE_BIN="$CONSOLE_BIN"
@@ -1965,8 +1851,7 @@ function deployCronJobs {
     local file="$TMP_DIR/cron"
 
     test ! -f "$file" && (
-        "$WGET_BIN" --quiet -O "$file" "$download_url" || \
-            abort "Unable to fetch file from '${download_url}'"
+        "$WGET_BIN" --quiet -O "$file" "$download_url" || abort "Unable to fetch file from '${download_url}'"
     )
 
     sed -i -- "s/www-data/${APACHE_USER}/g" "$file" || abort "Unable to set Apache user"
@@ -1994,8 +1879,7 @@ function deployScript {
     log "Deploy script '$file'"
 
     test ! -f "$tmp_file" && (
-        "$WGET_BIN" --quiet -O "$tmp_file" "$url" || \
-            abort "Unable to fetch file from '${url}'"
+        "$WGET_BIN" --quiet -O "$tmp_file" "$url" || abort "Unable to fetch file from '${url}'"
     )
 
     chmod 775 "$tmp_file" || abort "Unable to set read/write/executable bits"
@@ -2009,25 +1893,24 @@ function unitctl {
 
     log "${action^} $unit"
 
-    systemctl -q "$action" "${unit}.service" || \
-        abort "Failed to $action $unit"
+    systemctl -q "$action" "${unit}.service" || abort "Failed to $action $unit"
 }
 
 function setup {
     # We need English to check some command outputs:
-    if locale -a | grep "^en_US.utf8" > /dev/null; then
+    if locale -a | grep "^en_US.utf8" >/dev/null; then
         export LC_ALL="en_US.utf8"
         export LANG="en_US.utf8"
         export LANGUAGE="en_US.utf8"
-    elif locale -a | grep "^en_GB.utf8" > /dev/null; then
+    elif locale -a | grep "^en_GB.utf8" >/dev/null; then
         export LC_ALL="en_GB.utf8"
         export LANG="en_GB.utf8"
         export LANGUAGE="en_GB.utf8"
-    elif locale -a | grep "^C.UTF-8" > /dev/null; then
+    elif locale -a | grep "^C.UTF-8" >/dev/null; then
         export LC_ALL="C.UTF-8"
         export LANG="C.UTF-8"
         export LANGUAGE="C.UTF-8"
-    elif locale -a | grep "^C.utf8" > /dev/null; then
+    elif locale -a | grep "^C.utf8" >/dev/null; then
         export LC_ALL="C.utf8"
         export LANG="C.utf8"
         export LANGUAGE="C.utf8"
@@ -2041,7 +1924,7 @@ function setup {
 }
 
 function tearDown {
-    test -d "$TMP_DIR" && ( rm -rf "$TMP_DIR" || echo "Failed to cleanup" 1>&2 )
+    test -d "$TMP_DIR" && (rm -rf "$TMP_DIR" || echo "Failed to cleanup" 1>&2)
 }
 
 function showUsage {
@@ -2067,15 +1950,16 @@ function askYesNo {
     read -r answer
 
     case "$answer" in
-        ""|"Y"|"Yes"|"y"|"yes")
-            return 0
-            ;;
-        "No"|"no"|"n"|"N")
-            return 1
-            ;;
-        *)
-            log "Sorry, what do you mean?"
-            askYesNo "$1"
+    "" | "Y" | "Yes" | "y" | "yes")
+        return 0
+        ;;
+    "No" | "no" | "n" | "N")
+        return 1
+        ;;
+    *)
+        log "Sorry, what do you mean?"
+        askYesNo "$1"
+        ;;
     esac
 }
 
@@ -2085,15 +1969,16 @@ function askNoYes {
     read -r answer
 
     case "$answer" in
-        ""|"No"|"no"|"n"|"N")
-            return 0
-            ;;
-        "Y"|"Yes"|"y"|"yes")
-            return 1
-            ;;
-        *)
-            log "Sorry, what do you mean?"
-            askNoYes "$1"
+    "" | "No" | "no" | "n" | "N")
+        return 0
+        ;;
+    "Y" | "Yes" | "y" | "yes")
+        return 1
+        ;;
+    *)
+        log "Sorry, what do you mean?"
+        askNoYes "$1"
+        ;;
     esac
 }
 
@@ -2103,7 +1988,7 @@ function finish {
 }
 
 function abort {
-    echo -e "$1"  1>&2
+    echo -e "$1" 1>&2
     echo "Operation failed. Please check what is wrong and try again." 1>&2
     exit 1
 }
@@ -2120,27 +2005,29 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
 
     ARGS=$(getopt \
         -o vh \
-        --long help,version -- "$@" 2> /dev/null)
+        --long help,version -- "$@" 2>/dev/null)
 
     eval set -- "$ARGS"
 
-    while true ; do
+    while true; do
         case "$1" in
-            -h|--help)
-                showUsage
-                exit 0
-                ;;
-            -v|--version)
-                printVersion
-                exit 0
-                ;;
-            --)
-                shift;
-                break;;
-            *)
-                log "Unkown option '${1}'."
-                showUsage
-                exit 1;;
+        -h | --help)
+            showUsage
+            exit 0
+            ;;
+        -v | --version)
+            printVersion
+            exit 0
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            log "Unkown option '${1}'."
+            showUsage
+            exit 1
+            ;;
         esac
     done
 
