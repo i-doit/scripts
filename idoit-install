@@ -330,6 +330,7 @@ function identifyOS {
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "8 (jessie)" ]]; then
         abort "Error: This version of Debian GNU/Linux is not supported anymore. Please upgrade to Debian 12."
     elif [[ "$NAME" == "Red Hat Enterprise Linux" && "$VERSION_ID" == 8* ]]; then
+
         OS="rhel8"
         APACHE_USER="apache"
         APACHE_GROUP="apache"
@@ -359,6 +360,7 @@ function identifyOS {
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" == "SLES" && "$VERSION" == 15* ]]; then
+
         OS="sles15"
         INSTALL_DIR="/srv/www/htdocs"
         APACHE_USER="wwwrun"
@@ -375,6 +377,7 @@ function identifyOS {
     elif [[ "$NAME" = "SLES" && "$VERSION_ID" == 12* ]]; then
         abort "Error: SLES 12 is out-dated. It's not supported anymore. Please upgrade."
     elif [[ "$NAME" == "openSUSE Leap" && "$VERSION" == 15* ]]; then
+
         OS="opensuse15"
         INSTALL_DIR="/srv/www/htdocs"
         APACHE_USER="wwwrun"
@@ -392,6 +395,7 @@ function identifyOS {
         abort "Error: openSUSE 12 is out-dated. It's not supported anymore. Please upgrade."
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "22.04" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
+
         OS="ubuntu2204"
         APACHE_USER="www-data"
         APACHE_GROUP="www-data"
@@ -406,6 +410,7 @@ function identifyOS {
         PHP_FPM_UNIT="php8.1-fpm"
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "20.04" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
+
         OS="ubuntu2004"
         APACHE_USER="www-data"
         APACHE_GROUP="www-data"
@@ -1350,7 +1355,7 @@ EOF
         "$a2_en_mod" setenvif || abort "Unable to enable Apache module setenvif"
         log "Let every user read the logs"
         chmod 755 /var/log/apache2 || abort "Unable to change permissions"
-        chmod 664 /var/log/apache2/* || abort "Unable to change permissions"
+        chmod 664 /var/log/apache2/ || abort "Unable to change permissions"
         unitctl "restart" "$APACHE_UNIT"
         ;;
     *)
@@ -1387,7 +1392,7 @@ EOF
         "$a2_en_mod" rewrite || abort "Unable to enable Apache module rewrite"
         log "Let every user read the logs"
         chmod 755 /var/log/apache2 || abort "Unable to change permissions"
-        chmod 664 /var/log/apache2/* || abort "Unable to change permissions"
+        chmod 664 /var/log/apache2/ || abort "Unable to change permissions"
         unitctl "restart" "$APACHE_UNIT"
         ;;
     esac
@@ -1406,7 +1411,7 @@ function configureMariaDB {
 
     # Check mariadb version
     local mariadb_version=""
-    mariadb_version=$(mysql --version | head -n1 -c29 | tail -c 5)
+    mariadb_version=$(mysql --version | head -n1 | sed -e 's/.* Distrib \([0-9]*\.[0-9]*\)\.[0-9]*.*/\1/')
 
     log "Prepare shutdown of MariaDB"
     "$MARIADB_BIN" \
@@ -1505,15 +1510,16 @@ EOF
     if [[ -d "/var/log/mysql" ]]; then
         log "Let every user read the logs"
         chmod 755 /var/log/mysql
-        chmod 664 /var/log/mysql/*
+        chmod 664 /var/log/mysql/
     fi
 
-    unitctl "start" "$MARIADB_UNIT"
+
 }
 
 function secureMariaDB {
+
     local mariadb_version=""
-    mariadb_version=$(mysql --version | head -n1 -c29 | tail -c 5)
+    mariadb_version=$(mysql --version | head -n1 | sed -e 's/.* Distrib \([0-9]*\.[0-9]*\)\.[0-9]*.*/\1/')
 
     echo -n -e \
         "Please enter a new password for MariaDB's super user '${MARIADB_SUPERUSER_USERNAME}' [leave empty for '${MARIADB_SUPERUSER_PASSWORD}']: "
@@ -1762,7 +1768,7 @@ function installIDoit {
         MARIADB_IDOIT_PASSWORD="$mariaDBidoitPassword"
     fi
 
-    sudo -u ${APACHE_USER} ${prefix} ${console} install \
+    sudo -u "${APACHE_USER}" "${prefix}" "${console}" install \
         -u "$MARIADB_SUPERUSER_USERNAME" \
         -p "$MARIADB_SUPERUSER_PASSWORD" \
         --host="$MARIADB_HOSTNAME" \
@@ -1793,7 +1799,7 @@ function create_tenant {
         tenant_name="$tenantName"
     fi
 
-    sudo -u ${APACHE_USER} ${prefix} ${console} tenant-create \
+    sudo -u "${APACHE_USER}" "${prefix}" "${console}" tenant-create \
         -u "$MARIADB_SUPERUSER_USERNAME" \
         -p "$MARIADB_SUPERUSER_PASSWORD" \
         -U "$MARIADB_IDOIT_USERNAME" \
