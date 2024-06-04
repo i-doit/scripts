@@ -390,6 +390,22 @@ function identifyOS {
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" = "openSUSE" && "$VERSION_ID" == 12* ]]; then
         abort "Error: openSUSE 12 is out-dated. It's not supported anymore. Please upgrade."
+    elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "24.04" ]]; then
+        # FEATURE: not supported with actual i-doit version see https://kb.i-doit.com/en/installation/system-requirements.html
+        export DEBIAN_FRONTEND="noninteractive"
+        OS="ubuntu2404"
+        APACHE_USER="www-data"
+        APACHE_GROUP="www-data"
+        APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
+        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
+        PHP_CONFIG_FILE="/etc/php/8.3/mods-available/i-doit.ini"
+        MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
+        PHP_FPM_SOCKET="/var/run/php/php8.3-fpm.sock"
+        APACHE_UNIT="apache2"
+        MARIADB_UNIT="mysql"
+        MEMCACHED_UNIT="memcached"
+        PHP_FPM_UNIT="php8.3-fpm"
+        abort "Error: Ubuntu 24.04 is using PHP 8.3 which is actually not supported by i-doit. See https://kb.i-doit.com/en/installation/system-requirements.html. \nPlease use Ubuntu 22.04 or install i-doit manuel with PHP 8.2."
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "22.04" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
         OS="ubuntu2204"
@@ -556,6 +572,9 @@ function configureOS {
     "debian11")
         configureDebian11
         ;;
+    "ubuntu2404")
+        configureUbuntu2404
+        ;;
     "ubuntu2204")
         configureUbuntu2204
         ;;
@@ -656,6 +675,25 @@ function configureUbuntu2204 {
         php-memcached \
         memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
 }
+
+function configureUbuntu2404 {
+    log "Keep your Ubuntu packages up-to-date"
+    apt-get -qq --yes update || abort "Unable to update Ubuntu package repositories"
+    apt-get -qq --yes full-upgrade || abort "Unable to perform update of Ubuntu packages"
+    apt-get -qq --yes clean || abort "Unable to cleanup Ubuntu packages"
+    apt-get -qq --yes autoremove || abort "Unable to remove unnecessary Ubuntu packages"
+
+    log "Install required Ubuntu packages"
+    apt-get -qq --yes install --no-install-recommends \
+        apache2 libapache2-mod-fcgid \
+        mariadb-client mariadb-server \
+        php8.3-bcmath php8.3-cli php8.3-common php8.3-curl php8.3-fpm php8.3-gd \
+        php8.3-ldap php8.3-mbstring php8.3-mysql php8.3-opcache php8.3-pgsql \
+        php8.3-soap php8.3-xml php8.3-zip \
+        php-memcached \
+        memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
+}
+
 
 function configureCentOS7 {
     log "Keep your yum packages up-to-date"
@@ -1085,6 +1123,9 @@ function configurePHP {
     "8.2")
         php_en_mod=$(command -v phpenmod)
         ;;
+    "8.3")
+        php_en_mod=$(command -v phpenmod)
+        ;;
     *)
         abort "PHP ${php_version} is not supported. Please follow the system requirements. We recommend version ${RECOMMENDED_PHP_VERSION}."
         ;;
@@ -1131,7 +1172,7 @@ function configurePHPFPM {
     log "Configure PHP-FPM"
 
     case "$OS" in
-    "debian11" | "debian12" | "ubuntu2004" | "ubuntu2204")
+    "debian11" | "debian12" | "ubuntu2004" | "ubuntu2204" | "ubuntu2404")
         unitctl "restart" "$PHP_FPM_UNIT"
         ;;
     "rhel7" | "rhel8" | "centos7" | "centos8")
@@ -1292,7 +1333,7 @@ EOF
 
         unitctl "restart" "$APACHE_UNIT"
         ;;
-    "debian11" | "debian12" | "ubuntu2004" | "ubuntu2204")
+    "debian11" | "debian12" | "ubuntu2004" | "ubuntu2204" | "ubuntu2404")
         a2_en_site=$(command -v a2ensite)
         a2_dis_site=$(command -v a2dissite)
         a2_en_mod=$(command -v a2enmod)
@@ -1588,7 +1629,7 @@ function secureMariaDB {
             -e"FLUSH PRIVILEGES;" || abort "SQL statement failed"
         ;;
 
-    "sles15" | "opensuse15" | "debian11" | "ubuntu2004" | "ubuntu2204")
+    "sles15" | "opensuse15" | "debian11" | "ubuntu2004" | "ubuntu2204" | "ubuntu2404")
         log "Allow $MARIADB_SUPERUSER_USERNAME login only from localhost"
         "$MARIADB_BIN" \
             -h"$MARIADB_HOSTNAME" \
