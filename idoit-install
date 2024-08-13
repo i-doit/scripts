@@ -1355,7 +1355,7 @@ EOF
         "$a2_en_mod" setenvif || abort "Unable to enable Apache module setenvif"
         log "Let every user read the logs"
         chmod 755 /var/log/apache2 || abort "Unable to change permissions"
-        chmod 664 /var/log/apache2/ || abort "Unable to change permissions"
+        chmod 664 /var/log/apache2/* || abort "Unable to change permissions"
         unitctl "restart" "$APACHE_UNIT"
         ;;
     *)
@@ -1513,6 +1513,7 @@ EOF
         chmod 664 /var/log/mysql/
     fi
 
+unitctl "start" "$MARIADB_UNIT"
 
 }
 
