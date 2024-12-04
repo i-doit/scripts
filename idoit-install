@@ -262,8 +262,7 @@ function identifyOS {
 
     if [[ "$NAME" == "CentOS Linux" && "$VERSION_ID" == "7" ]]; then
         log "Warning: This OS is not officially supported by i-doit"
-        log "Warning: CentOS 7 is out-dated. Please consider to upgrade your OS."
-        askNoYes "Do you really want to continue?" || cancel
+        abort "Warning: CentOS 7 is out-dated. Please consider to upgrade your OS."
 
         OS="centos7"
         APACHE_USER="apache"
@@ -278,8 +277,7 @@ function identifyOS {
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" == "CentOS Linux" && "$VERSION_ID" == "8" ]]; then
-        log "Warning: This OS is not officially supported by i-doit"
-        askNoYes "Do you really want to continue?" || cancel
+        abort "Warning: This OS is not officially supported by i-doit"
 
         OS="centos8"
         APACHE_USER="apache"
@@ -310,7 +308,7 @@ function identifyOS {
         PHP_FPM_UNIT="php8.2-fpm"
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "11 (bullseye)" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
-
+        abort "Error: Debian 11 is out-dated. It's not supported anymore. Please upgrade."
         OS="debian11"
         APACHE_USER="www-data"
         APACHE_GROUP="www-data"
@@ -344,8 +342,7 @@ function identifyOS {
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" == "Red Hat Enterprise Linux Server" && "$VERSION_ID" == 7* ]]; then
-        log "Warning: RHEL 7 is out-dated. Please consider to upgrade your OS."
-        askNoYes "Do you really want to continue?" || cancel
+        abort "Warning: RHEL 7 is out-dated. Please consider to upgrade your OS."
 
         OS="rhel7"
         APACHE_USER="apache"
@@ -424,7 +421,7 @@ function identifyOS {
         PHP_FPM_UNIT="php8.1-fpm"
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "20.04" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
-
+        abort "Error: Ubuntu 20.04 is out-dated. It's not supported anymore. Please upgrade."
         OS="ubuntu2004"
         APACHE_USER="www-data"
         APACHE_GROUP="www-data"
