@@ -394,7 +394,6 @@ function identifyOS {
     elif [[ "$NAME" = "openSUSE" && "$VERSION_ID" == 12* ]]; then
         abort "Error: openSUSE 12 is out-dated. It's not supported anymore. Please upgrade."
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "24.04" ]]; then
-        # FEATURE: not supported with actual i-doit version see https://kb.i-doit.com/en/installation/system-requirements.html
         export DEBIAN_FRONTEND="noninteractive"
         OS="ubuntu2404"
         APACHE_USER="www-data"
@@ -408,7 +407,6 @@ function identifyOS {
         MARIADB_UNIT="mysql"
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php8.3-fpm"
-        abort "Error: Ubuntu 24.04 is using PHP 8.3 which is actually not supported by i-doit. See https://kb.i-doit.com/en/installation/system-requirements.html. \nPlease use Ubuntu 22.04 or install i-doit manually with PHP 8.2."
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "22.04" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
 
@@ -698,7 +696,6 @@ function configureUbuntu2404 {
         php-memcached \
         memcached unzip moreutils || abort "Unable to install required Ubuntu packages"
 }
-
 
 function configureCentOS7 {
     log "Keep your yum packages up-to-date"
