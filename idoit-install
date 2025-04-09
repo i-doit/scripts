@@ -52,7 +52,7 @@ IFS=$'\n\t'
 : "${JOBS_BIN:="/usr/local/bin/idoit-jobs"}"
 : "${CRON_FILE:="/etc/cron.d/i-doit"}"
 : "${BACKUP_DIR:="/var/backups/i-doit"}"
-: "${RECOMMENDED_PHP_VERSION:="8.0"}"
+: "${RECOMMENDED_PHP_VERSION:="8.2"}"
 : "${RECOMMENDED_MARIADB_VERSION:="10.6"}"
 
 ##
@@ -327,8 +327,20 @@ function identifyOS {
         abort "Error: This version of Debian GNU/Linux is not supported anymore. Please upgrade to Debian 12."
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "8 (jessie)" ]]; then
         abort "Error: This version of Debian GNU/Linux is not supported anymore. Please upgrade to Debian 12."
+    elif [[ "$NAME" == "Red Hat Enterprise Linux" && "$VERSION_ID" == 9* ]]; then
+        OS="rhel9"
+        APACHE_USER="apache"
+        APACHE_GROUP="apache"
+        APACHE_CONFIG_FILE="/etc/httpd/conf.d/i-doit.conf"
+        MARIADB_CONFIG_FILE="/etc/my.cnf.d/99-i-doit.cnf"
+        PHP_CONFIG_FILE="/etc/php.d/i-doit.ini"
+        MARIADB_SOCKET="/var/lib/mysql/mysql.sock"
+        PHP_FPM_SOCKET="/var/run/php-fpm/php-fpm.sock"
+        APACHE_UNIT="httpd"
+        MARIADB_UNIT="mariadb"
+        MEMCACHED_UNIT="memcached"
+        PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" == "Red Hat Enterprise Linux" && "$VERSION_ID" == 8* ]]; then
-
         OS="rhel8"
         APACHE_USER="apache"
         APACHE_GROUP="apache"
@@ -343,7 +355,6 @@ function identifyOS {
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" == "Red Hat Enterprise Linux Server" && "$VERSION_ID" == 7* ]]; then
         abort "Warning: RHEL 7 is out-dated. Please consider to upgrade your OS."
-
         OS="rhel7"
         APACHE_USER="apache"
         APACHE_GROUP="apache"
@@ -509,7 +520,7 @@ function checkSoftwareRequirements {
     binaries["memcached"]=$(command -v memcached)
 
     case "$OS" in
-    "rhel7" | "rhel8" | "centos7" | "centos8")
+    "rhel7" | "rhel8" | "rhel9" | "centos7" | "centos8")
         binaries["httpd"]=$(command -v httpd)
         ;;
     *)
@@ -530,8 +541,8 @@ function checkSoftwareRequirements {
         log "Check for installed PHP extensions…"
 
         case "$OS" in
-        ## TODO There is no php-memcached on RHEL 8:
-        "rhel8" | "centos8")
+        ## TODO There is no php-memcached on RHEL 8 and 9:
+        "rhel8" | "rhel9" | "centos8")
             local phpExtensions=(bcmath ctype curl fileinfo gd json ldap
                 mbstring mysqli mysqlnd pgsql session soap xml zip)
             ;;
@@ -586,6 +597,9 @@ function configureOS {
         ;;
     "rhel8")
         configureRHEL8
+        ;;
+    "rhel9")
+        configureRHEL9
         ;;
     "centos7")
         configureCentOS7
@@ -807,6 +821,53 @@ function configureCentOS8 {
         log "Firewall is inactive."
         unitctl "start" "firewalld"
     )
+    firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
+    unitctl "restart" "firewalld"
+}
+
+function configureRHEL9 {
+    log "Keep your packages up-to-date"
+    dnf --assumeyes --quiet update || abort "Unable to update yum packages"
+    dnf --assumeyes --quiet autoremove || abort "Unable to remove out-dated yum packages"
+    dnf --assumeyes --quiet clean all || abort "Unable to clean yum caches"
+    rm -rf /var/cache/dnf || abort "Unable to remove orphaned yum caches"
+
+    for appStream in mariadb:10.11 php:8.2; do
+        log "Install AppStream $appStream"
+        dnf --assumeyes --quiet module install "$appStream"
+    done
+
+    log "Install some important packages"
+    dnf --assumeyes --quiet install \
+        httpd memcached unzip boost-program-options wget zip \
+        php-{bcmath,curl,gd,json,ldap,mysqli,mysqlnd,odbc,pecl-zip,pgsql,pdo,snmp,soap,zip} || abort "Unable to install packages"
+
+    # Is used to install moreutils which provides chronic which is needed for the idoit-jobs
+    if ! rpm -qa | grep "epel-release" >/dev/null; then
+        log "Import EPEL public GPG key"
+        rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-9 || abort "Unable to import public GPG key from EPEL"
+        log "Add epel releases repository"
+        rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm || abort "Unable to install epel releases repository"
+    fi
+
+    # Provides dependencies for moreutils
+    log "Enable codeready-builder for RHEL 9"
+    subscription-manager repos --enable "codeready-builder-for-rhel-9-x86_64-rpms" || abort "Unable to enable Codeready-Builder"
+
+    log "Install moreutils with all dependencies"
+    dnf --assumeyes --quiet install moreutils || abort "Unable to install moreutils"
+
+    for unit in $APACHE_UNIT $MARIADB_UNIT $MEMCACHED_UNIT $PHP_FPM_UNIT; do
+        unitctl "enable" "$unit"
+        unitctl "start" "$unit"
+    done
+
+    log "Allow incoming HTTP traffic"
+    systemctl -q is-active firewalld.service || (
+        log "Firewall is inactive."
+        unitctl "start" "firewalld"
+    )
+
     firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
     unitctl "restart" "firewalld"
 }
@@ -1110,8 +1171,7 @@ function configurePHP {
         abort "PHP ${php_version} is way too old. Please upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
         ;;
     "7.4")
-        log "PHP ${php_version} is installed, but this version is deprecated. Please consider to upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
-        php_en_mod=$(command -v phpenmod)
+        abort "PHP ${php_version} is way too old. Please upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
         ;;
     "8.0")
         php_en_mod=$(command -v phpenmod)
@@ -1174,7 +1234,7 @@ function configurePHPFPM {
     "debian11" | "debian12" | "ubuntu2004" | "ubuntu2204" | "ubuntu2404")
         unitctl "restart" "$PHP_FPM_UNIT"
         ;;
-    "rhel7" | "rhel8" | "centos7" | "centos8")
+    "rhel7" | "rhel8" | "rhel9" | "centos7" | "centos8")
         log "Disable default configuration file"
         mv /etc/php-fpm.d/www.conf{,.bak} || abort "Unable to disable default configuration file"
         log "Put new settings into file '/etc/php-fpm.d/i-doit.conf'"
@@ -1235,7 +1295,7 @@ function configureApache {
     hostname="$(cat /etc/hostname)"
 
     case "$OS" in
-    "rhel7" | "rhel8" | "centos7" | "centos8")
+    "rhel7" | "rhel8" | "rhel9"  | "centos7" | "centos8")
         cat <<EOF >${APACHE_CONFIG_FILE} || abort "Unable to create and edit file '${APACHE_CONFIG_FILE}'"
 DirectoryIndex index.php
 DocumentRoot ${INSTALL_DIR}/
@@ -1268,14 +1328,7 @@ EOF
         chcon -t httpd_sys_rw_content_t "${INSTALL_DIR}/" -R || abort "Unable to give write permissions recursively"
 
         ## mpm_event is already enabled on RHEL 8:
-        if [[ "$OS" != "rhel8" ]]; then
-            log "Disable MPM prefork"
-            sed -i "/.* mpm_prefork_module /s/^#*/#/" /etc/httpd/conf.modules.d/00-mpm.conf || abort "sed exited with error"
-            log "Enable MPM event"
-            sed -i "/^#.* mpm_event_module /s/^#//" /etc/httpd/conf.modules.d/00-mpm.conf || abort "sed exited with error"
-        fi
-
-        if [[ "$OS" != "centos8" ]]; then
+        if [[ "$OS" != "centos8" && "$OS" != "rhel8" ]]; then
             log "Disable MPM prefork"
             sed -i "/.* mpm_prefork_module /s/^#*/#/" /etc/httpd/conf.modules.d/00-mpm.conf || abort "sed exited with error"
             log "Enable MPM event"
@@ -1600,7 +1653,7 @@ function secureMariaDB {
     esac
 
     case "$OS" in
-    "rhel7" | "rhel8" | "centos7" | "centos8")
+    "rhel7" | "rhel8" | "rhel9" | "centos7" | "centos8")
         log "Allow $MARIADB_SUPERUSER_USERNAME login only from localhost"
         "$MARIADB_BIN" \
             -h"$MARIADB_HOSTNAME" \
