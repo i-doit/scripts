@@ -327,8 +327,8 @@ function identifyOS {
         abort "Error: This version of Debian GNU/Linux is not supported anymore. Please upgrade to Debian 12."
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "8 (jessie)" ]]; then
         abort "Error: This version of Debian GNU/Linux is not supported anymore. Please upgrade to Debian 12."
-    elif [[ "$NAME" == "Red Hat Enterprise Linux" && "$VERSION_ID" == 9* ]]; then
-        OS="rhel9"
+    elif [[ ( "$ID" == "rhel" || "$ID_LIKE" =~ (^| )fedora($| ) ) && "$PLATFORM_ID" =~ ^platform:el9$ ]] ; then
+        OS="el9"
         APACHE_USER="apache"
         APACHE_GROUP="apache"
         APACHE_CONFIG_FILE="/etc/httpd/conf.d/i-doit.conf"
@@ -340,8 +340,8 @@ function identifyOS {
         MARIADB_UNIT="mariadb"
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
-    elif [[ "$NAME" == "Red Hat Enterprise Linux" && "$VERSION_ID" == 8* ]]; then
-        OS="rhel8"
+    elif [[ ( "$ID" == "rhel" || "$ID_LIKE" =~ (^| )fedora($| ) ) && "$PLATFORM_ID" =~ ^platform:el8$ ]] ; then
+        OS="el8"
         APACHE_USER="apache"
         APACHE_GROUP="apache"
         APACHE_CONFIG_FILE="/etc/httpd/conf.d/i-doit.conf"
@@ -520,7 +520,7 @@ function checkSoftwareRequirements {
     binaries["memcached"]=$(command -v memcached)
 
     case "$OS" in
-    "rhel7" | "rhel8" | "rhel9" | "centos7" | "centos8")
+    "rhel7" | "el8" | "el9" | "centos7" | "centos8")
         binaries["httpd"]=$(command -v httpd)
         ;;
     *)
@@ -541,8 +541,8 @@ function checkSoftwareRequirements {
         log "Check for installed PHP extensions…"
 
         case "$OS" in
-        ## TODO There is no php-memcached on RHEL 8 and 9:
-        "rhel8" | "rhel9" | "centos8")
+        ## TODO There is no php-memcached on EL 8 and 9:
+        "el8" | "el9" | "centos8")
             local phpExtensions=(bcmath ctype curl fileinfo gd json ldap
                 mbstring mysqli mysqlnd pgsql session soap xml zip)
             ;;
@@ -595,11 +595,11 @@ function configureOS {
     "rhel7")
         configureRHEL7
         ;;
-    "rhel8")
-        configureRHEL8
+    "el8")
+        configureEL8
         ;;
-    "rhel9")
-        configureRHEL9
+    "el9")
+        configureEL9
         ;;
     "centos7")
         configureCentOS7
@@ -825,14 +825,11 @@ function configureCentOS8 {
     unitctl "restart" "firewalld"
 }
 
-function configureRHEL9 {
-    log "Keep your packages up-to-date"
-    dnf --assumeyes --quiet update || abort "Unable to update yum packages"
-    dnf --assumeyes --quiet autoremove || abort "Unable to remove out-dated yum packages"
-    dnf --assumeyes --quiet clean all || abort "Unable to clean yum caches"
-    rm -rf /var/cache/dnf || abort "Unable to remove orphaned yum caches"
+function configureEL9 {
+    log "Check for available updates on your system"
+    dnf --quiet check-update > /dev/null || abort "Please install all available updates"
 
-    for appStream in mariadb:10.11 php:8.2; do
+    for appStream in mariadb:10.11 php:8.3; do
         log "Install AppStream $appStream"
         dnf --assumeyes --quiet module install "$appStream"
     done
@@ -843,16 +840,24 @@ function configureRHEL9 {
         php-{bcmath,curl,gd,json,ldap,mysqli,mysqlnd,odbc,pecl-zip,pgsql,pdo,snmp,soap,zip} || abort "Unable to install packages"
 
     # Is used to install moreutils which provides chronic which is needed for the idoit-jobs
-    if ! rpm -qa | grep "epel-release" >/dev/null; then
-        log "Import EPEL public GPG key"
-        rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-9 || abort "Unable to import public GPG key from EPEL"
-        log "Add epel releases repository"
-        rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm || abort "Unable to install epel releases repository"
+    if ! dnf --quiet list moreutils > /dev/null; then
+	log "Install epel-release for EPEL9 repository"
+	dnf --assumeyes --quiet install epel-release || abort "Unable to install epel-release. Please make sure that epel repository is available."
+	# update the package if a newer version is available from epel directly
+	dnf --assumeyes --quiet update epel-release || abort "Unable to update epel-release."
     fi
 
     # Provides dependencies for moreutils
-    log "Enable codeready-builder for RHEL 9"
-    subscription-manager repos --enable "codeready-builder-for-rhel-9-x86_64-rpms" || abort "Unable to enable Codeready-Builder"
+    if [[ "$ID" == "rhel" ]] ; then
+        log "Enable codeready-builder for RHEL 9"
+        subscription-manager repos --enable "codeready-builder-for-rhel-9-$(arch)-rpms" || abort "Unable to enable Codeready-Builder"
+    elif [[ "$ID" == "ol" ]] ; then
+	log "Enable codeready-builder for OL 9"
+	dnf config-manager --set-enabled ol9_codeready_builder
+    else
+	log "Enable crb repository"
+	dnf config-manager --set-enabled crb || abort "Unable to enable crb repository"
+    fi
 
     log "Install moreutils with all dependencies"
     dnf --assumeyes --quiet install moreutils || abort "Unable to install moreutils"
@@ -862,24 +867,21 @@ function configureRHEL9 {
         unitctl "start" "$unit"
     done
 
-    log "Allow incoming HTTP traffic"
-    systemctl -q is-active firewalld.service || (
-        log "Firewall is inactive."
-        unitctl "start" "firewalld"
-    )
+    if ! systemctl -q is-active firewalld.service ; then
+        log "firewalld is not active. Please make sure that tcp ports 80 (http) and 443 (https) are open!"
+    else
+        log "Allow incoming HTTP traffic"
 
-    firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
-    unitctl "restart" "firewalld"
+        firewall-cmd --permanent --add-service=http --add-service=https || abort "Unable to configure firewall"
+        firewall-cmd --reload
+    fi
 }
 
-function configureRHEL8 {
-    log "Keep your yum packages up-to-date"
-    yum --assumeyes --quiet update || abort "Unable to update yum packages"
-    yum --assumeyes --quiet autoremove || abort "Unable to remove out-dated yum packages"
-    yum --assumeyes --quiet clean all || abort "Unable to clean yum caches"
-    rm -rf /var/cache/yum || abort "Unable to remove orphaned yum caches"
+function configureEL8 {
+    log "Check for available updates on your system"
+    dnf --quiet check-update > /dev/null || abort "Please install all available updates"
 
-    for appStream in httpd:2.4 mariadb:10.3 php:7.4; do
+    for appStream in httpd:2.4 mariadb:10.11 php:8.2; do
         log "Install AppStream $appStream"
         yum --assumeyes --quiet module install "$appStream"
     done
@@ -890,15 +892,25 @@ function configureRHEL8 {
         php-bcmath php-gd php-ldap php-mysqli php-mysqlnd \
         php-pgsql php-soap php-zip || abort "Unable to install packages"
 
-    if ! rpm -qa | grep "epel-release" >/dev/null; then
-        log "Import EPEL public GPG key"
-        rpm --import --quiet https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8 || abort "Unable to import public GPG key from EPEL"
-        log "Add epel releases repository"
-        rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm || abort "Unable to install epel releases repository"
+    # Is used to install moreutils which provides chronic which is needed for the idoit-jobs
+    if ! dnf --quiet list moreutils > /dev/null; then
+	log "Install epel-release for EPEL8 repository"
+	dnf --assumeyes --quiet install epel-release || abort "Unable to install epel-release. Please make sure that epel repository is available."
+	# update the package if a newer version is available from epel directly
+	dnf --assumeyes --quiet update epel-release || abort "Unable to update epel-release."
     fi
 
-    log "Enable codeready-builder for RHEL 8"
-    subscription-manager repos --enable "codeready-builder-for-rhel-8-x86_64-rpms" || abort "Unable to enable Codeready-Builder"
+    # Provides dependencies for moreutils
+    if [[ "$ID" == "rhel" ]] ; then
+        log "Enable codeready-builder for RHEL 8"
+        subscription-manager repos --enable "codeready-builder-for-rhel-8-$(arch)-rpms" || abort "Unable to enable Codeready-Builder"
+    elif [[ "$ID" == "ol" ]] ; then
+	log "Enable codeready-builder for OL 8"
+	dnf config-manager --set-enabled ol8_codeready_builder
+    else
+	log "Enable crb repository"
+	dnf config-manager --set-enabled powertools || abort "Unable to enable powertools repository"
+    fi
 
     log "Install moreutils with all dependencies"
     dnf --assumeyes --quiet install moreutils || abort "Unable to install moreutils"
@@ -908,13 +920,14 @@ function configureRHEL8 {
         unitctl "start" "$unit"
     done
 
-    log "Allow incoming HTTP traffic"
-    systemctl -q is-active firewalld.service || (
-        log "Firewall is inactive."
-        unitctl "start" "firewalld"
-    )
-    firewall-cmd --permanent --add-service=http || abort "Unable to configure firewall"
-    unitctl "restart" "firewalld"
+    if ! systemctl -q is-active firewalld.service ; then
+        log "firewalld is not active. Please make sure that tcp ports 80 (http) and 443 (https) are open!"
+    else
+        log "Allow incoming HTTP traffic"
+
+        firewall-cmd --permanent --add-service=http --add-service=https || abort "Unable to configure firewall"
+        firewall-cmd --reload
+    fi
 }
 
 function configureRHEL7 {
@@ -1234,7 +1247,7 @@ function configurePHPFPM {
     "debian11" | "debian12" | "ubuntu2004" | "ubuntu2204" | "ubuntu2404")
         unitctl "restart" "$PHP_FPM_UNIT"
         ;;
-    "rhel7" | "rhel8" | "rhel9" | "centos7" | "centos8")
+    "rhel7" | "el8" | "el9" | "centos7" | "centos8")
         log "Disable default configuration file"
         mv /etc/php-fpm.d/www.conf{,.bak} || abort "Unable to disable default configuration file"
         log "Put new settings into file '/etc/php-fpm.d/i-doit.conf'"
@@ -1295,7 +1308,7 @@ function configureApache {
     hostname="$(cat /etc/hostname)"
 
     case "$OS" in
-    "rhel7" | "rhel8" | "rhel9"  | "centos7" | "centos8")
+    "rhel7" | "el8" | "el9"  | "centos7" | "centos8")
         cat <<EOF >${APACHE_CONFIG_FILE} || abort "Unable to create and edit file '${APACHE_CONFIG_FILE}'"
 DirectoryIndex index.php
 DocumentRoot ${INSTALL_DIR}/
@@ -1324,11 +1337,10 @@ EOF
         chown "$APACHE_USER":"$APACHE_GROUP" -R "${INSTALL_DIR}/" || abort "Unable to change ownership"
 
         log "SELinux: Allow Apache Web server to read/write files under ${INSTALL_DIR}/"
-        chcon -t httpd_sys_content_t "${INSTALL_DIR}/" -R || abort "Unable to give read permissions recursively"
         chcon -t httpd_sys_rw_content_t "${INSTALL_DIR}/" -R || abort "Unable to give write permissions recursively"
 
         ## mpm_event is already enabled on RHEL 8:
-        if [[ "$OS" != "centos8" && "$OS" != "rhel8" ]]; then
+        if [[ "$OS" != "centos8" && "$OS" != "el8" ]]; then
             log "Disable MPM prefork"
             sed -i "/.* mpm_prefork_module /s/^#*/#/" /etc/httpd/conf.modules.d/00-mpm.conf || abort "sed exited with error"
             log "Enable MPM event"
@@ -1653,7 +1665,7 @@ function secureMariaDB {
     esac
 
     case "$OS" in
-    "rhel7" | "rhel8" | "rhel9" | "centos7" | "centos8")
+    "rhel7" | "el8" | "el9" | "centos7" | "centos8")
         log "Allow $MARIADB_SUPERUSER_USERNAME login only from localhost"
         "$MARIADB_BIN" \
             -h"$MARIADB_HOSTNAME" \
