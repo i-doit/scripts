@@ -6,7 +6,7 @@ Useful scripts to maintain i-doit
 
 ## About
 
-[i-doit](https://i-doit.com) is a software application for IT documentation and a CMDB (Configuration Management Database). This application is very useful to collect all your knowledge about the IT infrastructure you are dealing with. i-doit is a Web application and [has an exhausting API](https://kb.i-doit.com/pages/viewpage.action?pageId=37355644) which is very useful to automate your infrastructure.
+[i-doit](https://i-doit.com) is a software application for IT documentation and a CMDB (Configuration Management Database). This application is very useful to collect all your knowledge about the IT infrastructure you are dealing with. i-doit is a Web application and [has an exhausting API](https://kb.i-doit.com/en/i-doit-add-ons/api/index.html) which is very useful to automate your infrastructure.
 
 ## Install i-doit on a GNU/Linux operating system
 
@@ -18,16 +18,15 @@ The script [`idoit-install`](idoit-install) allows you to easily install the **l
 
 on a **fresh installation of a GNU/Linux operating system**. Supported OSs are:
 
--   Debian GNU/Linux 10 "buster" , DebianGNU/Linux 11 (bullseye) (**recommended**)
+-   Debian GNU/Linux 12 "bookworm" , DebianGNU/Linux 13 (trixie) (**recommended**)
 -   Ubuntu Linux 18.04 LTS "bionic", 20.04 LTS "focal fossa" and 22.04 LTS "jammy jellyfish"
--   Red Hat Enterprise Linux (RHEL) 7 (deprecated) and (RHEL) 8
--   CentOS 7 (deprecated) and CentOS 8
+-   Red Hat Enterprise Linux (RHEL) 9 (deprecated) and (RHEL) 10
 -   SUSE Linux Enterprise Server 15, 15 SP1, 15 SP2 and 15 SP3
 -   openSUSE "leap" 15, 15.1, 15.2 and 15.3
 
 Before you execute this script you …
 
--   Must install one of the supported operating systems in **x86 64 bit** based on the [requirements mentioned in the i-doit knowledge base](https://kb.i-doit.com/display/en/System+Requirements) (excluding the LAMP stack)
+-   Must install one of the supported operating systems in **x86 64 bit** based on the [requirements mentioned in the i-doit knowledge base](https://kb.i-doit.com/en/installation/system-requirements.html) (excluding the LAMP stack)
 -   Should **create a backup/snapshot of your system**
 -   Must make sure that the system is allowed to access external Web services, for example package repositories and the i-doit website.
 
@@ -43,7 +42,7 @@ The script includes several steps which are essential for i-doit:
 -   Deploy cron jobs and an easy-to-use CLI tool for your i-doit instance
 -   Deploy scripts to backup and restore your i-doit instance
 
-All steps are based on information provided by the [i-doit knowledge base](https://kb.i-doit.com/display/en/).
+All steps are based on information provided by the [i-doit knowledge base](https://kb.i-doit.com/en/).
 
 ### Usage
 
@@ -112,7 +111,7 @@ You **should not** install i-doit with this script if you agree with one or more
 
 There are several steps you still need to do by yourself:
 
-1.  [Install your license (only pro version)](https://kb.i-doit.com/display/en/Install+License)
+1.  [Install your license (only pro version)](https://kb.i-doit.com/en/maintenance-and-operation/licensing.html)
 2.  Document your IT (obviously ;-))
 
 ## Easy-use of the i-doit CLI
@@ -200,7 +199,7 @@ idoit-support
 
 ## Alter passwords for various users and remove default users
 
-[`idoit-pwd`](idoit-pwd) works smoothly with the [i-doit Virtual Appliance](https://github.com/i-doit/appliance):
+[`idoit-pwd`](idoit-pwd) allows you to change the password for the i-doit user who executes CLI commands. Additionally, it can be used to remove the default `admin` user and create a new one with a custom username and password.
 
 ~~~
 idoit-pwd
@@ -222,21 +221,21 @@ As already mentioned before some scripts provide configuration settings. These s
 
 There is a default configuration file you may use: [`i-doit.sh`](i-doit.sh)
 
-| Setting               | Default Value                                                         | Description
-| --------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------
-| `CONSOLE_BIN`         | `/usr/local/bin/idoit`                                                | See "Easy-use of the i-doit CLI"                              |
-| `APACHE_USER`         | `www-data` (Debian/Ubuntu), `apache` (RHEL/CentOS), `wwwrun` (SLES)   | User who runs Apache Web server                               |
-| `SYSTEM_DATABASE`     | `idoit_system`                                                        | i-doit's system database                                      |
-| `TENANT_DATABASE`     | `idoit_data`                                                          | i-doit's tenant database                                      |
-| `TENANT_ID`           | `1`                                                                   | Tenant ID                                                     |
-| `MARIADB_USERNAME`    | `idoit`                                                               | MariaDB user for i-doit                                       |
-| `MARIADB_PASSWORD`    | `idoit`                                                               | Password for this user                                        |
-| `MARIADB_HOSTNAME`    | `localhost`                                                           | `localhost` uses a local UNIX socket for a better performance |
-| `INSTANCE_PATH`       | `/var/www/html` (Debian/Ubuntu/RHEL/CentOS), `/srv/www/htdocs` (SLES) | In which directory is i-doit located?                         |
-| `IDOIT_USERNAME`      | `admin`                                                               | i-doit user who executes CLI commands                         |
-| `IDOIT_PASSWORD`      | `admin`                                                               | User's password                                               |
-| `BACKUP_DIR`          | `/var/backups/i-doit`                                                 | Directory for local backups                                   |
-| `BACKUP_AGE`          | `30`                                                                  | Max. age of backup files (in days); `0` disables it           |
+| Setting            | Default Value                                                         | Description                                                   |
+| ------------------ | --------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `CONSOLE_BIN`      | `/usr/local/bin/idoit`                                                | See "Easy-use of the i-doit CLI"                              |
+| `APACHE_USER`      | `www-data` (Debian/Ubuntu), `apache` (RHEL/CentOS), `wwwrun` (SLES)   | User who runs Apache Web server                               |
+| `SYSTEM_DATABASE`  | `idoit_system`                                                        | i-doit's system database                                      |
+| `TENANT_DATABASE`  | `idoit_data`                                                          | i-doit's tenant database                                      |
+| `TENANT_ID`        | `1`                                                                   | Tenant ID                                                     |
+| `MARIADB_USERNAME` | `idoit`                                                               | MariaDB user for i-doit                                       |
+| `MARIADB_PASSWORD` | `idoit`                                                               | Password for this user                                        |
+| `MARIADB_HOSTNAME` | `localhost`                                                           | `localhost` uses a local UNIX socket for a better performance |
+| `INSTANCE_PATH`    | `/var/www/html` (Debian/Ubuntu/RHEL/CentOS), `/srv/www/htdocs` (SLES) | In which directory is i-doit located?                         |
+| `IDOIT_USERNAME`   | `admin`                                                               | i-doit user who executes CLI commands                         |
+| `IDOIT_PASSWORD`   | `admin`                                                               | User's password                                               |
+| `BACKUP_DIR`       | `/var/backups/i-doit`                                                 | Directory for local backups                                   |
+| `BACKUP_AGE`       | `30`                                                                  | Max. age of backup files (in days); `0` disables it           |
 
 The installation script `idoit-install` will ask the user to change most of the default values. **Pro tip:** You should set your own passwords. ;-) You may alter them with `idoit-pwd`.
 
@@ -246,6 +245,6 @@ Please, report any issues to [our issue tracker](https://github.com/i-doit/scrip
 
 ## Copyright & license
 
-Copyright (C) 2017-23 [synetics GmbH](https://i-doit.com/)
+Copyright (C) 2017-26 [i-doit GmbH](https://i-doit.com/)
 
 Licensed under the [GNU Affero GPL version 3 or later (AGPLv3+)](https://gnu.org/licenses/agpl.html). This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
