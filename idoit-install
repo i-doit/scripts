@@ -262,33 +262,8 @@ function identifyOS {
         log "Warning: This OS is not officially supported by i-doit"
         abort "Warning: CentOS 7 is out-dated. Please consider to upgrade your OS."
 
-        OS="centos7"
-        APACHE_USER="apache"
-        APACHE_GROUP="apache"
-        APACHE_CONFIG_FILE="/etc/httpd/conf.d/i-doit.conf"
-        MARIADB_CONFIG_FILE="/etc/my.cnf.d/99-i-doit.cnf"
-        PHP_CONFIG_FILE="/etc/php.d/i-doit.ini"
-        MARIADB_SOCKET="/var/lib/mysql/mysql.sock"
-        PHP_FPM_SOCKET="/var/run/php-fpm/php-fpm.sock"
-        APACHE_UNIT="httpd"
-        MARIADB_UNIT="mariadb"
-        MEMCACHED_UNIT="memcached"
-        PHP_FPM_UNIT="php-fpm"
-
     elif [[ "$NAME" == "CentOS Linux" && "$VERSION_ID" == "8" ]]; then
         abort "Warning: This OS is not officially supported by i-doit"
-        OS="centos8"
-        APACHE_USER="apache"
-        APACHE_GROUP="apache"
-        APACHE_CONFIG_FILE="/etc/httpd/conf.d/i-doit.conf"
-        MARIADB_CONFIG_FILE="/etc/my.cnf.d/99-i-doit.cnf"
-        PHP_CONFIG_FILE="/etc/php.d/i-doit.ini"
-        MARIADB_SOCKET="/var/lib/mysql/mysql.sock"
-        PHP_FPM_SOCKET="/var/run/php-fpm/php-fpm.sock"
-        APACHE_UNIT="httpd"
-        MARIADB_UNIT="mariadb"
-        MEMCACHED_UNIT="memcached"
-        PHP_FPM_UNIT="php-fpm"
 
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "13 (trixie)" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
@@ -324,24 +299,13 @@ function identifyOS {
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "11 (bullseye)" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
         abort "Error: Debian 11 is out-dated. It's not supported anymore. Please upgrade."
-        OS="debian11"
-        APACHE_USER="www-data"
-        APACHE_GROUP="www-data"
-        APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
-        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
-        PHP_CONFIG_FILE="/etc/php/7.4/mods-available/i-doit.ini"
-        MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
-        PHP_FPM_SOCKET="/var/run/php/php7.4-fpm.sock"
-        APACHE_UNIT="apache2"
-        MARIADB_UNIT="mysql"
-        MEMCACHED_UNIT="memcached"
-        PHP_FPM_UNIT="php7.4-fpm"
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "10 (buster)" ]]; then
         abort "Error: This version of Debian GNU/Linux is not supported anymore. Please upgrade to Debian 12."
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "9 (stretch)" ]]; then
         abort "Error: This version of Debian GNU/Linux is not supported anymore. Please upgrade to Debian 12."
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "8 (jessie)" ]]; then
         abort "Error: This version of Debian GNU/Linux is not supported anymore. Please upgrade to Debian 12."
+
     elif [[ "$NAME" == "Red Hat Enterprise Linux" && "$VERSION_ID" == 9* ]]; then
         OS="rhel9"
         APACHE_USER="apache"
@@ -355,6 +319,8 @@ function identifyOS {
         MARIADB_UNIT="mariadb"
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
+
+
     elif [[ "$NAME" == "Red Hat Enterprise Linux" && "$VERSION_ID" == 8* ]]; then
         OS="rhel8"
         APACHE_USER="apache"
@@ -370,20 +336,9 @@ function identifyOS {
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" == "Red Hat Enterprise Linux Server" && "$VERSION_ID" == 7* ]]; then
         abort "Warning: RHEL 7 is out-dated. Please consider to upgrade your OS."
-        OS="rhel7"
-        APACHE_USER="apache"
-        APACHE_GROUP="apache"
-        APACHE_CONFIG_FILE="/etc/httpd/conf.d/i-doit.conf"
-        MARIADB_CONFIG_FILE="/etc/my.cnf.d/99-i-doit.cnf"
-        PHP_CONFIG_FILE="/etc/php.d/i-doit.ini"
-        MARIADB_SOCKET="/var/lib/mysql/mysql.sock"
-        PHP_FPM_SOCKET="/var/run/php-fpm/php-fpm.sock"
-        APACHE_UNIT="httpd"
-        MARIADB_UNIT="mariadb"
-        MEMCACHED_UNIT="memcached"
-        PHP_FPM_UNIT="php-fpm"
-    elif [[ "$NAME" == "SLES" && "$VERSION" == 15* ]]; then
 
+
+    elif [[ "$NAME" == "SLES" && "$VERSION" == 15* ]]; then
         OS="sles15"
         INSTALL_DIR="/srv/www/htdocs"
         APACHE_USER="wwwrun"
@@ -416,6 +371,7 @@ function identifyOS {
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" = "openSUSE" && "$VERSION_ID" == 12* ]]; then
         abort "Error: openSUSE 12 is out-dated. It's not supported anymore. Please upgrade."
+
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "24.04" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
         OS="ubuntu2404"
@@ -430,6 +386,7 @@ function identifyOS {
         MARIADB_UNIT="mysql"
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php8.3-fpm"
+
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "22.04" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
 
@@ -445,21 +402,10 @@ function identifyOS {
         MARIADB_UNIT="mysql"
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php8.1-fpm"
+
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "20.04" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
         abort "Error: Ubuntu 20.04 is out-dated. It's not supported anymore. Please upgrade."
-        OS="ubuntu2004"
-        APACHE_USER="www-data"
-        APACHE_GROUP="www-data"
-        APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
-        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
-        PHP_CONFIG_FILE="/etc/php/7.4/mods-available/i-doit.ini"
-        MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
-        PHP_FPM_SOCKET="/var/run/php/php7.4-fpm.sock"
-        APACHE_UNIT="apache2"
-        MARIADB_UNIT="mysql"
-        MEMCACHED_UNIT="memcached"
-        PHP_FPM_UNIT="php7.4-fpm"
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "18.04" ]]; then
         abort "Error: Ubuntu 18.04 is out-dated. It's not supported anymore. Please upgrade."
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "16.04" ]]; then
