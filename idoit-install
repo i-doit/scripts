@@ -3,9 +3,7 @@
 ##
 ## Install i-doit on a GNU/Linux operating system
 ##
-
-##
-## Copyright (C) 2017-22 synetics GmbH, <https://i-doit.com/>
+## Copyright (C) 2017-26 i-doit GmbH, <https://i-doit.com/>
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU Affero General Public License as published by
@@ -52,8 +50,8 @@ IFS=$'\n\t'
 : "${JOBS_BIN:="/usr/local/bin/idoit-jobs"}"
 : "${CRON_FILE:="/etc/cron.d/i-doit"}"
 : "${BACKUP_DIR:="/var/backups/i-doit"}"
-: "${RECOMMENDED_PHP_VERSION:="8.2"}"
-: "${RECOMMENDED_MARIADB_VERSION:="10.6"}"
+: "${RECOMMENDED_PHP_VERSION:="8.4"}"
+: "${RECOMMENDED_MARIADB_VERSION:="10.11"}"
 
 ##
 ## Runtime settings
@@ -264,36 +262,27 @@ function identifyOS {
         log "Warning: This OS is not officially supported by i-doit"
         abort "Warning: CentOS 7 is out-dated. Please consider to upgrade your OS."
 
-        OS="centos7"
-        APACHE_USER="apache"
-        APACHE_GROUP="apache"
-        APACHE_CONFIG_FILE="/etc/httpd/conf.d/i-doit.conf"
-        MARIADB_CONFIG_FILE="/etc/my.cnf.d/99-i-doit.cnf"
-        PHP_CONFIG_FILE="/etc/php.d/i-doit.ini"
-        MARIADB_SOCKET="/var/lib/mysql/mysql.sock"
-        PHP_FPM_SOCKET="/var/run/php-fpm/php-fpm.sock"
-        APACHE_UNIT="httpd"
-        MARIADB_UNIT="mariadb"
-        MEMCACHED_UNIT="memcached"
-        PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" == "CentOS Linux" && "$VERSION_ID" == "8" ]]; then
         abort "Warning: This OS is not officially supported by i-doit"
 
-        OS="centos8"
-        APACHE_USER="apache"
-        APACHE_GROUP="apache"
-        APACHE_CONFIG_FILE="/etc/httpd/conf.d/i-doit.conf"
-        MARIADB_CONFIG_FILE="/etc/my.cnf.d/99-i-doit.cnf"
-        PHP_CONFIG_FILE="/etc/php.d/i-doit.ini"
-        MARIADB_SOCKET="/var/lib/mysql/mysql.sock"
-        PHP_FPM_SOCKET="/var/run/php-fpm/php-fpm.sock"
-        APACHE_UNIT="httpd"
-        MARIADB_UNIT="mariadb"
-        MEMCACHED_UNIT="memcached"
-        PHP_FPM_UNIT="php-fpm"
-    elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "12 (bookworm)" ]]; then
+    elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "13 (trixie)" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
 
+        OS="debian13"
+        APACHE_USER="www-data"
+        APACHE_GROUP="www-data"
+        APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
+        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
+        PHP_CONFIG_FILE="/etc/php/8.4/mods-available/i-doit.ini"
+        MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
+        PHP_FPM_SOCKET="/var/run/php/php8.4-fpm.sock"
+        APACHE_UNIT="apache2"
+        MARIADB_UNIT="mysql"
+        MEMCACHED_UNIT="memcached"
+        PHP_FPM_UNIT="php8.4-fpm"
+
+    elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "12 (bookworm)" ]]; then
+        export DEBIAN_FRONTEND="noninteractive"
         OS="debian12"
         APACHE_USER="www-data"
         APACHE_GROUP="www-data"
@@ -306,27 +295,17 @@ function identifyOS {
         MARIADB_UNIT="mysql"
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php8.2-fpm"
+
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "11 (bullseye)" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
         abort "Error: Debian 11 is out-dated. It's not supported anymore. Please upgrade."
-        OS="debian11"
-        APACHE_USER="www-data"
-        APACHE_GROUP="www-data"
-        APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
-        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
-        PHP_CONFIG_FILE="/etc/php/7.4/mods-available/i-doit.ini"
-        MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
-        PHP_FPM_SOCKET="/var/run/php/php7.4-fpm.sock"
-        APACHE_UNIT="apache2"
-        MARIADB_UNIT="mysql"
-        MEMCACHED_UNIT="memcached"
-        PHP_FPM_UNIT="php7.4-fpm"
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "10 (buster)" ]]; then
         abort "Error: This version of Debian GNU/Linux is not supported anymore. Please upgrade to Debian 12."
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "9 (stretch)" ]]; then
         abort "Error: This version of Debian GNU/Linux is not supported anymore. Please upgrade to Debian 12."
     elif [[ "$NAME" == "Debian GNU/Linux" && "$VERSION" == "8 (jessie)" ]]; then
         abort "Error: This version of Debian GNU/Linux is not supported anymore. Please upgrade to Debian 12."
+
     elif [[ "$NAME" == "Red Hat Enterprise Linux" && "$VERSION_ID" == 9* ]]; then
         OS="rhel9"
         APACHE_USER="apache"
@@ -340,6 +319,8 @@ function identifyOS {
         MARIADB_UNIT="mariadb"
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php-fpm"
+
+
     elif [[ "$NAME" == "Red Hat Enterprise Linux" && "$VERSION_ID" == 8* ]]; then
         OS="rhel8"
         APACHE_USER="apache"
@@ -355,20 +336,9 @@ function identifyOS {
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" == "Red Hat Enterprise Linux Server" && "$VERSION_ID" == 7* ]]; then
         abort "Warning: RHEL 7 is out-dated. Please consider to upgrade your OS."
-        OS="rhel7"
-        APACHE_USER="apache"
-        APACHE_GROUP="apache"
-        APACHE_CONFIG_FILE="/etc/httpd/conf.d/i-doit.conf"
-        MARIADB_CONFIG_FILE="/etc/my.cnf.d/99-i-doit.cnf"
-        PHP_CONFIG_FILE="/etc/php.d/i-doit.ini"
-        MARIADB_SOCKET="/var/lib/mysql/mysql.sock"
-        PHP_FPM_SOCKET="/var/run/php-fpm/php-fpm.sock"
-        APACHE_UNIT="httpd"
-        MARIADB_UNIT="mariadb"
-        MEMCACHED_UNIT="memcached"
-        PHP_FPM_UNIT="php-fpm"
-    elif [[ "$NAME" == "SLES" && "$VERSION" == 15* ]]; then
 
+
+    elif [[ "$NAME" == "SLES" && "$VERSION" == 15* ]]; then
         OS="sles15"
         INSTALL_DIR="/srv/www/htdocs"
         APACHE_USER="wwwrun"
@@ -401,6 +371,7 @@ function identifyOS {
         PHP_FPM_UNIT="php-fpm"
     elif [[ "$NAME" = "openSUSE" && "$VERSION_ID" == 12* ]]; then
         abort "Error: openSUSE 12 is out-dated. It's not supported anymore. Please upgrade."
+
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "24.04" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
         OS="ubuntu2404"
@@ -415,6 +386,7 @@ function identifyOS {
         MARIADB_UNIT="mysql"
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php8.3-fpm"
+
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "22.04" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
 
@@ -430,21 +402,10 @@ function identifyOS {
         MARIADB_UNIT="mysql"
         MEMCACHED_UNIT="memcached"
         PHP_FPM_UNIT="php8.1-fpm"
+
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "20.04" ]]; then
         export DEBIAN_FRONTEND="noninteractive"
         abort "Error: Ubuntu 20.04 is out-dated. It's not supported anymore. Please upgrade."
-        OS="ubuntu2004"
-        APACHE_USER="www-data"
-        APACHE_GROUP="www-data"
-        APACHE_CONFIG_FILE="/etc/apache2/sites-available/i-doit.conf"
-        MARIADB_CONFIG_FILE="/etc/mysql/mariadb.conf.d/99-i-doit.cnf"
-        PHP_CONFIG_FILE="/etc/php/7.4/mods-available/i-doit.ini"
-        MARIADB_SOCKET="/var/run/mysqld/mysqld.sock"
-        PHP_FPM_SOCKET="/var/run/php/php7.4-fpm.sock"
-        APACHE_UNIT="apache2"
-        MARIADB_UNIT="mysql"
-        MEMCACHED_UNIT="memcached"
-        PHP_FPM_UNIT="php7.4-fpm"
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "18.04" ]]; then
         abort "Error: Ubuntu 18.04 is out-dated. It's not supported anymore. Please upgrade."
     elif [[ "$NAME" == "Ubuntu" && "$VERSION_ID" == "16.04" ]]; then
@@ -577,6 +538,9 @@ function checkSoftwareRequirements {
 
 function configureOS {
     case "$OS" in
+    "debian13")
+        configureDebian13
+        ;;
     "debian12")
         configureDebian12
         ;;
@@ -618,6 +582,26 @@ function configureOS {
         ;;
     esac
 }
+
+# Debian13
+function configureDebian13 {
+    log "Keep your Debian packages up-to-date"
+    apt-get -qq --yes update || abort "Unable to update Debian package repositories"
+    apt-get -qq --yes full-upgrade || abort "Unable to perform update of Debian packages"
+    apt-get -qq --yes clean || abort "Unable to cleanup Debian packages"
+    apt-get -qq --yes autoremove || abort "Unable to remove unnecessary Debian packages"
+
+    log "Install required Debian 12 packages"
+    apt-get -qq --yes install --no-install-recommends \
+        apache2 libapache2-mod-fcgid \
+        mariadb-client mariadb-server \
+        php-bcmath php-cli php-common php-curl php-fpm php-gd \
+        php-ldap php-mbstring php-mysql php-opcache php-pgsql \
+        php-soap php-xml php-zip \
+        php-memcached \
+        memcached unzip sudo moreutils || abort "Unable to install required Debian packages"
+}
+
 function configureDebian12 {
     log "Keep your Debian packages up-to-date"
     apt-get -qq --yes update || abort "Unable to update Debian package repositories"
@@ -1167,22 +1151,16 @@ function configurePHP {
     php_version=$(php --version | head -n1 -c7 | tail -c3)
 
     case "$php_version" in
-    "5.4" | "5.5" | "5.6" | "7.0" | "7.1" | "7.2" | "7.3")
+    "5.4" | "5.5" | "5.6" | "7.0" | "7.1" | "7.2" | "7.3" | "7.4" | "8.0"| "8.1")
         abort "PHP ${php_version} is way too old. Please upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
-        ;;
-    "7.4")
-        abort "PHP ${php_version} is way too old. Please upgrade. We recommend version ${RECOMMENDED_PHP_VERSION}."
-        ;;
-    "8.0")
-        php_en_mod=$(command -v phpenmod)
-        ;;
-    "8.1")
-        php_en_mod=$(command -v phpenmod)
         ;;
     "8.2")
         php_en_mod=$(command -v phpenmod)
         ;;
     "8.3")
+        php_en_mod=$(command -v phpenmod)
+        ;;
+    "8.4")
         php_en_mod=$(command -v phpenmod)
         ;;
     *)
@@ -1231,7 +1209,7 @@ function configurePHPFPM {
     log "Configure PHP-FPM"
 
     case "$OS" in
-    "debian11" | "debian12" | "ubuntu2004" | "ubuntu2204" | "ubuntu2404")
+    "debian11" | "debian12" | "debian13" | "ubuntu2004" | "ubuntu2204" | "ubuntu2404")
         unitctl "restart" "$PHP_FPM_UNIT"
         ;;
     "rhel7" | "rhel8" | "rhel9" | "centos7" | "centos8")
@@ -1385,7 +1363,7 @@ EOF
 
         unitctl "restart" "$APACHE_UNIT"
         ;;
-    "debian11" | "debian12" | "ubuntu2004" | "ubuntu2204" | "ubuntu2404")
+    "debian11" | "debian12" | "debian13" | "ubuntu2004" | "ubuntu2204" | "ubuntu2404")
         a2_en_site=$(command -v a2ensite)
         a2_dis_site=$(command -v a2dissite)
         a2_en_mod=$(command -v a2enmod)
@@ -1495,11 +1473,19 @@ function configureMariaDB {
         MARIADB_HOSTNAME="$answer"
     fi
 
-    secureMariaDB
-
     # Check mariadb version
     local mariadb_version=""
-    mariadb_version=$(mysql --version | head -n1 | sed -e 's/.* Distrib \([0-9]*\.[0-9]*\)\.[0-9]*.*/\1/')
+
+    if [[ "$OS" == "debian13" ]]; then
+        # Debian 13 has MariaDB 10.11, but it is not possible to get the version number with the default method
+        # So we have to use a workaround to get the major and minor version number
+        mariadb_version=$(mysql --version | head -n1 | sed -e 's/.*from \([0-9]*\.[0-9]*\).*/\1/')
+    else
+        # For all other OSes we can get the major and minor version number with the default mysql client
+        mariadb_version=$(mysql --version | head -n1 | sed -e 's/.* Distrib \([0-9]*\.[0-9]*\).*/\1/')
+    fi
+
+    secureMariaDB
 
     log "Prepare shutdown of MariaDB"
     "$MARIADB_BIN" \
@@ -1517,12 +1503,8 @@ function configureMariaDB {
         MARIADB_INNODB_BUFFER_POOL_SIZE="$answer"
     fi
 
-    if [[ "$mariadb_version" != "10.11" ]]; then
-        log "Move old MariaDB log files"
-        mv /var/lib/mysql/ib_logfile[01] "$TMP_DIR" || abort "Unable to remove old log files"
-
-        log "Configure MariaDB settings"
-        cat <<EOF >"$MARIADB_CONFIG_FILE" || abort "Unable to create and edit file '${MARIADB_CONFIG_FILE}'"
+    log "Configure MariaDB settings"
+    cat <<EOF >"$MARIADB_CONFIG_FILE" || abort "Unable to create and edit file '${MARIADB_CONFIG_FILE}'"
 [mysqld]
 
 # This is the number 1 setting to look at for any performance optimization
@@ -1560,41 +1542,6 @@ innodb_stats_on_metadata = 0
 sql-mode = ""
 EOF
 
-    else
-        cat <<EOF >"$MARIADB_CONFIG_FILE" || abort "Unable to create and edit file '${MARIADB_CONFIG_FILE}'"
-[mysqld]
-# This is the number 1 setting to look at for any performance optimization
-# It is where the data and indexes are cached: having it as large as possible will
-# ensure MySQL uses memory and not disks for most read operations.
-# See https://mariadb.com/kb/en/innodb-buffer-pool/
-# Typical values are 1G (1-2GB RAM), 5-6G (8GB RAM), 20-25G (32GB RAM), 100-120G (128GB RAM).
-innodb_buffer_pool_size = 1G
-# Redo log file size, the higher the better.
-# MySQL/MariaDB writes one of these log files in a default installation.
-innodb_log_file_size = 512M
-innodb_sort_buffer_size = 64M
-sort_buffer_size = 262144 # default
-join_buffer_size = 262144 # default
-max_allowed_packet = 128M
-max_heap_table_size = 32M
-query_cache_min_res_unit = 4096
-query_cache_type = 1
-query_cache_limit = 5M
-query_cache_size = 80M
-tmp_table_size = 32M
-max_connections = 200
-innodb_file_per_table = 1
-# Disable this (= 0) if you have slow hard disks
-innodb_flush_log_at_trx_commit = 1
-innodb_flush_method = O_DIRECT
-innodb_lru_scan_depth = 2048
-table_definition_cache = 1024
-table_open_cache = 2048
-innodb_stats_on_metadata = 0
-sql-mode = ""
-EOF
-    fi
-
     if [[ -d "/var/log/mysql" ]]; then
         log "Let every user read the logs"
         chmod 755 /var/log/mysql
@@ -1606,9 +1553,6 @@ unitctl "start" "$MARIADB_UNIT"
 }
 
 function secureMariaDB {
-
-    local mariadb_version=""
-    mariadb_version=$(mysql --version | head -n1 | sed -e 's/.* Distrib \([0-9]*\.[0-9]*\)\.[0-9]*.*/\1/')
 
     echo -n -e \
         "Please enter a new password for MariaDB's super user '${MARIADB_SUPERUSER_USERNAME}' [leave empty for '${MARIADB_SUPERUSER_PASSWORD}']: "
@@ -1622,7 +1566,7 @@ function secureMariaDB {
     log "Set $MARIADB_SUPERUSER_USERNAME password and plugin 'mysql_native_password'"
     case "$mariadb_version" in
 
-    "10.11")
+    "10.11" | "11.4" | "11.8")
         "$MARIADB_BIN" \
             -h"$MARIADB_HOSTNAME" \
             -u"$MARIADB_SUPERUSER_USERNAME" \
@@ -1683,7 +1627,7 @@ function secureMariaDB {
             -e"FLUSH PRIVILEGES;" || abort "SQL statement failed"
         ;;
 
-    "sles15" | "opensuse15" | "debian11" | "ubuntu2004" | "ubuntu2204" | "ubuntu2404")
+    "sles15" | "opensuse15" | "debian11" | "debian12" | "debian13" | "ubuntu2004" | "ubuntu2204" | "ubuntu2404")
         log "Allow $MARIADB_SUPERUSER_USERNAME login only from localhost"
         "$MARIADB_BIN" \
             -h"$MARIADB_HOSTNAME" \
