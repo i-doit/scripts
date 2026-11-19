@@ -7,52 +7,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased][]
 
+## [0.14][] – 2026-09-30
+
 Note: We moved this repository to [a new location](http://github.com/i-doit/scripts).
+
+### Security
+
+-   `idoit-install`: Known limitation: `console.php` only accepts the passwords for the installation and the first tenant as command-line options, so local users can read them in the process list while these commands run. See "Security notes and limitations" in the README.
 
 ### Added
 
--   `idoit-install`: Add support for CentOS 8
--   `idoit-install`: Add support for Debian 11 "bullseye"
--   `idoit-install`: Add support for Ubuntu Linux 20.04 LTS "focal fossa" and 22.04 LTS "jammy jellyfish"
--   `idoit-install`: Add support for openSUSE "leap" 15, 15.1, 15.2 and 15.3
--   `idoit-install`: Add new logic to configure MariaDB based on the operating system and MariaDB version used
--   `idoit-install`: Add support for MariaDB 10.4, 10.5 and 10.6
--   `idoit-install`: Added "create_tenant" function to "function execute"
--   `idoit-install`: Added EVAL installation routine and set as default
+-   `idoit-install`: Add support for Debian GNU/Linux 13 "trixie", Ubuntu Linux 24.04 LTS, RHEL 9, RHEL 10, Rocky Linux 10 and SLES 15 SP6
+-   `idoit-install`: Add EVAL installation routine and set it as default
+-   `idoit-install`: Create the first tenant via `console.php`; its name defaults to `IDOIT_DEFAULT_TENANT`
+-   `idoit-install`: Add unattended mode (`IDOIT_UNATTENDED=1` or no terminal on stdin)
+-   `idoit-install`: Serve i-doit via HTTPS with a self-signed certificate by default or an own certificate
+-   `idoit-install`: Store all passwords set during the installation in `/root/i-doit-credentials.txt`, readable only by `root`
+-   `idoit-install`: Deploy `/etc/i-doit/console.ini` with the credentials for the cron jobs
+-   `idoit-install`: Ask for the e-mail address for errors of cron jobs (`CRON_MAILTO`)
+-   `idoit-install`: Install and check the PHP extensions `imagick` and `xmlwriter`
+-   `idoit-install`: Enable the Apache modules `expires` and `headers` on Debian and Ubuntu
 
 ### Changed
 
--   `idoit-install`: Add PHP 7.4 and MariaDB 10.5 support for Ubuntu Linux 18.04 LTS "bionic"
--   `idoit-install`: Change default answer to yes when asking to continue without fulfilling all hardware requirements
--   `idoit-install`: Do not install recommended software packages automatically (Debian/Ubuntu)
--   `idoit-install`: Mark PHP 5.6 and PHP 7.0 as unsupported
--   `idoit-install`: Mark PHP 7.1 as deprecated
--   `idoit-install`: Mark PHP 7.4 as stable
--   `idoit-install`: Mark PHP 8.0 as supported
--   `idoit-install`: Mark PHP 8.1 as supported
--   `idoit-install`: Mark MariaDB 10.6 as recommended
--   `idoit-install`: Mark PHP 8.0 as recommended
--   `idoit-install`: Deprecate support for RHEL 7
--   `idoit-install`: Deprecate support for CentOS 7
--   `idoit-install`: Remove support for Debian GNU/Linux 9 "stretch"
--   `idoit-install`: Remove support for Ubuntu Linux 16.04 LTS "xenial"
--   `idoit-install`: Remove support for SLES 12
+-   `idoit-install`: Generate random passwords instead of using default passwords
+-   `idoit-install`: Create the MariaDB administrator `idoit_admin`; MariaDB's `root` keeps logging in via UNIX socket
+-   `idoit-install`: Deploy helper scripts from the directory of `idoit-install` or from the Git tag of this version (`SCRIPTS_REF`) instead of the main branch
+-   `idoit-install`: Use PHP 8 on SLES 15 SP6
+-   `idoit-install`: Align MariaDB settings with the knowledge base
+-   `idoit-install`: Install i-doit via `console.php`
+-   `idoit-jobs`: Read the i-doit credentials from `CONSOLE_CONFIG`
+-   `cron`: Run the jobs as `root` and send errors to `MAILTO`
+-   `i-doit.sh`: Remove `IDOIT_USERNAME` and `IDOIT_PASSWORD`, add `CONSOLE_CONFIG`; only `root` may read this file
+-   `README.md`: Describe supported platforms, unattended mode, all settings and HTTPS
+
+### Removed
+
+-   `idoit-install`: Remove support for all operating systems not listed above, including Debian 12, older Ubuntu releases, RHEL 8, CentOS and openSUSE
 -   `idoit-install`: Remove outdated i-doit controller
--   `idoit-install`: Changed Copyright to 2023
--   `idoit-install`: Changed installIDoit to use console.php for installation
--   `idoit-install`: Changed installIDoit to use console.php for tenant creation
 
 ### Fixed
 
+-   `idoit-install`: Stop on errors inside installation steps
+-   `idoit-install`: Use the proxy for package mirrors via plain HTTP, too
+-   `idoit-install`: Keep the database password out of the process list for backup and restore
+-   `idoit-install`: Keep logs private and make reruns safe
+-   `idoit-install`: Stop before the first change of the system if i-doit is already installed
+-   `idoit-install`: Label the i-doit directory persistently for SELinux
+-   `idoit-install`: Set the AppArmor profile of PHP-FPM to complain mode on SLES
+-   `idoit-install`: Install and enable a cron daemon and the CA certificates on minimal systems
+-   `idoit-install`: Stop with a clear message if basic commands like `getopt` or `vmstat` are missing
+-   `idoit-install`: Install available updates on RHEL and Rocky Linux instead of stopping, like on the other platforms
+-   `idoit-install`: Find local helper files after a change of the working directory and check all helper files before the first change of the system
+-   `idoit-install`: Open TCP port 80 in an active `ufw` firewall on Debian and Ubuntu in every HTTPS mode, including `none`
+-   `idoit-install`: Reject a password for the MariaDB user of i-doit that contains `'`, `"` or `\` because `console.php` cannot store it correctly, and check a preset password before the first change of the system
+-   `idoit-install`: Check the variant, the HTTPS settings, the host name in the certificate, the size of the InnoDB buffer pool, the password of the i-doit user `admin` and `CRON_MAILTO` before the first change of the system, and ask again after an invalid answer instead of stopping
+-   `idoit-install`: Print the usage on an unknown option or argument instead of stopping without a message or ignoring the argument
+-   `idoit-install`: Stop with a clear message if the download URL, version or release date of i-doit cannot be read or the `.htaccess` template is missing
+-   `idoit-install`: Store generated passwords before `console.php` uses them, so they are not lost if it fails
+-   `idoit-install`: Stop if MariaDB is running but `root` cannot log in to check for an existing installation
+-   `idoit-install`: Activate the Desktop Applications Module on SLES because `php8-imagick` needs ImageMagick from it
+-   `idoit-install`: Activate the Development Tools Module on SLES because `chronic` needs `perl-IO-Tty` from it, and activate the Basesystem and Server Applications Modules the other modules depend on
+-   `idoit-install`: Create a custom installation directory (`INSTALL_DIR`) on SLES, Debian and Ubuntu before changing its ownership
+-   `idoit-install`: Grant access to a custom installation directory (`INSTALL_DIR`) in the Apache VHosts and stop enabling the Apache module `access_compat` on SLES, which i-doit does not need
+-   `idoit-install`: Enable the BaseOS and AppStream repositories on RHEL if they are missing on a registered system, for example when registering RHEL 10 disabled the repository management of `subscription-manager`, and stop with a clear message on a system that is not registered
 -   `idoit-install`: Fix broken patch of i-doit's configuration file `src/config.inc.php`
--   `idoit-install`: Enable systemd unit for PHP-FPM on CentOS
 -   `idoit-install`: Fix hardware checks because of wrong locale (found on Ubuntu 18.04 LTS)
+-   `idoit-install`: Fix links to the knowledge base
 -   `idoit-support`: Add missing destination for file `appliance_version`
--   `idoit-install`: Fix missing authentication statement for MariaDB configuration
--   `idoit-install`: Fixed CronJobs URL from master to main
--   `idoit-install`: Fixed deployScript URL from master to main
--   `idoit-install`: Fix PHP version checker to support the recommended PHP version
-
 
 ## [0.13][] – 2019-07-10
 
@@ -259,7 +281,8 @@ Happy holidays 🎄
 
 Initial release
 
-[Unreleased]: https://github.com/i-doit/scripts/compare/0.13...HEAD
+[Unreleased]: https://github.com/i-doit/scripts/compare/0.14...HEAD
+[0.14]: https://github.com/i-doit/scripts/compare/0.13...0.14
 [0.13]: https://github.com/i-doit/scripts/compare/0.12...0.13
 [0.12]: https://github.com/i-doit/scripts/compare/0.11...0.12
 [0.11]: https://github.com/i-doit/scripts/compare/0.10...0.11

@@ -28,17 +28,15 @@ set -euo pipefail
 ##
 
 CONFIGURATION_FILE="/etc/i-doit/i-doit.sh"
-ARGS="$*"
 
 ##--------------------------------------------------------------------------------------------------
 
 function execute {
-    local prefix=""
-    local console="php console.php $ARGS"
-
-    test "$(whoami)" != "$APACHE_USER" && prefix="sudo -u $APACHE_USER "
-
-    eval "${prefix}${console}" || abort "i-doit console exited with non-zero status"
+    if [[ "$(whoami)" = "$APACHE_USER" ]]; then
+        php console.php "$@" || abort "i-doit console exited with non-zero status"
+    else
+        sudo -u "$APACHE_USER" php console.php "$@" || abort "i-doit console exited with non-zero status"
+    fi
 }
 
 function setup {
@@ -67,5 +65,7 @@ function log {
 ##--------------------------------------------------------------------------------------------------
 
 if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
-    setup && execute && finish
+    setup
+    execute "$@"
+    finish
 fi

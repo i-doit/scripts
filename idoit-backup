@@ -31,6 +31,7 @@ IFS=$'\n\t'
 USER="root"
 CONFIGURATION_FILE="/etc/i-doit/i-doit.sh"
 DATE=$(date +%Y-%m-%d_%H-%M-%S)
+CLIENT_CONFIG=""
 
 ##--------------------------------------------------------------------------------------------------
 
@@ -66,8 +67,7 @@ function dumpDatabase {
 
     log "Dump $db_description database '${db_name}'"
 
-    /usr/bin/mysqldump \
-        -h"$MARIADB_HOSTNAME" -u"$MARIADB_USERNAME" -p"$MARIADB_PASSWORD" "$db_name" | \
+    /usr/bin/mysqldump --defaults-extra-file="$CLIENT_CONFIG" "$db_name" | \
         gzip -9 > "${BACKUP_DIR}/${db_name}_${DATE}.sql.gz" || \
         abort "Unable to dump database"
 
@@ -80,6 +80,9 @@ function dumpDatabase {
 function setup {
     test "$(whoami)" = "$USER" || abort "Only user '${USER}' may execute this script"
 
+    ## Backups contain credentials:
+    umask 077
+
     test -f "$CONFIGURATION_FILE" || abort "Missing configuration file '${CONFIGURATION_FILE}'"
 
     # shellcheck source=/dev/null
@@ -90,6 +93,37 @@ function setup {
     if [[ ! -d "$BACKUP_DIR" ]]; then
         log "Create backup directory '${BACKUP_DIR}'"
         mkdir -p "$BACKUP_DIR" || abort "Unable to create backup directory"
+    fi
+
+    writeClientConfig
+}
+
+## Pass credentials to the MariaDB client in a temporary file instead of the command line:
+function writeClientConfig {
+    CLIENT_CONFIG=$(mktemp) || abort "Unable to create temporary file"
+
+    {
+        echo "[client]"
+        echo "host=$(cnfString "$MARIADB_HOSTNAME")"
+        echo "user=$(cnfString "$MARIADB_USERNAME")"
+        echo "password=$(cnfString "$MARIADB_PASSWORD")"
+    } >"$CLIENT_CONFIG" || abort "Unable to edit file '${CLIENT_CONFIG}'"
+}
+
+## Quote a value for a MariaDB option file:
+function cnfString {
+    local value="$1"
+    local bs="\\"
+    local dq='"'
+
+    value="${value//"$bs"/"$bs$bs"}"
+    value="${value//"$dq"/"$bs$dq"}"
+    printf '"%s"' "$value"
+}
+
+function tearDown {
+    if [[ -n "$CLIENT_CONFIG" ]]; then
+        rm -f "$CLIENT_CONFIG" || echo "Unable to remove file '${CLIENT_CONFIG}'" 1>&2
     fi
 }
 
@@ -111,5 +145,8 @@ function abort {
 ##--------------------------------------------------------------------------------------------------
 
 if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
-    setup && execute && finish
+    trap tearDown EXIT
+    setup
+    execute
+    finish
 fi

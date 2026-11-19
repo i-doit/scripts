@@ -30,6 +30,7 @@ IFS=$'\n\t'
 
 USER="root"
 CONFIGURATION_FILE="/etc/i-doit/i-doit.sh"
+CLIENT_CONFIG=""
 
 ##--------------------------------------------------------------------------------------------------
 
@@ -49,13 +50,12 @@ function restoreDatabase {
     local db_name="$2"
 
     log "Restore $db_description database"
-    /usr/bin/mysql -h"$MARIADB_HOSTNAME" -u"$MARIADB_USERNAME" -p"$MARIADB_PASSWORD" \
-        -e"DROP DATABASE IF EXISTS ${db_name};" || abort "Unable to drop database"
-    /usr/bin/mysql -h"$MARIADB_HOSTNAME" -u"$MARIADB_USERNAME" -p"$MARIADB_PASSWORD" \
-        -e"CREATE DATABASE IF NOT EXISTS ${db_name};" || abort "Unable to create database"
+    /usr/bin/mysql --defaults-extra-file="$CLIENT_CONFIG" \
+        -e"DROP DATABASE IF EXISTS \`${db_name}\`;" || abort "Unable to drop database"
+    /usr/bin/mysql --defaults-extra-file="$CLIENT_CONFIG" \
+        -e"CREATE DATABASE IF NOT EXISTS \`${db_name}\`;" || abort "Unable to create database"
     /bin/gunzip < "${BACKUP_DIR}/${db_name}_latest.sql.gz" | \
-        /usr/bin/mysql \
-        -h"$MARIADB_HOSTNAME" -u"$MARIADB_USERNAME" -p"$MARIADB_PASSWORD" "$db_name" || \
+        /usr/bin/mysql --defaults-extra-file="$CLIENT_CONFIG" "$db_name" || \
         abort "Unable to import dump"
 }
 
@@ -79,6 +79,37 @@ function setup {
 
     test -f "${BACKUP_DIR}/i-doit_latest.tar.gz" || \
         abort "No file dump found"
+
+    writeClientConfig
+}
+
+## Pass credentials to the MariaDB client in a temporary file instead of the command line:
+function writeClientConfig {
+    CLIENT_CONFIG=$(mktemp) || abort "Unable to create temporary file"
+
+    {
+        echo "[client]"
+        echo "host=$(cnfString "$MARIADB_HOSTNAME")"
+        echo "user=$(cnfString "$MARIADB_USERNAME")"
+        echo "password=$(cnfString "$MARIADB_PASSWORD")"
+    } >"$CLIENT_CONFIG" || abort "Unable to edit file '${CLIENT_CONFIG}'"
+}
+
+## Quote a value for a MariaDB option file:
+function cnfString {
+    local value="$1"
+    local bs="\\"
+    local dq='"'
+
+    value="${value//"$bs"/"$bs$bs"}"
+    value="${value//"$dq"/"$bs$dq"}"
+    printf '"%s"' "$value"
+}
+
+function tearDown {
+    if [[ -n "$CLIENT_CONFIG" ]]; then
+        rm -f "$CLIENT_CONFIG" || echo "Unable to remove file '${CLIENT_CONFIG}'" 1>&2
+    fi
 }
 
 function log {
@@ -99,5 +130,8 @@ function abort {
 ##--------------------------------------------------------------------------------------------------
 
 if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
-    setup && execute && finish
+    trap tearDown EXIT
+    setup
+    execute
+    finish
 fi

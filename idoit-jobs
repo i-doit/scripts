@@ -33,46 +33,55 @@ CONFIGURATION_FILE="/etc/i-doit/i-doit.sh"
 ##--------------------------------------------------------------------------------------------------
 
 function execute {
-    local prefix=""
-    local suffix="--user $IDOIT_USERNAME --password $IDOIT_PASSWORD --tenantId $TENANT_ID"
+    local auth=()
 
     log "Perform important background tasks for i-doit"
 
-    test "$(whoami)" != "$APACHE_USER" && prefix="sudo -u $APACHE_USER "
+    ## Settings written by older versions of idoit-install have no console configuration file:
+    if [[ -n "${CONSOLE_CONFIG:-}" && -f "$CONSOLE_CONFIG" ]]; then
+        auth=(-c "$CONSOLE_CONFIG")
+    elif [[ -n "${IDOIT_USERNAME:-}" && -n "${IDOIT_PASSWORD:-}" && -n "${TENANT_ID:-}" ]]; then
+        auth=(--user "$IDOIT_USERNAME" --password "$IDOIT_PASSWORD" --tenantId "$TENANT_ID")
+    else
+        abort "Missing credentials: Please set CONSOLE_CONFIG in '${CONFIGURATION_FILE}' to an existing file (current value: '${CONSOLE_CONFIG:-}')"
+    fi
 
     log "Archive i-doit logbook"
-    eval "${prefix}${CONSOLE_BIN} logbook-archive $suffix" || \
+    "$CONSOLE_BIN" logbook-archive "${auth[@]}" || \
         abort "Command 'logbook-archive' failed"
     log ""
 
     log "Cleanup i-doit rights"
-    eval "${prefix}${CONSOLE_BIN} auth-cleanup $suffix" || \
+    "$CONSOLE_BIN" auth-cleanup "${auth[@]}" || \
         abort "Command 'auth-cleanup' failed"
     log ""
 
     log "Purge unfinished objects"
-    eval "${prefix}${CONSOLE_BIN} system-objectcleanup --objectStatus 1 $suffix" || \
+    "$CONSOLE_BIN" system-objectcleanup --objectStatus 1 "${auth[@]}" || \
         abort "Command 'system-objectcleanup' failed"
     log ""
 
     log "Re-create search index"
-    eval "${prefix}${CONSOLE_BIN} search-index $suffix" || \
+    "$CONSOLE_BIN" search-index "${auth[@]}" || \
         abort "Command 'search-index' failed"
 
     log "Send notifications"
-    eval "${prefix}${CONSOLE_BIN} notifications-send $suffix" || \
+    "$CONSOLE_BIN" notifications-send "${auth[@]}" || \
         abort "Command 'notifications-send' failed"
 
     log "Clear caches"
-    eval "${prefix}rm -rf ${INSTANCE_PATH}/temp/*" || \
+    sudo -u "$APACHE_USER" rm -rf "${INSTANCE_PATH}/temp/"* || \
         abort "Unable to clear caches"
 
     log "Clear updates"
-    eval "${prefix}rm -rf ${INSTANCE_PATH}/updates/versions/*" || \
+    sudo -u "$APACHE_USER" rm -rf "${INSTANCE_PATH}/updates/versions/"* || \
         abort "Unable to clear updates"
 }
 
 function setup {
+    test "$(whoami)" = "root" || \
+        abort "Only user 'root' may execute this script"
+
     test -f "$CONFIGURATION_FILE" || \
         abort "Missing configuration file '${CONFIGURATION_FILE}'"
 
@@ -105,5 +114,7 @@ function abort {
 ##--------------------------------------------------------------------------------------------------
 
 if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
-    setup && execute && finish
+    setup
+    execute
+    finish
 fi
