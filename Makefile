@@ -41,7 +41,7 @@ lint-yaml :
 install :
 	install idoit* $(PREFIX)/bin/
 	mkdir -p /etc/i-doit
-	install i-doit.sh /etc/i-doit
+	install -m 0600 i-doit.sh /etc/i-doit
 
 uninstall :
 	rm -f $(PREFIX)/bin/idoit*
